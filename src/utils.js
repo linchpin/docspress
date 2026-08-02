@@ -28,6 +28,15 @@ export function slugify(value, fallback = "page") {
   return slug || fallback;
 }
 
+export function slugifyPath(value, fallback = "page") {
+  const segments = String(value || "")
+    .split("/")
+    .map((segment) => slugify(segment, ""))
+    .filter(Boolean);
+
+  return segments.length > 0 ? segments.join("/") : fallback;
+}
+
 export function titleFromSlug(slug) {
   return String(slug || "")
     .split(/[-_]+/)

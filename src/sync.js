@@ -1,4 +1,5 @@
 import { readSentinel } from "./sentinel.js";
+import { slugify, slugifyPath } from "./utils.js";
 
 export async function syncPages(options) {
   const {
@@ -8,6 +9,7 @@ export async function syncPages(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     versionTaxonomy = "docspress_versions",
     githubRepository = "",
@@ -18,6 +20,7 @@ export async function syncPages(options) {
     logger = console
   } = options;
 
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = suppliedExistingPages || await client.listPages();
   const indexed = indexExistingPages(existingPages);
   const desiredKeys = new Set(desiredPages.map((page) => page.key));
@@ -128,7 +131,7 @@ export async function syncPages(options) {
 
   const deletions = allowDeletions ? Array.from(indexed.managedByKey.values())
     .filter((page) => (
-      isUnderRoot(page.sentinel?.key, rootSlug)
+      isUnderPath(page.sentinel?.key, ownedPath)
       && !desiredKeys.has(page.sentinel.key)
       && !matchedExistingIds.has(page.id)
     ))
@@ -417,8 +420,31 @@ function normalizeBooleanMeta(value) {
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
-function isUnderRoot(key, rootSlug) {
-  return key === rootSlug || key?.startsWith(`${rootSlug}/`);
+export function isUnderPath(key, path) {
+  return key === path || Boolean(key?.startsWith(`${path}/`));
+}
+
+/**
+ * Resolve the subtree this repository owns.
+ *
+ * The root defaults to the managed root page and is normalized exactly the way
+ * page keys are built in docs.js, so the ownership prefix always matches the
+ * keys it is compared against. An explicit managed-path narrows ownership to a
+ * branch below that root, which lets several repositories publish into one
+ * shared parent without deleting each other's pages.
+ */
+export function resolveManagedPath(rootSlug, managedPath = "") {
+  const root = slugify(rootSlug || "docs", "docs");
+  if (!managedPath) {
+    return root;
+  }
+
+  const scoped = slugifyPath(managedPath, root);
+  if (!isUnderPath(scoped, root)) {
+    throw new Error(`managed-path '${managedPath}' resolves to '${scoped}', which is outside the managed root '${root}'. Use the root path or a path below it.`);
+  }
+
+  return scoped;
 }
 
 export function indexExistingPages(pages) {

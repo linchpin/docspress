@@ -225,4 +225,110 @@ describe("syncPages", () => {
       ["update", 1, expect.objectContaining({ menu_order: 0 })]
     ]);
   });
+
+  it("deletes every managed page below the root when no managed path is set", async () => {
+    const client = mockClient([
+      existingPage(1, "docs"),
+      existingPage(2, "docs/removed", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs")],
+      client,
+      dryRun: true,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.deleted).toBe(1);
+    expect(result.operations.filter((op) => op.action === "delete").map((op) => op.key))
+      .toEqual(["docs/removed"]);
+  });
+
+  it("limits deletions to the managed path so sibling repositories keep their pages", async () => {
+    const client = mockClient([
+      existingPage(1, "wordpress-plugins"),
+      existingPage(2, "wordpress-plugins/mantle", { parent: 1 }),
+      existingPage(3, "wordpress-plugins/mantle/removed", { parent: 2 }),
+      existingPage(4, "wordpress-plugins/linchpin-blocks", { parent: 1 }),
+      existingPage(5, "wordpress-plugins/linchpin-blocks/install", { parent: 4 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      dryRun: true,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      logger: { info() {} }
+    });
+
+    expect(result.operations.filter((op) => op.action === "delete").map((op) => op.key))
+      .toEqual(["wordpress-plugins/mantle/removed"]);
+    expect(result.conflicts).toBe(0);
+  });
+
+  it("keeps the shared root page owned by every repository publishing below it", async () => {
+    const client = mockClient([
+      existingPage(1, "wordpress-plugins"),
+      existingPage(2, "wordpress-plugins/linchpin-blocks", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      dryRun: true,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      logger: { info() {} }
+    });
+
+    expect(result.unchanged).toBe(1);
+    expect(result.created).toBe(1);
+    expect(result.deleted).toBe(0);
+  });
+
+  it("normalizes the managed path the same way page keys are built", async () => {
+    const client = mockClient([
+      existingPage(1, "docs"),
+      existingPage(2, "docs/my-plugin", { parent: 1 }),
+      existingPage(3, "docs/my-plugin/removed", { parent: 2 }),
+      existingPage(4, "docs/other", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs"), desiredPage("docs/my-plugin")],
+      client,
+      dryRun: true,
+      rootSlug: "docs",
+      managedPath: "/Docs/My Plugin/",
+      logger: { info() {} }
+    });
+
+    expect(result.operations.filter((op) => op.action === "delete").map((op) => op.key))
+      .toEqual(["docs/my-plugin/removed"]);
+  });
+
+  it("rejects a managed path outside the managed root", async () => {
+    await expect(syncPages({
+      desiredPages: [desiredPage("docs")],
+      client: mockClient([]),
+      dryRun: true,
+      rootSlug: "docs",
+      managedPath: "marketing/landing",
+      logger: { info() {} }
+    })).rejects.toThrow(/outside the managed root 'docs'/);
+  });
+
+  it("scopes deletions by the slugified root instead of the raw input", async () => {
+    const client = mockClient([
+      existingPage(1, "my-docs"),
+      existingPage(2, "my-docs/removed", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("my-docs")],
+      client,
+      dryRun: true,
+      rootSlug: "My Docs",
+      logger: { info() {} }
+    });
+
+    expect(result.deleted).toBe(1);
+  });
 });

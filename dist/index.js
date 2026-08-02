@@ -16883,7 +16883,7 @@ exports.createIncrementalHTMLParser = function() {
         document: function() {
           return parser.document();
         },
-    };
+    };  
 };
 
 exports.createWindow = function(html, address) {
@@ -64787,7 +64787,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /************************************************************************/
 /******/ // The module cache
 /******/ var __webpack_module_cache__ = {};
-/******/
+/******/ 
 /******/ // The require function
 /******/ function __nccwpck_require__(moduleId) {
 /******/ 	// Check if module is in cache
@@ -64801,7 +64801,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		// no module.loaded needed
 /******/ 		exports: {}
 /******/ 	};
-/******/
+/******/ 
 /******/ 	// Execute the module function
 /******/ 	var threw = true;
 /******/ 	try {
@@ -64810,11 +64810,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 	} finally {
 /******/ 		if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 	}
-/******/
+/******/ 
 /******/ 	// Return the exports of the module
 /******/ 	return module.exports;
 /******/ }
-/******/
+/******/ 
 /************************************************************************/
 /******/ /* webpack/runtime/create fake namespace object */
 /******/ (() => {
@@ -64845,7 +64845,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		return ns;
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/define property getters */
 /******/ (() => {
 /******/ 	// define getter functions for harmony exports
@@ -64857,12 +64857,12 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		}
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/make namespace object */
 /******/ (() => {
 /******/ 	// define __esModule on exports
@@ -64873,11 +64873,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/compat */
-/******/
+/******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
-/******/
+/******/ 
 /************************************************************************/
 var __webpack_exports__ = {};
 
@@ -66029,8 +66029,8 @@ class OidcClient {
             const res = yield httpclient
                 .getJson(id_token_url)
                 .catch(error => {
-                throw new Error(`Failed to get ID Token. \n
-        Error Code : ${error.statusCode}\n
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
@@ -91237,6 +91237,15 @@ function slugify(value, fallback = "page") {
   return slug || fallback;
 }
 
+function slugifyPath(value, fallback = "page") {
+  const segments = String(value || "")
+    .split("/")
+    .map((segment) => slugify(segment, ""))
+    .filter(Boolean);
+
+  return segments.length > 0 ? segments.join("/") : fallback;
+}
+
 function titleFromSlug(slug) {
   return String(slug || "")
     .split(/[-_]+/)
@@ -93020,6 +93029,7 @@ function normalizeGutenbergSerialization(value) {
 ;// CONCATENATED MODULE: ./src/sync.js
 
 
+
 async function syncPages(options) {
   const {
     desiredPages,
@@ -93028,6 +93038,7 @@ async function syncPages(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     versionTaxonomy = "docspress_versions",
     githubRepository = "",
@@ -93038,6 +93049,7 @@ async function syncPages(options) {
     logger = console
   } = options;
 
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = suppliedExistingPages || await client.listPages();
   const indexed = indexExistingPages(existingPages);
   const desiredKeys = new Set(desiredPages.map((page) => page.key));
@@ -93148,7 +93160,7 @@ async function syncPages(options) {
 
   const deletions = allowDeletions ? Array.from(indexed.managedByKey.values())
     .filter((page) => (
-      isUnderRoot(page.sentinel?.key, rootSlug)
+      isUnderPath(page.sentinel?.key, ownedPath)
       && !desiredKeys.has(page.sentinel.key)
       && !matchedExistingIds.has(page.id)
     ))
@@ -93437,8 +93449,31 @@ function normalizeBooleanMeta(value) {
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
-function isUnderRoot(key, rootSlug) {
-  return key === rootSlug || key?.startsWith(`${rootSlug}/`);
+function isUnderPath(key, path) {
+  return key === path || Boolean(key?.startsWith(`${path}/`));
+}
+
+/**
+ * Resolve the subtree this repository owns.
+ *
+ * The root defaults to the managed root page and is normalized exactly the way
+ * page keys are built in docs.js, so the ownership prefix always matches the
+ * keys it is compared against. An explicit managed-path narrows ownership to a
+ * branch below that root, which lets several repositories publish into one
+ * shared parent without deleting each other's pages.
+ */
+function resolveManagedPath(rootSlug, managedPath = "") {
+  const root = slugify(rootSlug || "docs", "docs");
+  if (!managedPath) {
+    return root;
+  }
+
+  const scoped = slugifyPath(managedPath, root);
+  if (!isUnderPath(scoped, root)) {
+    throw new Error(`managed-path '${managedPath}' resolves to '${scoped}', which is outside the managed root '${root}'. Use the root path or a path below it.`);
+  }
+
+  return scoped;
 }
 
 function indexExistingPages(pages) {
@@ -93485,7 +93520,7 @@ function pathForPage(page, byId, seen = new Set()) {
 
 
 function planReconciliation(options) {
-  const { desiredPages, existingPages } = options;
+  const { desiredPages, existingPages, ownedPath = "" } = options;
   const indexed = indexExistingPages(existingPages);
   const desiredByKey = new Map(desiredPages.map((page) => [page.key, page]));
   const wordpressChanges = [];
@@ -93544,6 +93579,11 @@ function planReconciliation(options) {
     if (desiredByKey.has(key)) {
       continue;
     }
+    // Managed pages owned by another repository publishing into the same
+    // parent are not this repository's to classify, delete, or conflict over.
+    if (ownedPath && !isUnderPath(key, ownedPath)) {
+      continue;
+    }
     const liveHash = hashPageState(livePageState(managed, indexed));
     if (liveHash !== managed.sentinel?.hash) {
       conflicts.push({
@@ -93597,6 +93637,7 @@ async function syncBidirectional(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     cwd = process.cwd(),
     manifestFile = "",
@@ -93606,8 +93647,9 @@ async function syncBidirectional(options) {
     githubServerUrl = "https://github.com",
     logger = console
   } = options;
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = await client.listPages();
-  const plan = planReconciliation({ desiredPages, existingPages });
+  const plan = planReconciliation({ desiredPages, existingPages, ownedPath });
   const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
   let publishPreview = emptyResult(true);
 
@@ -93619,6 +93661,7 @@ async function syncBidirectional(options) {
       dryRun: true,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -93691,6 +93734,7 @@ async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -93706,6 +93750,7 @@ async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -95181,6 +95226,7 @@ async function main() {
     versionsFile: getInput("versions-file") || "",
     rootSlug: getInput("root-slug") || "docs",
     rootTitle: getInput("root-title") || "Docs",
+    managedPath: getInput("managed-path") || "",
     createH1: normalizeBoolean(getInput("create-h1") || "false"),
     rewriteLinks: normalizeBoolean(getInput("rewrite-links") || "true"),
     editLink: normalizeBoolean(getInput("edit-link") || "false"),
@@ -95248,6 +95294,7 @@ async function main() {
       dryRun: config.dryRun,
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
+      managedPath: config.managedPath,
       versionsRegistry,
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
@@ -95268,6 +95315,7 @@ async function main() {
       dryRun: config.dryRun,
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
+      managedPath: config.managedPath,
       versionsRegistry,
       cwd: process.cwd(),
       manifestFile: config.manifestFile,
