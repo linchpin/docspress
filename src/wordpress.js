@@ -153,11 +153,28 @@ export class WordPressClient {
 
     const response = await this.fetchImpl(requestUrl, init);
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+
+    // Parse defensively. Anything in front of WordPress — a CDN challenge, a
+    // WAF block, a PHP fatal — answers with HTML, and letting JSON.parse throw
+    // here would discard the status and body that identify the responder.
+    let data = null;
+    let parsed = true;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        parsed = false;
+      }
+    }
 
     if (!response.ok) {
-      const message = formatApiError(data, method, requestUrl, response.status);
-      throw new Error(message);
+      throw new Error(formatApiError(data, method, requestUrl, response.status, parsed ? null : text, response));
+    }
+
+    if (!parsed) {
+      throw new Error(
+        `${method} ${requestUrl} returned HTTP ${response.status} with a non-JSON body. ${describeBody(text, response)}`
+      );
     }
 
     return {
@@ -167,14 +184,44 @@ export class WordPressClient {
   }
 }
 
-function formatApiError(data, method, requestUrl, status) {
-  const message = data?.message || data?.error || `${method} ${requestUrl} failed with HTTP ${status}`;
+function formatApiError(data, method, requestUrl, status, rawBody, response) {
+  const message = data?.message || data?.error
+    || (rawBody
+      ? `${method} ${requestUrl} failed with HTTP ${status}. ${describeBody(rawBody, response)}`
+      : `${method} ${requestUrl} failed with HTTP ${status}`);
 
   if (String(message).includes("Required scope: `global`")) {
     return `${message} Regenerate WP_ACCESS_TOKEN with the Docspress token helper so it requests the WordPress.com "global" OAuth scope.`;
   }
 
+  // A hosting WAF can reject the request body before WordPress ever sees it.
+  // WordPress.com Atomic answers 406 with an HTML page, and the usual trigger
+  // is a literal "../.." in documented file paths, which matches a path
+  // traversal rule.
+  if (status === 406 && rawBody) {
+    return `${message} A hosting firewall rejected the request body before it reached WordPress. This usually means a page documents a literal "../.." path; rewrite those as repository-relative paths or a build alias.`;
+  }
+
   return message;
+}
+
+const BODY_SNIPPET_LENGTH = 300;
+
+function describeBody(text, response) {
+  const contentType = response?.headers?.get?.("content-type") || "unknown";
+  const snippet = String(text).replace(/\s+/g, " ").trim().slice(0, BODY_SNIPPET_LENGTH);
+  const parts = [`Content-Type: ${contentType}.`];
+
+  // Edge responses carry the identifiers support will ask for.
+  for (const header of ["cf-ray", "x-ac", "server"]) {
+    const value = response?.headers?.get?.(header);
+    if (value) {
+      parts.push(`${header}: ${value}.`);
+    }
+  }
+
+  parts.push(`Body starts: ${snippet}`);
+  return parts.join(" ");
 }
 
 export function normalizePage(page, taxonomies = []) {
