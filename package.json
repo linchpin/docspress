@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "build:release": "node scripts/build-release-zips.mjs",
     "lint": "eslint .",
     "migrate:markdown-blocks": "node scripts/migrate-readable-blocks.mjs",
     "package": "npm run lint && npm test && npm run build",
