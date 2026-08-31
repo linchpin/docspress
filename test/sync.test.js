@@ -156,6 +156,112 @@ describe("syncPages", () => {
     }
   });
 
+  it("stamps the publishing repository onto every managed page", async () => {
+    const client = mockClient([]);
+    await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      githubRepository: "acme/handbook",
+      githubRef: "trunk",
+      githubServerUrl: "https://github.example.com",
+      logger: { info() {} }
+    });
+
+    expect(client.calls[0][1].meta).toEqual({
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "trunk",
+      _docspress_github_server_url: "https://github.example.com"
+    });
+  });
+
+  it("clears a recorded source path when a page no longer has a file", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = { _docspress_github_path: "docs/retired.md" };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "virtual:docs" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+    expect(client.calls[0][2].meta).toEqual({ _docspress_github_path: "" });
+  });
+
+  it("keeps a recorded repository when a run has none to publish", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.unchanged).toBe(1);
+    expect(client.calls).toEqual([]);
+  });
+
+  it("republishes managed pages that still record another repository", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "automattic/docspress",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      githubRepository: "acme/handbook",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+    expect(client.calls[0][2].meta._docspress_github_repository).toBe("acme/handbook");
+  });
+
+  it("leaves matching source metadata and metadata-free sites unchanged", async () => {
+    const stamped = existingPage(1, "docs");
+    stamped.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const unregistered = existingPage(1, "docs");
+
+    for (const existing of [stamped, unregistered]) {
+      const client = mockClient([existing]);
+      const result = await syncPages({
+        desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+        client,
+        dryRun: false,
+        rootSlug: "docs",
+        githubRepository: "acme/handbook",
+        logger: { info() {} }
+      });
+
+      expect(result.unchanged).toBe(1);
+      expect(client.calls).toEqual([]);
+    }
+  });
+
   it("reports unmanaged path collisions as conflicts", async () => {
     const client = mockClient([existingPage(1, "docs", { managed: false })]);
     const result = await syncPages({

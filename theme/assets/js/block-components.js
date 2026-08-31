@@ -733,8 +733,8 @@
 			wordpressLabel: { type: 'string', default: 'Edit this page in WordPress', role: 'content' },
 			showGitHub: { type: 'boolean', default: true },
 			githubLabel: { type: 'string', default: 'Propose changes on GitHub', role: 'content' },
-			repositoryUrl: { type: 'string', default: 'https://github.com/Automattic/docspress' },
-			ref: { type: 'string', default: 'main' }
+			repositoryUrl: { type: 'string', default: '' },
+			ref: { type: 'string', default: '' }
 		},
 		preview: ( attributes ) => {
 			const actions = [];
@@ -774,8 +774,20 @@
 			panel( __( 'GitHub action', 'docspress' ), [
 				toggle( __( 'Show GitHub proposal link', 'docspress' ), 'showGitHub', attributes, setAttributes ),
 				attributes.showGitHub && text( __( 'GitHub label', 'docspress' ), 'githubLabel', attributes, setAttributes ),
-				attributes.showGitHub && text( __( 'Repository URL', 'docspress' ), 'repositoryUrl', attributes, setAttributes ),
-				attributes.showGitHub && text( __( 'Branch or tag', 'docspress' ), 'ref', attributes, setAttributes )
+				attributes.showGitHub && text(
+					__( 'Repository URL', 'docspress' ),
+					'repositoryUrl',
+					attributes,
+					setAttributes,
+					__( 'Only used for Pages that do not record their own repository. Synchronized Pages always link to the repository they came from.', 'docspress' )
+				),
+				attributes.showGitHub && text(
+					__( 'Branch or tag', 'docspress' ),
+					'ref',
+					attributes,
+					setAttributes,
+					__( 'Only used with the fallback repository above.', 'docspress' )
+				)
 			], false )
 		]
 	} );
