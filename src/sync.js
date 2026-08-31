@@ -170,33 +170,41 @@ function pagePayload(page, parentId, managed, options = {}) {
     payload.menu_order = 0;
   }
 
+  const meta = githubSourceMeta(page, options, managed);
   if (page.docsVersion?.id) {
     payload[options.versionTaxonomy] = options.versionTermId ? [options.versionTermId] : [];
-    payload.meta = {
+    Object.assign(meta, {
       _docspress_version_id: page.docsVersion.id,
       _docspress_logical_route: page.logicalRoute || "",
       _docspress_page_identity: page.stableIdentity,
       _docspress_source_type: page.sourceType,
       _docspress_source_path: page.sourcePath,
-      ...githubSourceMeta(page, options),
       _docspress_docs_root: page.key.split("/")[0],
       _docspress_version_container: false
-    };
+    });
   } else if (page.versionContainer) {
-    payload.meta = {
-      _docspress_version_container: true
-    };
+    meta._docspress_version_container = true;
   } else if (managed?.meta?._docspress_version_id) {
     payload[options.versionTaxonomy] = [];
-    payload.meta = {
+    Object.assign(meta, {
       _docspress_version_id: "",
       _docspress_logical_route: "",
       _docspress_page_identity: "",
       _docspress_source_type: "",
       _docspress_source_path: page.sourcePath || "",
-      ...githubSourceMeta(page, options),
       _docspress_docs_root: page.key.split("/")[0],
       _docspress_version_container: false
+    });
+  }
+  if (Object.keys(meta).length > 0) {
+    payload.meta = meta;
+  }
+
+  const sidebarMeta = sidebarPageMeta(page, managed);
+  if (sidebarMeta) {
+    payload.meta = {
+      ...(payload.meta || {}),
+      ...sidebarMeta
     };
   }
 
@@ -222,6 +230,19 @@ function managedMetadataMatches(desired, managed, options = {}) {
   const sourceContentMatches = desiredHasSourceContent
     ? managedHasSourceContent && managed.sentinel.sourceContentBase64 === desiredSentinel.sourceContentBase64
     : !managedHasSourceContent;
+  const desiredHasSidebar = Boolean(desired.sidebarId);
+  const managedHasSidebar = Boolean(
+    managed.sentinel?.sidebarId
+      || managed.sentinel?.sidebarRoot
+      || managed.meta?._docspress_sidebar_id
+      || normalizeBooleanMeta(managed.meta?._docspress_sidebar_root)
+  );
+  const sidebarMatches = desiredHasSidebar
+    ? managed.sentinel?.sidebarId === desired.sidebarId
+      && normalizeBooleanMeta(managed.sentinel?.sidebarRoot) === Boolean(desired.sidebarRoot)
+      && String(managed.meta?._docspress_sidebar_id || "") === desired.sidebarId
+      && normalizeBooleanMeta(managed.meta?._docspress_sidebar_root) === Boolean(desired.sidebarRoot)
+    : !managedHasSidebar;
 
   const desiredVersion = desired.docsVersion?.id || "";
   const versionMatches = String(managed.meta?._docspress_version_id || "") === desiredVersion;
@@ -230,8 +251,9 @@ function managedMetadataMatches(desired, managed, options = {}) {
   const sourceTypeMatches = String(managed.meta?._docspress_source_type || "") === String(desired.sourceType || "");
   const sourcePathMatches = !desiredVersion
     || String(managed.meta?._docspress_source_path || "") === String(desired.sourcePath || "");
-  const githubMeta = githubSourceMeta(desired, options);
-  const githubMatches = !desiredVersion || Object.entries(githubMeta).every(
+  const githubMeta = githubSourceMeta(desired, options, managed);
+  const githubMetaVisible = Object.keys(githubMeta).every((key) => Object.hasOwn(managed.meta || {}, key));
+  const githubMatches = !(desiredVersion || githubMetaVisible) || Object.entries(githubMeta).every(
     ([key, value]) => String(managed.meta?.[key] || "") === String(value)
   );
   const taxonomyMatches = !desiredVersion
@@ -242,6 +264,7 @@ function managedMetadataMatches(desired, managed, options = {}) {
   return positionMatches
     && collapsedMatches
     && sourceContentMatches
+    && sidebarMatches
     && versionMatches
     && logicalRouteMatches
     && identityMatches
@@ -252,10 +275,45 @@ function managedMetadataMatches(desired, managed, options = {}) {
     && taxonomyMatches;
 }
 
-function githubSourceMeta(page, options = {}) {
+function sidebarPageMeta(page, managed) {
+  if (page.sidebarId) {
+    return {
+      _docspress_sidebar_id: page.sidebarId,
+      _docspress_sidebar_root: Boolean(page.sidebarRoot)
+    };
+  }
+
+  if (
+    managed?.sentinel?.sidebarId
+      || managed?.sentinel?.sidebarRoot
+      || managed?.meta?._docspress_sidebar_id
+      || normalizeBooleanMeta(managed?.meta?._docspress_sidebar_root)
+  ) {
+    return {
+      _docspress_sidebar_id: "",
+      _docspress_sidebar_root: false
+    };
+  }
+
+  return null;
+}
+
+function githubSourceMeta(page, options = {}, managed = null) {
+  const sourcePath = page?.sourcePath || "";
+  const path = sourcePath.includes(":") ? "" : sourcePath;
+  const meta = {};
+  if (path || managed?.meta?._docspress_github_path) {
+    meta._docspress_github_path = path;
+  }
+
+  // Without a known repository, leave the one already recorded on the page alone
+  // instead of clearing the source links the theme builds from it.
+  if (!options.githubRepository) {
+    return meta;
+  }
   return {
-    _docspress_github_path: page.sourcePath || "",
-    _docspress_github_repository: options.githubRepository || "",
+    ...meta,
+    _docspress_github_repository: options.githubRepository,
     _docspress_github_ref: options.githubRef || "main",
     _docspress_github_server_url: options.githubServerUrl || "https://github.com"
   };

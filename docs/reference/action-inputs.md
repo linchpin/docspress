@@ -24,6 +24,7 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | --- | --- | --- |
 | `docs-dir` | `docs` | Directory containing `.md` and `.markdown` files. |
 | `manifest-file` | empty | Optional JSON manifest for explicit titles, slugs, parents, and source files. |
+| `sidebars-file` | empty | Optional YAML or JSON route map for advanced contextual sidebars in the DocsPress theme. Without it, DocsPress keeps one automatic Page tree. |
 | `redirects-file` | empty | Optional JSON redirects map that creates managed moved-page placeholders. |
 | `versions-file` | empty | Optional ordered API-version registry. Enables root, directory, suffix, and per-version manifest sources through DocsPress Blocks. |
 | `root-slug` | `docs` | Slug of the managed root Page. |
@@ -41,6 +42,8 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | `github-repository` | `GITHUB_REPOSITORY` | Repository used in edit URLs, for example `owner/repo`. |
 | `github-ref` | `GITHUB_REF_NAME`, then `main` | Branch or ref used in edit URLs. |
 | `github-server-url` | `GITHUB_SERVER_URL`, then `https://github.com` | GitHub server used in edit URLs. |
+
+Every run stores these three values on each managed Page as `_docspress_github_repository`, `_docspress_github_ref`, and `_docspress_github_server_url`, alongside the `_docspress_github_path` source file. The DocsPress theme's Edit Links block reads that metadata, so its **Propose changes on GitHub** button opens the repository the Page was published from without any theme configuration.
 
 ## WordPress-to-GitHub pull requests
 

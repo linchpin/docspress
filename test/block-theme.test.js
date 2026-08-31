@@ -207,7 +207,28 @@ describe("DocsPress block theme constraints", () => {
     const kitchenSink = generated.pages.find(
       (page) => page.key === "docs/reference/kitchen-sink"
     );
+    const kitchenSinkAudiencePathExamples = [
+      ...(kitchenSink?.content.matchAll(
+        /<!-- wp:docspress\/audience-paths ([^\n]+) \/-->/g
+      ) ?? []),
+    ].map((match) => JSON.parse(match[1]));
+    const audiencePathsGuide = generated.pages.find(
+      (page) => page.key === "docs/reference/gutenberg-blocks/audience-paths"
+    );
+    const documentedAudiencePathExamples = [
+      ...(audiencePathsGuide?.content.matchAll(
+        /<!-- wp:docspress\/audience-paths ([^\n]+) \/-->/g
+      ) ?? []),
+    ].map((match) => JSON.parse(match[1]));
     expect(kitchenSink?.content.match(/<h2>Playground runtime<\/h2>/g)).toHaveLength(1);
+    expect(kitchenSinkAudiencePathExamples).toHaveLength(3);
+    expect(kitchenSinkAudiencePathExamples.map((example) => example.columns).sort()).toEqual([1, 2, 3]);
+    expect(documentedAudiencePathExamples).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ columns: 1, showIcons: false, showLinks: true }),
+        expect.objectContaining({ columns: 3, showIcons: true, showLinks: false }),
+      ])
+    );
     expect(setup).toContain("docspress_playground_with_component_inventory");
     expect(setup).toContain("function docspress_playground_should_use_live_inventory()");
     expect(setup).toContain("return 'production' !== wp_get_environment_type();");
@@ -1175,6 +1196,37 @@ describe("DocsPress block theme constraints", () => {
     expect(php).toContain("docspress_component_supports()");
   });
 
+  it("links source actions at the repository each Page was published from", async () => {
+    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
+    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const editor = await fs.readFile(
+      path.join(root, "theme", "assets", "js", "block-components.js"),
+      "utf8"
+    );
+
+    expect(functions).toContain("function docspress_get_github_source(");
+    expect(functions).toContain("_docspress_github_repository");
+    expect(functions).toContain("_docspress_github_ref");
+    expect(functions).toContain("_docspress_github_server_url");
+    expect(functions).toContain("function docspress_normalize_repository_url(");
+    expect(functions).toContain(
+      "function docspress_get_github_edit_url( $post_id = 0, $repository = '', $ref = '' )"
+    );
+    expect(functions).toContain("apply_filters( 'docspress_github_source', $source, $post_id )");
+    expect(functions).toContain("apply_filters( 'docspress_github_edit_url', $url, $path, $post_id )");
+    expect(php).toContain("registered_meta_key_exists( 'post', $key, 'page' )");
+    expect(php).toContain("'repositoryUrl'  => array( 'type' => 'string', 'default' => '' )");
+    expect(php).toContain("'ref'            => array( 'type' => 'string', 'default' => '' )");
+    expect(editor).toContain("repositoryUrl: { type: 'string', default: '' }");
+    expect(editor).toContain(
+      "Only used for Pages that do not record their own repository."
+    );
+    expect(functions).toContain("$resolved = docspress_normalize_repository_url( $source['repository'], $source['server_url'] );");
+    for (const file of [functions, php, editor]) {
+      expect(file).not.toContain("Automattic/docspress");
+    }
+  });
+
   it("collects Page feedback above adjacent documentation navigation", async () => {
     const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
     const editor = await fs.readFile(
@@ -1400,6 +1452,29 @@ describe("DocsPress block theme constraints", () => {
     );
     expect(audienceStyles).toContain("container-type: inline-size;");
     expect(audienceStyles).toContain("@container (max-width: 820px)");
+    expect(audienceStyles).toMatch(
+      /\.docspress-audience-paths--compact \.docspress-audience-paths__card\s*\{[^}]*grid-template-areas:\s*"icon"\s*"copy"\s*"cta";[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+    expect(audienceStyles).toMatch(
+      /@container \(max-width: 480px\)[\s\S]*?\.docspress-audience-paths--compact\.docspress-audience-paths--columns-3 \.docspress-audience-paths__grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/
+    );
+    expect(audienceStyles).toMatch(
+      /\.docspress-audience-paths--compact\.docspress-audience-paths--no-icons \.docspress-audience-paths__card\s*\{[^}]*grid-template-areas:\s*"copy"\s*"cta";[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+    expect(audienceStyles).toMatch(
+      /\.docspress-audience-paths--compact\.docspress-audience-paths--no-links \.docspress-audience-paths__card\s*\{[^}]*grid-template-areas:\s*"icon"\s*"copy";/s
+    );
+    expect(audienceStyles).not.toContain('"icon copy"');
+    for (const source of [audienceEditor, audienceRender]) {
+      expect(source).toContain("showIcons");
+      expect(source).toContain("showLinks");
+      expect(source).toContain("docspress-audience-paths--no-icons");
+      expect(source).toContain("docspress-audience-paths--no-links");
+    }
+    expect(audienceEditor).toContain("Show icons");
+    expect(audienceEditor).toContain("Show bottom links");
+    expect(audienceRender).toContain("$show_icons");
+    expect(audienceRender).toContain("$show_links && $path['cta']");
     expect(audienceEditor).not.toContain("textColor:");
     expect(audienceRender).not.toContain("'textColor'");
     expect(functions).toContain(
@@ -1620,6 +1695,26 @@ describe("DocsPress block theme constraints", () => {
     expect(runtime).toContain("enhanceCurrentNavigation(document.querySelector('.primary-navigation'))");
     expect(runtime).toContain("enhanceCurrentNavigation(docsNav)");
     expect(styles).toContain('.docs-nav a[aria-current="page"]');
+  });
+
+  it("scopes automatic navigation and adjacent links to opt-in contextual sidebars", async () => {
+    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
+    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const plugin = await fs.readFile(
+      path.join(root, "plugins", "docspress-blocks", "includes", "versioning.php"),
+      "utf8"
+    );
+
+    for (const metadataKey of ["_docspress_sidebar_id", "_docspress_sidebar_root"]) {
+      expect(php).toContain(metadataKey);
+      expect(plugin).toContain(metadataKey);
+    }
+    expect(functions).toContain("function docspress_get_sidebar_metadata");
+    expect(functions).toContain("function docspress_get_sidebar_context");
+    expect(functions).toContain("function docspress_filter_pages_by_sidebar");
+    expect(php).toContain("'pages' === $source ? docspress_get_sidebar_context() : null");
+    expect(php).toContain("docspress_get_sidebar_context( $current_id )");
+    expect(php).toContain("docspress_filter_pages_by_sidebar( $pages, $sidebar_context['id'] )");
   });
 
   it("keeps command-search data and controls available in rendered block templates", async () => {

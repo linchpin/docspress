@@ -13,6 +13,10 @@ function desiredPage(key, overrides = {}) {
   if (Object.hasOwn(overrides, "sidebarCollapsed")) {
     sentinel.sidebarCollapsed = overrides.sidebarCollapsed;
   }
+  if (overrides.sidebarId) {
+    sentinel.sidebarId = overrides.sidebarId;
+    sentinel.sidebarRoot = Boolean(overrides.sidebarRoot);
+  }
 
   return {
     key,
@@ -36,6 +40,10 @@ function existingPage(id, key, options = {}) {
   if (Object.hasOwn(options, "sidebarCollapsed")) {
     sentinel.sidebarCollapsed = options.sidebarCollapsed;
   }
+  if (options.sidebarId) {
+    sentinel.sidebarId = options.sidebarId;
+    sentinel.sidebarRoot = Boolean(options.sidebarRoot);
+  }
   const content = options.managed === false
     ? "<p>Manual page</p>"
     : prependSentinel("<p>Managed page</p>", sentinel);
@@ -47,7 +55,8 @@ function existingPage(id, key, options = {}) {
     menuOrder: options.menuOrder ?? 0,
     content,
     title: key,
-    status: options.status || "draft"
+    status: options.status || "draft",
+    meta: options.meta || {}
   };
 }
 
@@ -147,6 +156,112 @@ describe("syncPages", () => {
     }
   });
 
+  it("stamps the publishing repository onto every managed page", async () => {
+    const client = mockClient([]);
+    await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      githubRepository: "acme/handbook",
+      githubRef: "trunk",
+      githubServerUrl: "https://github.example.com",
+      logger: { info() {} }
+    });
+
+    expect(client.calls[0][1].meta).toEqual({
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "trunk",
+      _docspress_github_server_url: "https://github.example.com"
+    });
+  });
+
+  it("clears a recorded source path when a page no longer has a file", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = { _docspress_github_path: "docs/retired.md" };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "virtual:docs" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+    expect(client.calls[0][2].meta).toEqual({ _docspress_github_path: "" });
+  });
+
+  it("keeps a recorded repository when a run has none to publish", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.unchanged).toBe(1);
+    expect(client.calls).toEqual([]);
+  });
+
+  it("republishes managed pages that still record another repository", async () => {
+    const existing = existingPage(1, "docs");
+    existing.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "automattic/docspress",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const client = mockClient([existing]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      githubRepository: "acme/handbook",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+    expect(client.calls[0][2].meta._docspress_github_repository).toBe("acme/handbook");
+  });
+
+  it("leaves matching source metadata and metadata-free sites unchanged", async () => {
+    const stamped = existingPage(1, "docs");
+    stamped.meta = {
+      _docspress_github_path: "docs/index.md",
+      _docspress_github_repository: "acme/handbook",
+      _docspress_github_ref: "main",
+      _docspress_github_server_url: "https://github.com"
+    };
+    const unregistered = existingPage(1, "docs");
+
+    for (const existing of [stamped, unregistered]) {
+      const client = mockClient([existing]);
+      const result = await syncPages({
+        desiredPages: [desiredPage("docs", { sourcePath: "docs/index.md" })],
+        client,
+        dryRun: false,
+        rootSlug: "docs",
+        githubRepository: "acme/handbook",
+        logger: { info() {} }
+      });
+
+      expect(result.unchanged).toBe(1);
+      expect(client.calls).toEqual([]);
+    }
+  });
+
   it("reports unmanaged path collisions as conflicts", async () => {
     const client = mockClient([existingPage(1, "docs", { managed: false })]);
     const result = await syncPages({
@@ -226,6 +341,74 @@ describe("syncPages", () => {
     ]);
   });
 
+  it("synchronizes and clears opt-in contextual sidebar metadata", async () => {
+    const configured = desiredPage("docs", {
+      sidebarId: "api",
+      sidebarRoot: true
+    });
+    const legacy = existingPage(1, "docs", {
+      sidebarId: "api",
+      sidebarRoot: true,
+      meta: {}
+    });
+    const configureClient = mockClient([legacy]);
+
+    const configuredResult = await syncPages({
+      desiredPages: [configured],
+      client: configureClient,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(configuredResult.updated).toBe(1);
+    expect(configureClient.calls[0][2].meta).toEqual({
+      _docspress_sidebar_id: "api",
+      _docspress_sidebar_root: true
+    });
+
+    const stale = existingPage(1, "docs", {
+      sidebarId: "api",
+      sidebarRoot: true,
+      meta: {
+        _docspress_sidebar_id: "api",
+        _docspress_sidebar_root: true
+      }
+    });
+    const clearClient = mockClient([stale]);
+
+    const clearedResult = await syncPages({
+      desiredPages: [desiredPage("docs")],
+      client: clearClient,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(clearedResult.updated).toBe(1);
+    expect(clearClient.calls[0][2].meta).toEqual({
+      _docspress_sidebar_id: "",
+      _docspress_sidebar_root: false
+    });
+
+    const inconsistentClient = mockClient([existingPage(1, "docs", {
+      meta: { _docspress_sidebar_root: true }
+    })]);
+    const repairedResult = await syncPages({
+      desiredPages: [desiredPage("docs")],
+      client: inconsistentClient,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(repairedResult.updated).toBe(1);
+    expect(inconsistentClient.calls[0][2].meta).toEqual({
+      _docspress_sidebar_id: "",
+      _docspress_sidebar_root: false
+    });
+  });
+
   it("deletes every managed page below the root when no managed path is set", async () => {
     const client = mockClient([
       existingPage(1, "docs"),
@@ -242,6 +425,25 @@ describe("syncPages", () => {
     expect(result.deleted).toBe(1);
     expect(result.operations.filter((op) => op.action === "delete").map((op) => op.key))
       .toEqual(["docs/removed"]);
+  });
+
+  it("keeps the shared root page owned by every repository publishing below it", async () => {
+    const client = mockClient([
+      existingPage(1, "wordpress-plugins"),
+      existingPage(2, "wordpress-plugins/linchpin-blocks", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      dryRun: true,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      logger: { info() {} }
+    });
+
+    expect(result.unchanged).toBe(1);
+    expect(result.created).toBe(1);
+    expect(result.deleted).toBe(0);
   });
 
   it("limits deletions to the managed path so sibling repositories keep their pages", async () => {
@@ -264,25 +466,6 @@ describe("syncPages", () => {
     expect(result.operations.filter((op) => op.action === "delete").map((op) => op.key))
       .toEqual(["wordpress-plugins/mantle/removed"]);
     expect(result.conflicts).toBe(0);
-  });
-
-  it("keeps the shared root page owned by every repository publishing below it", async () => {
-    const client = mockClient([
-      existingPage(1, "wordpress-plugins"),
-      existingPage(2, "wordpress-plugins/linchpin-blocks", { parent: 1 })
-    ]);
-    const result = await syncPages({
-      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
-      client,
-      dryRun: true,
-      rootSlug: "wordpress-plugins",
-      managedPath: "wordpress-plugins/mantle",
-      logger: { info() {} }
-    });
-
-    expect(result.unchanged).toBe(1);
-    expect(result.created).toBe(1);
-    expect(result.deleted).toBe(0);
   });
 
   it("normalizes the managed path the same way page keys are built", async () => {

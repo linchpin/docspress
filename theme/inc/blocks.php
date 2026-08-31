@@ -10,6 +10,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Register synchronization-owned contextual sidebar metadata.
+ */
+function docspress_register_sidebar_meta() {
+	$auth_callback = static function ( $allowed, $meta_key, $post_id ) {
+		return current_user_can( 'edit_post', (int) $post_id );
+	};
+
+	register_post_meta(
+		'page',
+		'_docspress_sidebar_id',
+		array(
+			'type'              => 'string',
+			'description'       => __( 'Source-owned contextual documentation sidebar ID.', 'docspress' ),
+			'single'            => true,
+			'default'           => '',
+			'sanitize_callback' => 'sanitize_key',
+			'auth_callback'     => $auth_callback,
+			'show_in_rest'      => true,
+		)
+	);
+	register_post_meta(
+		'page',
+		'_docspress_sidebar_root',
+		array(
+			'type'              => 'boolean',
+			'description'       => __( 'Whether this Page is the root of its contextual documentation sidebar.', 'docspress' ),
+			'single'            => true,
+			'default'           => false,
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'auth_callback'     => $auth_callback,
+			'show_in_rest'      => true,
+		)
+	);
+}
+add_action( 'init', 'docspress_register_sidebar_meta', 9 );
+
+/**
  * Register aggregate documentation feedback as Page metadata.
  */
 function docspress_register_feedback_meta() {
@@ -58,6 +95,43 @@ function docspress_register_feedback_meta() {
 	);
 }
 add_action( 'init', 'docspress_register_feedback_meta', 9 );
+
+/**
+ * Register the synchronization-owned source metadata the theme reads.
+ *
+ * DocsPress Blocks registers the same keys when it is active, so each key is only
+ * registered when it is still missing. Without the registration the Action cannot
+ * write the repository a Page came from, and source links have nothing to point at.
+ */
+function docspress_register_source_meta() {
+	$keys = array(
+		'_docspress_source_path',
+		'_docspress_github_path',
+		'_docspress_github_repository',
+		'_docspress_github_ref',
+		'_docspress_github_server_url',
+	);
+	foreach ( $keys as $key ) {
+		if ( registered_meta_key_exists( 'post', $key, 'page' ) ) {
+			continue;
+		}
+		register_post_meta(
+			'page',
+			$key,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => '',
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => static function ( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', (int) $post_id );
+				},
+				'show_in_rest'      => true,
+			)
+		);
+	}
+}
+add_action( 'init', 'docspress_register_source_meta', 9 );
 
 /**
  * Return the aggregate feedback counts for a Page.
@@ -313,6 +387,11 @@ function docspress_render_docs_navigation( $attributes ) {
 	$content_id  = wp_unique_id( 'docspress-sidebar-content-' );
 	$root_id     = docspress_get_docs_root_id( $root_slug );
 	$pages       = 'menu' === $source ? docspress_get_menu_pages( $menu_slug, $max_depth ) : docspress_get_docs_pages( $root_slug, $sort );
+	$sidebar_context = 'pages' === $source ? docspress_get_sidebar_context() : null;
+	if ( $sidebar_context ) {
+		$root_id = $sidebar_context['root_id'];
+		$pages   = docspress_filter_pages_by_sidebar( $pages, $sidebar_context['id'] );
+	}
 	$wrapper     = get_block_wrapper_attributes(
 		array(
 			'class'      => 'docs-sidebar' . ( $start_collapsed ? ' is-sidebar-collapsed' : '' ),
@@ -669,8 +748,8 @@ function docspress_render_edit_links( $attributes ) {
 	$show_github    = (bool) docspress_component_attribute( $attributes, 'showGitHub', true );
 	$wp_label       = sanitize_text_field( docspress_component_attribute( $attributes, 'wordpressLabel', __( 'Edit this page in WordPress', 'docspress' ) ) );
 	$github_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'githubLabel', __( 'Propose changes on GitHub', 'docspress' ) ) );
-	$repository     = esc_url_raw( docspress_component_attribute( $attributes, 'repositoryUrl', 'https://github.com/Automattic/docspress' ) );
-	$ref            = sanitize_text_field( docspress_component_attribute( $attributes, 'ref', 'main' ) );
+	$repository     = sanitize_text_field( docspress_component_attribute( $attributes, 'repositoryUrl', '' ) );
+	$ref            = sanitize_text_field( docspress_component_attribute( $attributes, 'ref', '' ) );
 	$post_id        = get_queried_object_id();
 	$wp_url         = get_edit_post_link( $post_id, '' );
 	$wp_url         = $wp_url ? $wp_url : wp_login_url( admin_url( 'post.php?post=' . $post_id . '&action=edit' ) );
@@ -707,6 +786,11 @@ function docspress_render_edit_links( $attributes ) {
 function docspress_get_adjacent_pages( $current_id, $root_slug = 'docs', $sort = 'menu_order', $show_root = true, $max_depth = 0 ) {
 	$root_id = docspress_get_docs_root_id( $root_slug );
 	$pages   = docspress_get_docs_pages( $root_slug, $sort );
+	$sidebar_context = docspress_get_sidebar_context( $current_id );
+	if ( $sidebar_context ) {
+		$root_id = $sidebar_context['root_id'];
+		$pages   = docspress_filter_pages_by_sidebar( $pages, $sidebar_context['id'] );
+	}
 	$ordered = $root_id && ! $show_root
 		? docspress_flatten_page_tree( $pages, 0, $root_id, 1, $max_depth )
 		: docspress_flatten_page_tree( $pages, $root_id, 0, 1, $max_depth );
@@ -944,8 +1028,8 @@ function docspress_register_blocks() {
 				'wordpressLabel' => array( 'type' => 'string', 'default' => 'Edit this page in WordPress', 'role' => 'content' ),
 				'showGitHub'     => array( 'type' => 'boolean', 'default' => true ),
 				'githubLabel'    => array( 'type' => 'string', 'default' => 'Propose changes on GitHub', 'role' => 'content' ),
-				'repositoryUrl'  => array( 'type' => 'string', 'default' => 'https://github.com/Automattic/docspress' ),
-				'ref'            => array( 'type' => 'string', 'default' => 'main' ),
+				'repositoryUrl'  => array( 'type' => 'string', 'default' => '' ),
+				'ref'            => array( 'type' => 'string', 'default' => '' ),
 			),
 			'supports'        => docspress_component_supports(),
 		),
