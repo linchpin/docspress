@@ -97,6 +97,43 @@ function docspress_register_feedback_meta() {
 add_action( 'init', 'docspress_register_feedback_meta', 9 );
 
 /**
+ * Register the synchronization-owned source metadata the theme reads.
+ *
+ * DocsPress Blocks registers the same keys when it is active, so each key is only
+ * registered when it is still missing. Without the registration the Action cannot
+ * write the repository a Page came from, and source links have nothing to point at.
+ */
+function docspress_register_source_meta() {
+	$keys = array(
+		'_docspress_source_path',
+		'_docspress_github_path',
+		'_docspress_github_repository',
+		'_docspress_github_ref',
+		'_docspress_github_server_url',
+	);
+	foreach ( $keys as $key ) {
+		if ( registered_meta_key_exists( 'post', $key, 'page' ) ) {
+			continue;
+		}
+		register_post_meta(
+			'page',
+			$key,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => '',
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => static function ( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', (int) $post_id );
+				},
+				'show_in_rest'      => true,
+			)
+		);
+	}
+}
+add_action( 'init', 'docspress_register_source_meta', 9 );
+
+/**
  * Return the aggregate feedback counts for a Page.
  *
  * @param int $post_id Page ID.
@@ -711,8 +748,8 @@ function docspress_render_edit_links( $attributes ) {
 	$show_github    = (bool) docspress_component_attribute( $attributes, 'showGitHub', true );
 	$wp_label       = sanitize_text_field( docspress_component_attribute( $attributes, 'wordpressLabel', __( 'Edit this page in WordPress', 'docspress' ) ) );
 	$github_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'githubLabel', __( 'Propose changes on GitHub', 'docspress' ) ) );
-	$repository     = esc_url_raw( docspress_component_attribute( $attributes, 'repositoryUrl', 'https://github.com/Automattic/docspress' ) );
-	$ref            = sanitize_text_field( docspress_component_attribute( $attributes, 'ref', 'main' ) );
+	$repository     = sanitize_text_field( docspress_component_attribute( $attributes, 'repositoryUrl', '' ) );
+	$ref            = sanitize_text_field( docspress_component_attribute( $attributes, 'ref', '' ) );
 	$post_id        = get_queried_object_id();
 	$wp_url         = get_edit_post_link( $post_id, '' );
 	$wp_url         = $wp_url ? $wp_url : wp_login_url( admin_url( 'post.php?post=' . $post_id . '&action=edit' ) );
@@ -991,8 +1028,8 @@ function docspress_register_blocks() {
 				'wordpressLabel' => array( 'type' => 'string', 'default' => 'Edit this page in WordPress', 'role' => 'content' ),
 				'showGitHub'     => array( 'type' => 'boolean', 'default' => true ),
 				'githubLabel'    => array( 'type' => 'string', 'default' => 'Propose changes on GitHub', 'role' => 'content' ),
-				'repositoryUrl'  => array( 'type' => 'string', 'default' => 'https://github.com/Automattic/docspress' ),
-				'ref'            => array( 'type' => 'string', 'default' => 'main' ),
+				'repositoryUrl'  => array( 'type' => 'string', 'default' => '' ),
+				'ref'            => array( 'type' => 'string', 'default' => '' ),
 			),
 			'supports'        => docspress_component_supports(),
 		),

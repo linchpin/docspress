@@ -21,6 +21,11 @@ const pages = await collectDesiredPages({
 
 const payload = {
   generatedBy: "scripts/build-playground-docs.mjs",
+  github: {
+    serverUrl: "https://github.com",
+    repository: "Automattic/docspress",
+    ref: "main"
+  },
   pages: pages.map((page) => ({
     key: page.key,
     parentKey: page.parentKey,

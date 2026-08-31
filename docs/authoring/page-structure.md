@@ -108,4 +108,4 @@ With `rewrite-links: true`, known relative or root-relative Markdown links becom
 
 ## Edit links
 
-The Action can append a source link to Markdown-backed Pages with `edit-link: true`. The DocsPress theme also provides its own two-button article action bar using the sentinel source path. When using the theme action bar, keep the Action-level edit link disabled to avoid a duplicate control.
+The Action can append a source link to Markdown-backed Pages with `edit-link: true`. The DocsPress theme also provides its own two-button article action bar, built from the sentinel source path and the repository, ref, and server URL that each synchronization stores on the Page. When using the theme action bar, keep the Action-level edit link disabled to avoid a duplicate control.

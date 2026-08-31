@@ -19,9 +19,10 @@ require_once ABSPATH . 'wp-admin/includes/taxonomy.php';
  * @param array $page      Generated Page data.
  * @param int   $parent_id Parent WordPress Page ID.
  * @param int   $order     Menu order within the parent.
+ * @param array $github    Repository, ref, and server URL the docs came from.
  * @return int
  */
-function docspress_playground_upsert_page( $page, $parent_id, $order ) {
+function docspress_playground_upsert_page( $page, $parent_id, $order, $github = array() ) {
 	$theme_asset_source = 'https://raw.githubusercontent.com/Automattic/docspress/main/theme/';
 	$theme_asset_local  = trailingslashit( get_template_directory_uri() );
 	$content            = str_replace( $theme_asset_source, $theme_asset_local, (string) $page['content'] );
@@ -55,6 +56,10 @@ function docspress_playground_upsert_page( $page, $parent_id, $order ) {
 
 	if ( $page_id && ! is_wp_error( $page_id ) && ! empty( $page['sourcePath'] ) ) {
 		update_post_meta( $page_id, '_docspress_source_path', sanitize_text_field( $page['sourcePath'] ) );
+		update_post_meta( $page_id, '_docspress_github_path', sanitize_text_field( $page['sourcePath'] ) );
+		update_post_meta( $page_id, '_docspress_github_repository', sanitize_text_field( $github['repository'] ?? '' ) );
+		update_post_meta( $page_id, '_docspress_github_ref', sanitize_text_field( $github['ref'] ?? 'main' ) );
+		update_post_meta( $page_id, '_docspress_github_server_url', esc_url_raw( $github['serverUrl'] ?? 'https://github.com' ) );
 	}
 
 	return is_wp_error( $page_id ) ? 0 : (int) $page_id;
@@ -288,6 +293,7 @@ $generated = json_decode( file_get_contents( $generated_path ), true );
 if ( ! is_array( $generated ) || empty( $generated['pages'] ) || ! is_array( $generated['pages'] ) ) {
 	wp_die( 'The generated Playground documentation payload is invalid.' );
 }
+$generated_github = isset( $generated['github'] ) && is_array( $generated['github'] ) ? $generated['github'] : array();
 
 // Remove WordPress starter content so the acceptance site remains deterministic.
 foreach ( array( array( 'post', 'hello-world' ), array( 'page', 'sample-page' ) ) as $starter_content ) {
@@ -325,7 +331,7 @@ foreach ( $generated['pages'] as $page ) {
 
 	$order_key = $parent_key ? $parent_key : 'root';
 	$order     = isset( $order_by_parent[ $order_key ] ) ? $order_by_parent[ $order_key ] : 0;
-	$page_id   = docspress_playground_upsert_page( $page, $parent_id, $order * 10 );
+	$page_id   = docspress_playground_upsert_page( $page, $parent_id, $order * 10, $generated_github );
 	if ( ! $page_id ) {
 		wp_die( esc_html( 'Could not create generated documentation Page: ' . $page['key'] ) );
 	}

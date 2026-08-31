@@ -42,6 +42,8 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | `github-ref` | `GITHUB_REF_NAME`, then `main` | Branch or ref used in edit URLs. |
 | `github-server-url` | `GITHUB_SERVER_URL`, then `https://github.com` | GitHub server used in edit URLs. |
 
+Every run stores these three values on each managed Page as `_docspress_github_repository`, `_docspress_github_ref`, and `_docspress_github_server_url`, alongside the `_docspress_github_path` source file. The DocsPress theme's Edit Links block reads that metadata, so its **Propose changes on GitHub** button opens the repository the Page was published from without any theme configuration.
+
 ## WordPress-to-GitHub pull requests
 
 | Input | Default | Description |

@@ -904,21 +904,66 @@ function docspress_get_markdown_source_path( $post_id = 0 ) {
 }
 
 /**
- * Build a GitHub editor URL for the current Markdown source.
+ * Read the GitHub source metadata written by the synchronization Action.
  *
- * @param int    $post_id   Page ID.
- * @param string $repository Repository URL.
- * @param string $ref        Branch or tag.
+ * @param int $post_id Page ID.
+ * @return array{path:string,repository:string,ref:string,server_url:string}
+ */
+function docspress_get_github_source( $post_id = 0 ) {
+	$post_id = $post_id ? absint( $post_id ) : get_queried_object_id();
+	$source  = array(
+		'path'       => docspress_get_markdown_source_path( $post_id ),
+		'repository' => $post_id ? (string) get_post_meta( $post_id, '_docspress_github_repository', true ) : '',
+		'ref'        => $post_id ? (string) get_post_meta( $post_id, '_docspress_github_ref', true ) : '',
+		'server_url' => $post_id ? (string) get_post_meta( $post_id, '_docspress_github_server_url', true ) : '',
+	);
+	if ( ! $source['path'] && $post_id ) {
+		$source['path'] = docspress_normalize_markdown_source_path( get_post_meta( $post_id, '_docspress_github_path', true ) );
+	}
+
+	/**
+	 * Filter the GitHub source metadata used to build source links.
+	 *
+	 * @param array{path:string,repository:string,ref:string,server_url:string} $source  Source metadata.
+	 * @param int                                                              $post_id Page ID.
+	 */
+	$source = apply_filters( 'docspress_github_source', $source, $post_id );
+	if ( ! is_array( $source ) ) {
+		return array( 'path' => '', 'repository' => '', 'ref' => '', 'server_url' => '' );
+	}
+	return array(
+		'path'       => isset( $source['path'] ) ? (string) $source['path'] : '',
+		'repository' => isset( $source['repository'] ) ? (string) $source['repository'] : '',
+		'ref'        => isset( $source['ref'] ) ? (string) $source['ref'] : '',
+		'server_url' => isset( $source['server_url'] ) ? (string) $source['server_url'] : '',
+	);
+}
+
+/**
+ * Normalize a repository reference into a browsable repository URL.
+ *
+ * Accepts a full repository URL or an `owner/name` pair combined with a server URL.
+ *
+ * @param string $repository Repository URL or `owner/name` pair.
+ * @param string $server_url GitHub server URL used with an `owner/name` pair.
  * @return string
  */
-function docspress_get_github_edit_url( $post_id = 0, $repository = 'https://github.com/Automattic/docspress', $ref = 'main' ) {
-	$source = docspress_get_markdown_source_path( $post_id );
-	if ( ! $source ) {
+function docspress_normalize_repository_url( $repository, $server_url = '' ) {
+	$repository = trim( (string) $repository );
+	if ( '' === $repository ) {
 		return '';
 	}
 
+	if ( ! preg_match( '#^[a-z][a-z0-9+.-]*://#i', $repository ) ) {
+		if ( ! preg_match( '#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository ) ) {
+			return '';
+		}
+		$server_url = trim( (string) $server_url );
+		$repository = untrailingslashit( '' !== $server_url ? $server_url : 'https://github.com' ) . '/' . $repository;
+	}
+
 	$repository = preg_replace( '/\.git$/i', '', untrailingslashit( esc_url_raw( $repository ) ) );
-	$parts      = wp_parse_url( $repository );
+	$parts      = wp_parse_url( (string) $repository );
 	if (
 		! $repository ||
 		! is_array( $parts ) ||
@@ -932,13 +977,55 @@ function docspress_get_github_edit_url( $post_id = 0, $repository = 'https://git
 	) {
 		return '';
 	}
+	return $repository;
+}
 
-	$ref = trim( (string) $ref );
-	if ( ! preg_match( '#^[A-Za-z0-9._/-]+$#', $ref ) || false !== strpos( $ref, '..' ) ) {
+/**
+ * Build a GitHub editor URL for the current Markdown source.
+ *
+ * Each Page records the repository it was published from, so one WordPress install
+ * can hold documentation synchronized from several repositories. The arguments only
+ * supply a fallback for Pages that record no repository of their own; use the
+ * `docspress_github_source` filter to reroute Pages that do record one.
+ *
+ * @param int    $post_id    Page ID.
+ * @param string $repository Fallback repository URL or `owner/name` pair.
+ * @param string $ref        Fallback branch or tag.
+ * @return string
+ */
+function docspress_get_github_edit_url( $post_id = 0, $repository = '', $ref = '' ) {
+	$post_id = $post_id ? absint( $post_id ) : get_queried_object_id();
+	$source  = docspress_get_github_source( $post_id );
+	$path    = docspress_normalize_markdown_source_path( $source['path'] );
+	if ( ! $path ) {
+		return '';
+	}
+
+	$resolved = docspress_normalize_repository_url( $source['repository'], $source['server_url'] );
+	if ( $resolved ) {
+		$ref = trim( $source['ref'] );
+	} else {
+		$resolved = docspress_normalize_repository_url( $repository );
+		$ref      = trim( (string) $ref );
+	}
+	if ( ! $resolved ) {
+		return '';
+	}
+
+	if ( '' === $ref || ! preg_match( '#^[A-Za-z0-9._/-]+$#', $ref ) || false !== strpos( $ref, '..' ) ) {
 		$ref = 'main';
 	}
-	$source = implode( '/', array_map( 'rawurlencode', explode( '/', $source ) ) );
-	return $repository . '/edit/' . rawurlencode( $ref ) . '/' . $source;
+	$encoded = implode( '/', array_map( 'rawurlencode', explode( '/', $path ) ) );
+	$url     = $resolved . '/edit/' . rawurlencode( $ref ) . '/' . $encoded;
+
+	/**
+	 * Filter the GitHub editor URL for a managed Page.
+	 *
+	 * @param string $url     GitHub editor URL.
+	 * @param string $path    Repository-relative source path.
+	 * @param int    $post_id Page ID.
+	 */
+	return (string) apply_filters( 'docspress_github_edit_url', $url, $path, $post_id );
 }
 
 require get_theme_file_path( 'inc/blocks.php' );

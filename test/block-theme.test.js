@@ -1196,6 +1196,37 @@ describe("DocsPress block theme constraints", () => {
     expect(php).toContain("docspress_component_supports()");
   });
 
+  it("links source actions at the repository each Page was published from", async () => {
+    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
+    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const editor = await fs.readFile(
+      path.join(root, "theme", "assets", "js", "block-components.js"),
+      "utf8"
+    );
+
+    expect(functions).toContain("function docspress_get_github_source(");
+    expect(functions).toContain("_docspress_github_repository");
+    expect(functions).toContain("_docspress_github_ref");
+    expect(functions).toContain("_docspress_github_server_url");
+    expect(functions).toContain("function docspress_normalize_repository_url(");
+    expect(functions).toContain(
+      "function docspress_get_github_edit_url( $post_id = 0, $repository = '', $ref = '' )"
+    );
+    expect(functions).toContain("apply_filters( 'docspress_github_source', $source, $post_id )");
+    expect(functions).toContain("apply_filters( 'docspress_github_edit_url', $url, $path, $post_id )");
+    expect(php).toContain("registered_meta_key_exists( 'post', $key, 'page' )");
+    expect(php).toContain("'repositoryUrl'  => array( 'type' => 'string', 'default' => '' )");
+    expect(php).toContain("'ref'            => array( 'type' => 'string', 'default' => '' )");
+    expect(editor).toContain("repositoryUrl: { type: 'string', default: '' }");
+    expect(editor).toContain(
+      "Only used for Pages that do not record their own repository."
+    );
+    expect(functions).toContain("$resolved = docspress_normalize_repository_url( $source['repository'], $source['server_url'] );");
+    for (const file of [functions, php, editor]) {
+      expect(file).not.toContain("Automattic/docspress");
+    }
+  });
+
   it("collects Page feedback above adjacent documentation navigation", async () => {
     const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
     const editor = await fs.readFile(
