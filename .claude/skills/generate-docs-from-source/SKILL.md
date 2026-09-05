@@ -9,6 +9,16 @@ Build documentation from evidence in the repository, not assumptions. Produce a 
 
 ## 1. Establish the source of truth
 
+### Read the documentation brief first
+
+Look for a documentation brief at `.docspress/brief.md`, then `docs/.docspress/brief.md`, then the path the user names. Read it before inventorying anything else and treat it as this repository's contract: the audience, the repository shape, the pages that must exist, the non-goals, and the acceptance checks the finished tree has to pass.
+
+The brief governs scope and shape. The repository still governs facts. Never let a brief justify a claim the source does not support; when the two disagree, document the source and report the disagreement.
+
+Satisfy every requirement in the brief, or name the ones you could not meet and why. When no brief exists, propose one from what the inventory taught you and offer to commit it, so the next run starts from the same expectations instead of rediscovering them.
+
+Keep the brief outside the published tree. The collector globs `**/*.md` under `docs-dir` with `dot: false`, so any ordinary Markdown file there becomes a WordPress Page, while a dot-directory is skipped.
+
 1. Resolve the repository root and preserve unrelated working-tree changes.
 2. Inventory the project with `rg --files`. Inspect package manifests, lockfiles, entrypoints, exports, command definitions, schemas, environment examples, tests, examples, release configuration, and existing docs.
 3. Identify the intended audience and supported public surface from repository evidence.
@@ -18,8 +28,20 @@ Build documentation from evidence in the repository, not assumptions. Produce a 
    - API signatures → exported source and type declarations;
    - CLI commands and flags → parser definitions and help output;
    - behavior and edge cases → tests;
-   - operational steps → scripts and CI workflows.
+   - operational steps → scripts and CI workflows;
+   - catalog entries → the repeated unit files themselves and their frontmatter.
 5. Treat tests and executable examples as stronger evidence than comments. Mark contradictions for resolution instead of choosing silently.
+
+Name the repository's shape before planning pages, because the shape decides what a complete tree means:
+
+| Shape | Documented surface | Complete when |
+| --- | --- | --- |
+| Library | Exported symbols and types | Every public export appears in the reference |
+| Application or service | Routes, jobs, configuration, operations | Every operator task has a runbook |
+| Catalog | A repeated unit file such as `skills/*/SKILL.md`, `blocks/*/block.json`, or `packages/*/README.md` | Every unit has a page and an index row |
+| Monorepo | Independently released packages | Every released package owns a section |
+
+A catalog repository usually has no exports, commands, or tests to enumerate, so the coverage map above finds almost nothing and the run produces one thin overview page. Enumerate the units instead: derive one page per unit from the unit file, and one section index that lists every unit with a link, a one-line purpose, and its trigger. Never shorten that list with "and others" — a missing unit is a defect, not an editorial choice.
 
 Do not document private helpers as public APIs. Do not invent commands, options, URLs, support guarantees, performance claims, or output text.
 
@@ -44,6 +66,18 @@ docs/
     api.md
     cli.md
   troubleshooting.md
+```
+
+A catalog repository is flatter: one section directory holding a page per unit beside its index.
+
+```text
+docs/
+  index.md
+  skills/
+    index.md
+    project-context.md
+    quality-gates.md
+  contributing.md
 ```
 
 Create only pages supported by the source. Small libraries may need only an overview, installation, usage, and API reference. Applications may need architecture, deployment, operations, and troubleshooting.
@@ -195,6 +229,8 @@ Run the cheapest relevant checks first and record exact results.
 9. Run `git diff --check` and inspect the complete docs diff for accidental source changes or copied secrets.
 10. If a check cannot run, state why and narrow the claim. Never present an unrun example as verified.
 
+When a documentation brief exists, run its acceptance checks last and report each one as met or unmet with the number or name it produced. An unmet brief requirement is a reported gap, never a silent omission.
+
 Do not weaken tests or alter product behavior merely to make documentation examples pass. If source behavior is broken or ambiguous, report it separately.
 
 ## 7. Configure publication when missing
@@ -217,6 +253,7 @@ Documentation generation must still complete when WordPress credentials are unav
 Report:
 
 - pages created, updated, and intentionally preserved;
+- each acceptance check from the documentation brief, with its result;
 - source files used as evidence;
 - code examples and commands actually executed;
 - DocsPress blocks used, their locations, serialization validation, and plugin requirement;
