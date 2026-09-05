@@ -88,6 +88,7 @@ The generation workflow asks a repository-aware coding agent to:
 ## Continue
 
 - [Generate documentation from source](generate-from-source.md).
+- [Write a documentation brief](docs-brief.md) so every run knows what finished means.
 - [Review the generated tree and publish safely](review-and-publish.md).
 
 <!-- docspress:block

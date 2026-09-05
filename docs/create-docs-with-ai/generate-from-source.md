@@ -5,6 +5,8 @@ sidebar_position: 10
 
 Turn repository evidence into a DocsPress-compatible Markdown tree without inventing commands, behavior, or support guarantees.
 
+Repository-specific expectations belong in a [documentation brief](docs-brief.md), which the agent reads before it inventories anything else.
+
 ## 1. Install the repository skills
 
 Install both DocsPress skills so generation can hand off to publication after review:
