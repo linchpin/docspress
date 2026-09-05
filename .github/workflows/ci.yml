@@ -1,0 +1,46 @@
+name: CI
+
+# The action is consumed as linchpin/docspress@v1, a tag that moves forward as
+# fixes land. Nothing downstream pins a commit any more, so a merge to main is
+# a merge to production for every repository that publishes documentation.
+# These checks are what make that safe.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+
+      # dist/ is what actually executes when a workflow runs this action, so a
+      # stale bundle ships source changes that never take effect. Rebuild and
+      # confirm the committed bundle matches, comparing content rather than
+      # bytes: ncc does not order modules deterministically between runs.
+      - name: Check dist matches src
+        run: |
+          cp dist/index.js /tmp/dist-committed.js
+          npm run build
+          if ! diff <(sort /tmp/dist-committed.js) <(sort dist/index.js) > /dev/null; then
+            echo "::error::dist/index.js does not match src/. Run 'npm run build' and commit the result."
+            exit 1
+          fi
+          echo "dist is in sync with src"
