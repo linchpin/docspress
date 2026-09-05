@@ -16883,7 +16883,7 @@ exports.createIncrementalHTMLParser = function() {
         document: function() {
           return parser.document();
         },
-    };
+    };  
 };
 
 exports.createWindow = function(html, address) {
@@ -64787,7 +64787,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /************************************************************************/
 /******/ // The module cache
 /******/ var __webpack_module_cache__ = {};
-/******/
+/******/ 
 /******/ // The require function
 /******/ function __nccwpck_require__(moduleId) {
 /******/ 	// Check if module is in cache
@@ -64801,7 +64801,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		// no module.loaded needed
 /******/ 		exports: {}
 /******/ 	};
-/******/
+/******/ 
 /******/ 	// Execute the module function
 /******/ 	var threw = true;
 /******/ 	try {
@@ -64810,11 +64810,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 	} finally {
 /******/ 		if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 	}
-/******/
+/******/ 
 /******/ 	// Return the exports of the module
 /******/ 	return module.exports;
 /******/ }
-/******/
+/******/ 
 /************************************************************************/
 /******/ /* webpack/runtime/create fake namespace object */
 /******/ (() => {
@@ -64845,7 +64845,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		return ns;
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/define property getters */
 /******/ (() => {
 /******/ 	// define getter functions for harmony exports
@@ -64857,12 +64857,12 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		}
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/make namespace object */
 /******/ (() => {
 /******/ 	// define __esModule on exports
@@ -64873,11 +64873,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/compat */
-/******/
+/******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
-/******/
+/******/ 
 /************************************************************************/
 var __webpack_exports__ = {};
 
@@ -66029,8 +66029,8 @@ class OidcClient {
             const res = yield httpclient
                 .getJson(id_token_url)
                 .catch(error => {
-                throw new Error(`Failed to get ID Token. \n
-        Error Code : ${error.statusCode}\n
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
@@ -93034,6 +93034,7 @@ async function syncPages(options) {
     rootSlug = "docs",
     versionsRegistry = null,
     versionTaxonomy = "docspress_versions",
+    clientTaxonomy = "docs_client",
     githubRepository = "",
     githubRef = "main",
     githubServerUrl = "https://github.com",
@@ -93059,6 +93060,12 @@ async function syncPages(options) {
       logger
     })
     : null;
+  const clientTermIds = await resolveClientTermIds({
+    client,
+    clientTaxonomy,
+    desiredPages,
+    dryRun
+  });
   let syntheticId = -1;
 
   for (const [key, page] of indexed.managedByKey.entries()) {
@@ -93090,6 +93097,8 @@ async function syncPages(options) {
       versionTermId: desired.docsVersion?.id
         ? versionState?.termIds.get(desired.docsVersion.id)
         : null,
+      clientTaxonomy,
+      clientTermIds,
       githubRepository,
       githubRef,
       githubServerUrl
@@ -93116,6 +93125,8 @@ async function syncPages(options) {
           versionTermId: desired.docsVersion?.id
             ? versionState?.termIds.get(desired.docsVersion.id)
             : null,
+          clientTaxonomy,
+          clientTermIds,
           githubRepository,
           githubRef,
           githubServerUrl
@@ -93217,6 +93228,14 @@ function pagePayload(page, parentId, managed, options = {}) {
       _docspress_version_container: false
     });
   }
+  Object.assign(meta, accessPageMeta(page, managed));
+
+  if (page.accessManagedBy && options.clientTaxonomy) {
+    payload[options.clientTaxonomy] = page.access === "client"
+      ? clientTermIdsFor(page, options)
+      : [];
+  }
+
   if (Object.keys(meta).length > 0) {
     payload.meta = meta;
   }
@@ -93281,6 +93300,7 @@ function managedMetadataMatches(desired, managed, options = {}) {
     ? (managed.terms?.[options.versionTaxonomy] || []).length === 0
     : termsMatch(managed.terms?.[options.versionTaxonomy], options.versionTermId ? [options.versionTermId] : []);
   const containerMatches = normalizeBooleanMeta(managed.meta?._docspress_version_container) === Boolean(desired.versionContainer);
+  const accessMatches = accessMetadataMatches(desired, managed, options);
 
   return positionMatches
     && collapsedMatches
@@ -93293,7 +93313,122 @@ function managedMetadataMatches(desired, managed, options = {}) {
     && sourcePathMatches
     && githubMatches
     && containerMatches
-    && taxonomyMatches;
+    && taxonomyMatches
+    && accessMatches;
+}
+
+/**
+ * Whether stored access state still matches what the repository declares.
+ *
+ * Without this, an edit in the WordPress panel would never be detected as
+ * drift and a repository-managed tier would quietly go stale.
+ */
+function accessMetadataMatches(desired, managed, options = {}) {
+  const desiredManagedBy = desired.accessManagedBy || "";
+  const storedManagedBy = String(managed.meta?._docs_access_managed || "");
+
+  if (!desiredManagedBy) {
+    // The panel owns this page; only the marker must be clear.
+    return storedManagedBy === "";
+  }
+
+  if (storedManagedBy !== desiredManagedBy) {
+    return false;
+  }
+
+  if (String(managed.meta?._docs_access || "") !== String(desired.access || "")) {
+    return false;
+  }
+
+  if (!options.clientTaxonomy) {
+    return true;
+  }
+
+  const expected = desired.access === "client" ? clientTermIdsFor(desired, options) : [];
+
+  return termsMatch(managed.terms?.[options.clientTaxonomy], expected);
+}
+
+/**
+ * Access meta written for a page.
+ *
+ * When the repository stops managing access, only the "managed by" marker is
+ * cleared. The last tier is deliberately left in place so control hands back to
+ * the editor panel without a restricted page silently reverting to public.
+ */
+function accessPageMeta(page, managed) {
+  if (page.accessManagedBy) {
+    return {
+      _docs_access: page.access || "",
+      _docs_access_managed: page.accessManagedBy
+    };
+  }
+
+  if (managed?.meta?._docs_access_managed) {
+    return { _docs_access_managed: "" };
+  }
+
+  return {};
+}
+
+function clientTermIdsFor(page, options) {
+  const ids = (page.clientSlugs || [])
+    .map((slug) => options.clientTermIds?.get(slug))
+    .filter((id) => Number.isFinite(id));
+
+  return Array.from(new Set(ids));
+}
+
+/**
+ * Map every client slug the run needs to an existing term ID.
+ *
+ * Terms are never created here. A client term is an access-control principal
+ * with users attached to it; conjuring one from a typo in a workflow input
+ * would publish documentation scoped to a client nobody belongs to.
+ */
+async function resolveClientTermIds({ client, clientTaxonomy, desiredPages, dryRun }) {
+  const wanted = new Set();
+
+  for (const page of desiredPages) {
+    if (page.accessManagedBy && page.access === "client") {
+      for (const slug of page.clientSlugs || []) {
+        wanted.add(slug);
+      }
+    }
+  }
+
+  const termIds = new Map();
+
+  if (wanted.size === 0) {
+    return termIds;
+  }
+
+  let terms;
+  try {
+    terms = await client.listTerms(clientTaxonomy);
+  } catch (error) {
+    throw new Error(`Client-scoped documentation requires an active plugin exposing the ${clientTaxonomy} taxonomy through REST. ${error.message}`);
+  }
+
+  const bySlug = new Map(terms.map((term) => [term.slug, term.id]));
+  const missing = [];
+  let syntheticTermId = -1;
+
+  for (const slug of wanted) {
+    if (bySlug.has(slug)) {
+      termIds.set(slug, bySlug.get(slug));
+    } else if (dryRun) {
+      termIds.set(slug, syntheticTermId--);
+    } else {
+      missing.push(slug);
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Unknown documentation client(s): ${missing.join(", ")}. Create the ${clientTaxonomy} term in WordPress before syncing client-scoped docs.`);
+  }
+
+  return termIds;
 }
 
 function sidebarPageMeta(page, managed) {
@@ -93670,6 +93805,15 @@ async function syncBidirectional(options) {
   } = options;
   const existingPages = await client.listPages();
   const plan = planReconciliation({ desiredPages, existingPages });
+  const withheld = withheldReverseChanges(plan.wordpressChanges);
+
+  if (withheld.length > 0) {
+    plan.wordpressChanges = plan.wordpressChanges.filter((change) => !withheld.includes(change));
+    for (const { desired, page } of withheld) {
+      logger.warning?.(`Withholding ${desired.key} from the pull request: WordPress marks it "${page.meta._docs_access}", and reverse sync would copy restricted content into this repository.`);
+    }
+  }
+
   const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
   let publishPreview = emptyResult(true);
 
@@ -93789,6 +93933,25 @@ async function syncBidirectional(options) {
     pullRequest,
     operations: [...wordpressResult.operations, ...proposedOperations]
   };
+}
+
+/**
+ * Reverse-sync changes that must not become a pull request.
+ *
+ * Access control that leaks through git is worse than none: a WordPress-side
+ * edit on a restricted page would otherwise be copied into the source
+ * repository, which for a client-scoped page is the client's own repository.
+ *
+ * This reads the tier stored on the page itself. A page that only inherits a
+ * restricted tier from an ancestor carries no marker of its own, so pair this
+ * with the `access` input on the workflow, which withholds the whole run.
+ */
+function withheldReverseChanges(wordpressChanges) {
+  return wordpressChanges.filter(({ page }) => {
+    const access = String(page?.meta?._docs_access || "");
+
+    return access !== "" && access !== "public";
+  });
 }
 
 function proposedFileDetail(change) {
@@ -94519,7 +94682,61 @@ function convertMarkdownPages(byRoute, options, linkResolver) {
     page.body = converted.blocks;
     page.frontmatter = converted.data;
     Object.assign(page, normalizeSidebarFrontmatter(converted.data, page.sourcePath));
+    Object.assign(page, normalizeAccessFrontmatter(converted.data, page.sourcePath));
   }
+}
+
+const ACCESS_TIERS = ["public", "authenticated", "internal", "client"];
+
+function normalizeAccessTier(value, context = "access") {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+  if (typeof value !== "string" || !ACCESS_TIERS.includes(value.trim().toLowerCase())) {
+    throw new Error(`Invalid ${context}: expected one of ${ACCESS_TIERS.join(", ")}.`);
+  }
+
+  return value.trim().toLowerCase();
+}
+
+function normalizeClientSlugs(value, context = "clients") {
+  if (value === undefined || value === null || value === "") {
+    return [];
+  }
+  const list = Array.isArray(value) ? value : String(value).split(",");
+  const slugs = list
+    .map((entry) => String(entry).trim().toLowerCase())
+    .filter(Boolean);
+
+  for (const slug of slugs) {
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(slug)) {
+      throw new Error(`Invalid ${context}: "${slug}" is not a valid client slug.`);
+    }
+  }
+
+  return Array.from(new Set(slugs));
+}
+
+function normalizeAccessFrontmatter(frontmatter, sourcePath) {
+  const normalized = {};
+
+  if (Object.hasOwn(frontmatter, "access")) {
+    normalized.frontmatterAccess = normalizeAccessTier(frontmatter.access, `access in ${sourcePath}`);
+  }
+
+  const clientsKey = Object.hasOwn(frontmatter, "clients")
+    ? "clients"
+    : (Object.hasOwn(frontmatter, "client") ? "client" : null);
+
+  if (clientsKey) {
+    normalized.frontmatterClients = normalizeClientSlugs(frontmatter[clientsKey], `${clientsKey} in ${sourcePath}`);
+  }
+
+  if (normalized.frontmatterAccess === "client" && !(normalized.frontmatterClients || []).length) {
+    throw new Error(`Invalid access in ${sourcePath}: access "client" requires at least one client slug.`);
+  }
+
+  return normalized;
 }
 
 function normalizeSidebarFrontmatter(frontmatter, sourcePath) {
@@ -94791,6 +95008,34 @@ function normalizeRoutePath(value, rootSlug) {
   return stripKnownPrefix(normalizeAlias(value) || "", rootSlug, rootSlug);
 }
 
+/**
+ * Access precedence: page frontmatter, then the repository-level action input,
+ * then whatever the WordPress editor panel holds. The panel only governs when
+ * neither of the first two applies, which is why an unmanaged page writes no
+ * access value at all rather than writing an empty one.
+ */
+function resolvePageAccess(page, options) {
+  if (page.frontmatterAccess) {
+    return {
+      tier: page.frontmatterAccess,
+      clientSlugs: page.frontmatterAccess === "client" ? (page.frontmatterClients || []) : [],
+      managedBy: "frontmatter"
+    };
+  }
+
+  const repoTier = options.access || "";
+
+  if (repoTier) {
+    return {
+      tier: repoTier,
+      clientSlugs: repoTier === "client" ? (options.clientSlugs || []) : [],
+      managedBy: "repo"
+    };
+  }
+
+  return { tier: "", clientSlugs: [], managedBy: "" };
+}
+
 function finalizePage(page, options) {
   const rootSlug = slugify(options.rootSlug || "docs", "docs");
   const routePrefixSegments = options.routePrefixSegments || [rootSlug];
@@ -94800,6 +95045,7 @@ function finalizePage(page, options) {
   const parentKey = parentSegments.length > 0 ? parentSegments.join("/") : null;
   const slug = fullSegments.at(-1);
   const status = options.status || "publish";
+  const access = resolvePageAccess(page, options);
   const createH1 = normalizeBoolean(options.createH1);
   let body = createH1 && page.kind === "placeholder"
     ? `${headingBlock(1, escapeHtml(page.title))}\n\n${page.body}`
@@ -94860,6 +95106,9 @@ function finalizePage(page, options) {
     parentKey,
     slug,
     status,
+    access: access.tier,
+    clientSlugs: access.clientSlugs,
+    accessManagedBy: access.managedBy,
     body,
     hash,
     content,
@@ -95422,6 +95671,8 @@ async function main() {
     pullRequestBranch: getInput("pull-request-branch") || "docspress/wordpress-sync",
     pullRequestTitle: getInput("pull-request-title"),
     status: getInput("status") || "publish",
+    access: normalizeAccessTier(getInput("access") || "", "access input"),
+    clientSlugs: normalizeClientSlugs(getInput("client") || "", "client input"),
     deleteMode: getInput("delete-mode") || "trash",
     dryRun: normalizeBoolean(getInput("dry-run") || "false")
   };
@@ -95437,6 +95688,22 @@ async function main() {
     setOutputs(result);
     await writeSummary(result);
     return;
+  }
+
+  // Reverse sync turns WordPress edits into a pull request against the source
+  // repository. For a repository whose docs are not public that would publish
+  // restricted content into git, so refuse the combination outright rather than
+  // relying on per-page markers that inherited tiers do not carry.
+  if (config.mode !== "publish" && config.access && config.access !== "public") {
+    throw new Error(`mode: ${config.mode} cannot be combined with "access: ${config.access}". Reverse sync would copy restricted documentation into this repository. Use mode: publish for non-public docs.`);
+  }
+
+  if (config.access === "client" && config.clientSlugs.length === 0) {
+    throw new Error('The "access: client" input requires a "client" input naming at least one docs_client term slug.');
+  }
+
+  if (config.access && config.access !== "client" && config.clientSlugs.length > 0) {
+    throw new Error(`The "client" input only applies to "access: client"; this run sets access: ${config.access}.`);
   }
 
   const versionsRegistry = config.versionsFile
@@ -95459,16 +95726,32 @@ async function main() {
     githubRepository: config.githubRepository,
     githubRef: config.githubRef,
     githubServerUrl: config.githubServerUrl,
-    status: config.status
+    status: config.status,
+    access: config.access,
+    clientSlugs: config.clientSlugs
   });
 
   info(`Docspress found ${desiredPages.length} desired page(s) in ${config.docsDir}.`);
+
+  const clientTaxonomy = "docs_client";
+  const managesAccess = desiredPages.some((page) => Boolean(page.accessManagedBy));
+  const taxonomies = [];
+
+  if (versionsRegistry) {
+    taxonomies.push("docspress_versions");
+  }
+
+  // Only read the client taxonomy back when this run manages access, so a
+  // public docs repository never touches it.
+  if (managesAccess) {
+    taxonomies.push(clientTaxonomy);
+  }
 
   const client = new WordPressClient({
     baseUrl: config.baseUrl,
     site: config.site,
     token: config.token,
-    taxonomies: versionsRegistry ? ["docspress_versions"] : []
+    taxonomies
   });
 
   const result = config.mode === "publish"
@@ -95479,6 +95762,7 @@ async function main() {
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
       versionsRegistry,
+      clientTaxonomy: managesAccess ? clientTaxonomy : "",
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
       githubServerUrl: config.githubServerUrl,

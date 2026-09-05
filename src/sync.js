@@ -10,6 +10,7 @@ export async function syncPages(options) {
     rootSlug = "docs",
     versionsRegistry = null,
     versionTaxonomy = "docspress_versions",
+    clientTaxonomy = "docs_client",
     githubRepository = "",
     githubRef = "main",
     githubServerUrl = "https://github.com",
@@ -35,6 +36,12 @@ export async function syncPages(options) {
       logger
     })
     : null;
+  const clientTermIds = await resolveClientTermIds({
+    client,
+    clientTaxonomy,
+    desiredPages,
+    dryRun
+  });
   let syntheticId = -1;
 
   for (const [key, page] of indexed.managedByKey.entries()) {
@@ -66,6 +73,8 @@ export async function syncPages(options) {
       versionTermId: desired.docsVersion?.id
         ? versionState?.termIds.get(desired.docsVersion.id)
         : null,
+      clientTaxonomy,
+      clientTermIds,
       githubRepository,
       githubRef,
       githubServerUrl
@@ -92,6 +101,8 @@ export async function syncPages(options) {
           versionTermId: desired.docsVersion?.id
             ? versionState?.termIds.get(desired.docsVersion.id)
             : null,
+          clientTaxonomy,
+          clientTermIds,
           githubRepository,
           githubRef,
           githubServerUrl
@@ -193,6 +204,14 @@ function pagePayload(page, parentId, managed, options = {}) {
       _docspress_version_container: false
     });
   }
+  Object.assign(meta, accessPageMeta(page, managed));
+
+  if (page.accessManagedBy && options.clientTaxonomy) {
+    payload[options.clientTaxonomy] = page.access === "client"
+      ? clientTermIdsFor(page, options)
+      : [];
+  }
+
   if (Object.keys(meta).length > 0) {
     payload.meta = meta;
   }
@@ -257,6 +276,7 @@ function managedMetadataMatches(desired, managed, options = {}) {
     ? (managed.terms?.[options.versionTaxonomy] || []).length === 0
     : termsMatch(managed.terms?.[options.versionTaxonomy], options.versionTermId ? [options.versionTermId] : []);
   const containerMatches = normalizeBooleanMeta(managed.meta?._docspress_version_container) === Boolean(desired.versionContainer);
+  const accessMatches = accessMetadataMatches(desired, managed, options);
 
   return positionMatches
     && collapsedMatches
@@ -269,7 +289,122 @@ function managedMetadataMatches(desired, managed, options = {}) {
     && sourcePathMatches
     && githubMatches
     && containerMatches
-    && taxonomyMatches;
+    && taxonomyMatches
+    && accessMatches;
+}
+
+/**
+ * Whether stored access state still matches what the repository declares.
+ *
+ * Without this, an edit in the WordPress panel would never be detected as
+ * drift and a repository-managed tier would quietly go stale.
+ */
+function accessMetadataMatches(desired, managed, options = {}) {
+  const desiredManagedBy = desired.accessManagedBy || "";
+  const storedManagedBy = String(managed.meta?._docs_access_managed || "");
+
+  if (!desiredManagedBy) {
+    // The panel owns this page; only the marker must be clear.
+    return storedManagedBy === "";
+  }
+
+  if (storedManagedBy !== desiredManagedBy) {
+    return false;
+  }
+
+  if (String(managed.meta?._docs_access || "") !== String(desired.access || "")) {
+    return false;
+  }
+
+  if (!options.clientTaxonomy) {
+    return true;
+  }
+
+  const expected = desired.access === "client" ? clientTermIdsFor(desired, options) : [];
+
+  return termsMatch(managed.terms?.[options.clientTaxonomy], expected);
+}
+
+/**
+ * Access meta written for a page.
+ *
+ * When the repository stops managing access, only the "managed by" marker is
+ * cleared. The last tier is deliberately left in place so control hands back to
+ * the editor panel without a restricted page silently reverting to public.
+ */
+function accessPageMeta(page, managed) {
+  if (page.accessManagedBy) {
+    return {
+      _docs_access: page.access || "",
+      _docs_access_managed: page.accessManagedBy
+    };
+  }
+
+  if (managed?.meta?._docs_access_managed) {
+    return { _docs_access_managed: "" };
+  }
+
+  return {};
+}
+
+function clientTermIdsFor(page, options) {
+  const ids = (page.clientSlugs || [])
+    .map((slug) => options.clientTermIds?.get(slug))
+    .filter((id) => Number.isFinite(id));
+
+  return Array.from(new Set(ids));
+}
+
+/**
+ * Map every client slug the run needs to an existing term ID.
+ *
+ * Terms are never created here. A client term is an access-control principal
+ * with users attached to it; conjuring one from a typo in a workflow input
+ * would publish documentation scoped to a client nobody belongs to.
+ */
+async function resolveClientTermIds({ client, clientTaxonomy, desiredPages, dryRun }) {
+  const wanted = new Set();
+
+  for (const page of desiredPages) {
+    if (page.accessManagedBy && page.access === "client") {
+      for (const slug of page.clientSlugs || []) {
+        wanted.add(slug);
+      }
+    }
+  }
+
+  const termIds = new Map();
+
+  if (wanted.size === 0) {
+    return termIds;
+  }
+
+  let terms;
+  try {
+    terms = await client.listTerms(clientTaxonomy);
+  } catch (error) {
+    throw new Error(`Client-scoped documentation requires an active plugin exposing the ${clientTaxonomy} taxonomy through REST. ${error.message}`);
+  }
+
+  const bySlug = new Map(terms.map((term) => [term.slug, term.id]));
+  const missing = [];
+  let syntheticTermId = -1;
+
+  for (const slug of wanted) {
+    if (bySlug.has(slug)) {
+      termIds.set(slug, bySlug.get(slug));
+    } else if (dryRun) {
+      termIds.set(slug, syntheticTermId--);
+    } else {
+      missing.push(slug);
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Unknown documentation client(s): ${missing.join(", ")}. Create the ${clientTaxonomy} term in WordPress before syncing client-scoped docs.`);
+  }
+
+  return termIds;
 }
 
 function sidebarPageMeta(page, managed) {

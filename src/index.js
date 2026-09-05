@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { syncBidirectional } from "./bidirectional.js";
-import { collectDesiredPages } from "./docs.js";
+import { collectDesiredPages, normalizeAccessTier, normalizeClientSlugs } from "./docs.js";
 import { isManagedPullRequestMerge } from "./github-event.js";
 import { githubContext, GitHubPullRequestClient } from "./github.js";
 import { syncPages } from "./sync.js";
@@ -34,6 +34,8 @@ async function main() {
     pullRequestBranch: core.getInput("pull-request-branch") || "docspress/wordpress-sync",
     pullRequestTitle: core.getInput("pull-request-title"),
     status: core.getInput("status") || "publish",
+    access: normalizeAccessTier(core.getInput("access") || "", "access input"),
+    clientSlugs: normalizeClientSlugs(core.getInput("client") || "", "client input"),
     deleteMode: core.getInput("delete-mode") || "trash",
     dryRun: normalizeBoolean(core.getInput("dry-run") || "false")
   };
@@ -49,6 +51,22 @@ async function main() {
     setOutputs(result);
     await writeSummary(result);
     return;
+  }
+
+  // Reverse sync turns WordPress edits into a pull request against the source
+  // repository. For a repository whose docs are not public that would publish
+  // restricted content into git, so refuse the combination outright rather than
+  // relying on per-page markers that inherited tiers do not carry.
+  if (config.mode !== "publish" && config.access && config.access !== "public") {
+    throw new Error(`mode: ${config.mode} cannot be combined with "access: ${config.access}". Reverse sync would copy restricted documentation into this repository. Use mode: publish for non-public docs.`);
+  }
+
+  if (config.access === "client" && config.clientSlugs.length === 0) {
+    throw new Error('The "access: client" input requires a "client" input naming at least one docs_client term slug.');
+  }
+
+  if (config.access && config.access !== "client" && config.clientSlugs.length > 0) {
+    throw new Error(`The "client" input only applies to "access: client"; this run sets access: ${config.access}.`);
   }
 
   const versionsRegistry = config.versionsFile
@@ -71,16 +89,32 @@ async function main() {
     githubRepository: config.githubRepository,
     githubRef: config.githubRef,
     githubServerUrl: config.githubServerUrl,
-    status: config.status
+    status: config.status,
+    access: config.access,
+    clientSlugs: config.clientSlugs
   });
 
   core.info(`Docspress found ${desiredPages.length} desired page(s) in ${config.docsDir}.`);
+
+  const clientTaxonomy = "docs_client";
+  const managesAccess = desiredPages.some((page) => Boolean(page.accessManagedBy));
+  const taxonomies = [];
+
+  if (versionsRegistry) {
+    taxonomies.push("docspress_versions");
+  }
+
+  // Only read the client taxonomy back when this run manages access, so a
+  // public docs repository never touches it.
+  if (managesAccess) {
+    taxonomies.push(clientTaxonomy);
+  }
 
   const client = new WordPressClient({
     baseUrl: config.baseUrl,
     site: config.site,
     token: config.token,
-    taxonomies: versionsRegistry ? ["docspress_versions"] : []
+    taxonomies
   });
 
   const result = config.mode === "publish"
@@ -91,6 +125,7 @@ async function main() {
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
       versionsRegistry,
+      clientTaxonomy: managesAccess ? clientTaxonomy : "",
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
       githubServerUrl: config.githubServerUrl,

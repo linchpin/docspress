@@ -22,6 +22,15 @@ export async function syncBidirectional(options) {
   } = options;
   const existingPages = await client.listPages();
   const plan = planReconciliation({ desiredPages, existingPages });
+  const withheld = withheldReverseChanges(plan.wordpressChanges);
+
+  if (withheld.length > 0) {
+    plan.wordpressChanges = plan.wordpressChanges.filter((change) => !withheld.includes(change));
+    for (const { desired, page } of withheld) {
+      logger.warning?.(`Withholding ${desired.key} from the pull request: WordPress marks it "${page.meta._docs_access}", and reverse sync would copy restricted content into this repository.`);
+    }
+  }
+
   const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
   let publishPreview = emptyResult(true);
 
@@ -141,6 +150,25 @@ export async function syncBidirectional(options) {
     pullRequest,
     operations: [...wordpressResult.operations, ...proposedOperations]
   };
+}
+
+/**
+ * Reverse-sync changes that must not become a pull request.
+ *
+ * Access control that leaks through git is worse than none: a WordPress-side
+ * edit on a restricted page would otherwise be copied into the source
+ * repository, which for a client-scoped page is the client's own repository.
+ *
+ * This reads the tier stored on the page itself. A page that only inherits a
+ * restricted tier from an ancestor carries no marker of its own, so pair this
+ * with the `access` input on the workflow, which withholds the whole run.
+ */
+function withheldReverseChanges(wordpressChanges) {
+  return wordpressChanges.filter(({ page }) => {
+    const access = String(page?.meta?._docs_access || "");
+
+    return access !== "" && access !== "public";
+  });
 }
 
 function proposedFileDetail(change) {

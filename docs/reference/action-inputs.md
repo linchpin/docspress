@@ -63,6 +63,39 @@ Reverse sync requires `contents: write` and `pull-requests: write`. The reposito
 | `delete-mode` | `trash` | `trash` moves removed managed Pages to Trash; `force` permanently deletes them. |
 | `dry-run` | `false` | Plans operations without WordPress or GitHub writes. Start with `true`. |
 
+## Access control
+
+These inputs require the [Linchpin Docs Access](https://github.com/linchpin/linchpin-docs-access) plugin on the target site. Leave both empty and access stays owned by the WordPress editor panel.
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `access` | `""` | Access tier applied to every Page from this repository: `public`, `authenticated`, `internal`, or `client`. |
+| `client` | `""` | Comma separated `docs_client` term slugs. Required when `access: client`. |
+
+Page frontmatter overrides the repository input:
+
+```yaml
+---
+access: internal
+clients: [acme, globex]
+---
+```
+
+Precedence is frontmatter, then the `access` input, then the editor panel, then inheritance from the nearest ancestor, then `public`. When the repository governs a Page, the editor panel renders read-only.
+
+The named client terms must already exist in WordPress. The sync never creates them: a client term is an access-control principal with users attached, and a typo that silently created one would publish documentation scoped to a client nobody belongs to. The run fails instead.
+
+### Reverse sync
+
+`mode: propose` and `mode: reconcile` turn WordPress-side edits into a pull request against this repository. For non-public documentation that would copy restricted content into git, so:
+
+- Setting `access` to anything other than `public` fails the run in `propose` or `reconcile` mode. Use `mode: publish` for non-public docs.
+- Any individual Page that WordPress marks non-public is withheld from the pull request, and the run logs a warning naming it.
+
+The second rule reads the tier stored on the Page itself, so a Page that only inherits a restricted tier from an ancestor is not covered by it alone. Pair it with the `access` input, which withholds the whole run.
+
+The sync's WordPress user needs the `view_all_docs` and `manage_docs_access` capabilities. Without `view_all_docs` the run cannot see restricted Pages over REST, treats them as deleted, and with `delete-mode: trash` will trash them.
+
 <!-- docspress:block
 {
   "version": 1,

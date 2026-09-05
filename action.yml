@@ -93,6 +93,20 @@ inputs:
     description: WordPress status for created or updated pages, such as draft or publish.
     required: false
     default: publish
+  access:
+    description: >-
+      Documentation access tier applied to every page from this repository:
+      public, authenticated, internal, or client. Leave empty to let the
+      WordPress editor panel own access. Requires the Linchpin Docs Access
+      plugin on the target site.
+    required: false
+    default: ""
+  client:
+    description: >-
+      Comma separated docs_client term slugs, required when access is client.
+      The terms must already exist in WordPress; the sync never creates them.
+    required: false
+    default: ""
   delete-mode:
     description: Use trash to move removed docs to Trash, or force to permanently delete them.
     required: false

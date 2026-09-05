@@ -378,7 +378,61 @@ function convertMarkdownPages(byRoute, options, linkResolver) {
     page.body = converted.blocks;
     page.frontmatter = converted.data;
     Object.assign(page, normalizeSidebarFrontmatter(converted.data, page.sourcePath));
+    Object.assign(page, normalizeAccessFrontmatter(converted.data, page.sourcePath));
   }
+}
+
+export const ACCESS_TIERS = ["public", "authenticated", "internal", "client"];
+
+export function normalizeAccessTier(value, context = "access") {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+  if (typeof value !== "string" || !ACCESS_TIERS.includes(value.trim().toLowerCase())) {
+    throw new Error(`Invalid ${context}: expected one of ${ACCESS_TIERS.join(", ")}.`);
+  }
+
+  return value.trim().toLowerCase();
+}
+
+export function normalizeClientSlugs(value, context = "clients") {
+  if (value === undefined || value === null || value === "") {
+    return [];
+  }
+  const list = Array.isArray(value) ? value : String(value).split(",");
+  const slugs = list
+    .map((entry) => String(entry).trim().toLowerCase())
+    .filter(Boolean);
+
+  for (const slug of slugs) {
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(slug)) {
+      throw new Error(`Invalid ${context}: "${slug}" is not a valid client slug.`);
+    }
+  }
+
+  return Array.from(new Set(slugs));
+}
+
+function normalizeAccessFrontmatter(frontmatter, sourcePath) {
+  const normalized = {};
+
+  if (Object.hasOwn(frontmatter, "access")) {
+    normalized.frontmatterAccess = normalizeAccessTier(frontmatter.access, `access in ${sourcePath}`);
+  }
+
+  const clientsKey = Object.hasOwn(frontmatter, "clients")
+    ? "clients"
+    : (Object.hasOwn(frontmatter, "client") ? "client" : null);
+
+  if (clientsKey) {
+    normalized.frontmatterClients = normalizeClientSlugs(frontmatter[clientsKey], `${clientsKey} in ${sourcePath}`);
+  }
+
+  if (normalized.frontmatterAccess === "client" && !(normalized.frontmatterClients || []).length) {
+    throw new Error(`Invalid access in ${sourcePath}: access "client" requires at least one client slug.`);
+  }
+
+  return normalized;
 }
 
 function normalizeSidebarFrontmatter(frontmatter, sourcePath) {
@@ -650,6 +704,34 @@ function normalizeRoutePath(value, rootSlug) {
   return stripKnownPrefix(normalizeAlias(value) || "", rootSlug, rootSlug);
 }
 
+/**
+ * Access precedence: page frontmatter, then the repository-level action input,
+ * then whatever the WordPress editor panel holds. The panel only governs when
+ * neither of the first two applies, which is why an unmanaged page writes no
+ * access value at all rather than writing an empty one.
+ */
+function resolvePageAccess(page, options) {
+  if (page.frontmatterAccess) {
+    return {
+      tier: page.frontmatterAccess,
+      clientSlugs: page.frontmatterAccess === "client" ? (page.frontmatterClients || []) : [],
+      managedBy: "frontmatter"
+    };
+  }
+
+  const repoTier = options.access || "";
+
+  if (repoTier) {
+    return {
+      tier: repoTier,
+      clientSlugs: repoTier === "client" ? (options.clientSlugs || []) : [],
+      managedBy: "repo"
+    };
+  }
+
+  return { tier: "", clientSlugs: [], managedBy: "" };
+}
+
 function finalizePage(page, options) {
   const rootSlug = slugify(options.rootSlug || "docs", "docs");
   const routePrefixSegments = options.routePrefixSegments || [rootSlug];
@@ -659,6 +741,7 @@ function finalizePage(page, options) {
   const parentKey = parentSegments.length > 0 ? parentSegments.join("/") : null;
   const slug = fullSegments.at(-1);
   const status = options.status || "publish";
+  const access = resolvePageAccess(page, options);
   const createH1 = normalizeBoolean(options.createH1);
   let body = createH1 && page.kind === "placeholder"
     ? `${headingBlock(1, escapeHtml(page.title))}\n\n${page.body}`
@@ -719,6 +802,9 @@ function finalizePage(page, options) {
     parentKey,
     slug,
     status,
+    access: access.tier,
+    clientSlugs: access.clientSlugs,
+    accessManagedBy: access.managedBy,
     body,
     hash,
     content,
