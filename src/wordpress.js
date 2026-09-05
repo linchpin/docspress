@@ -153,11 +153,29 @@ export class WordPressClient {
 
     const response = await this.fetchImpl(requestUrl, init);
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+
+    // Parse after the status check, not before. A WAF block page, a 502, or a
+    // PHP fatal all answer with HTML, and parsing first turns every one of them
+    // into "Unexpected token '<'" with the status and body thrown away.
+    let data = null;
+    let parsed = true;
+
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        parsed = false;
+      }
+    }
 
     if (!response.ok) {
-      const message = formatApiError(data, method, requestUrl, response.status);
-      throw new Error(message);
+      throw new Error(formatApiError(data, method, requestUrl, response.status, parsed ? "" : text));
+    }
+
+    if (!parsed) {
+      throw new Error(
+        `${method} ${requestUrl} returned HTTP ${response.status} with a non-JSON body. ${describeNonJsonBody(text)}`
+      );
     }
 
     return {
@@ -167,8 +185,34 @@ export class WordPressClient {
   }
 }
 
-function formatApiError(data, method, requestUrl, status) {
-  const message = data?.message || data?.error || `${method} ${requestUrl} failed with HTTP ${status}`;
+/**
+ * Summarize a non-JSON response body so the cause is visible in the log.
+ *
+ * Server error pages are long and mostly boilerplate, so this reports what kind
+ * of page it looks like plus a short excerpt rather than dumping the whole
+ * thing into the Actions output.
+ */
+function describeNonJsonBody(text) {
+  const body = String(text || "").trim();
+
+  if (!body) {
+    return "The response body was empty.";
+  }
+
+  const title = body.match(/<title[^>]*>([^<]{1,120})<\/title>/i)?.[1]?.trim();
+  const snippet = body.replace(/\s+/g, " ").slice(0, 200);
+
+  return [
+    title ? `Page title: "${title}".` : "",
+    `First 200 characters: ${snippet}`
+  ].filter(Boolean).join(" ");
+}
+
+function formatApiError(data, method, requestUrl, status, rawBody = "") {
+  const fallback = rawBody
+    ? `${method} ${requestUrl} failed with HTTP ${status}. ${describeNonJsonBody(rawBody)}`
+    : `${method} ${requestUrl} failed with HTTP ${status}`;
+  const message = data?.message || data?.error || fallback;
 
   if (String(message).includes("Required scope: `global`")) {
     return `${message} Regenerate WP_ACCESS_TOKEN with the Docspress token helper so it requests the WordPress.com "global" OAuth scope.`;

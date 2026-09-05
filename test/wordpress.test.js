@@ -173,3 +173,52 @@ describe("WordPressClient", () => {
     ]));
   });
 });
+
+describe("non-JSON responses", () => {
+  const htmlBody = "<!DOCTYPE html><html><head><title>Attention Required! | Cloudflare</title></head>"
+    + "<body><h1>Sorry, you have been blocked</h1></body></html>";
+
+  function clientWith(response) {
+    return new WordPressClient({
+      baseUrl: "https://example.test",
+      site: "example.test",
+      token: "t",
+      fetchImpl: async () => response
+    });
+  }
+
+  it("reports the status, page title and an excerpt instead of a JSON parse error", async () => {
+    const client = clientWith({
+      ok: false,
+      status: 403,
+      headers: new Map(),
+      text: async () => htmlBody
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/HTTP 403/);
+    await expect(client.listPages()).rejects.toThrow(/Attention Required/);
+    await expect(client.listPages()).rejects.not.toThrow(/Unexpected token/);
+  });
+
+  it("still explains a 200 that is not JSON", async () => {
+    const client = clientWith({
+      ok: true,
+      status: 200,
+      headers: new Map(),
+      text: async () => htmlBody
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/non-JSON body/);
+  });
+
+  it("keeps the API's own message when the error body is JSON", async () => {
+    const client = clientWith({
+      ok: false,
+      status: 400,
+      headers: new Map(),
+      text: async () => JSON.stringify({ message: "Invalid parameter(s): parent" })
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/Invalid parameter\(s\): parent/);
+  });
+});
