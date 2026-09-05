@@ -1,9 +1,9 @@
 import { hashPageState } from "./page-state.js";
 import { stripSentinel } from "./sentinel.js";
-import { indexExistingPages } from "./sync.js";
+import { indexExistingPages, isUnderPath } from "./sync.js";
 
 export function planReconciliation(options) {
-  const { desiredPages, existingPages } = options;
+  const { desiredPages, existingPages, ownedPath = "" } = options;
   const indexed = indexExistingPages(existingPages);
   const desiredByKey = new Map(desiredPages.map((page) => [page.key, page]));
   const wordpressChanges = [];
@@ -60,6 +60,11 @@ export function planReconciliation(options) {
 
   for (const [key, managed] of indexed.managedByKey.entries()) {
     if (desiredByKey.has(key)) {
+      continue;
+    }
+    // Managed pages owned by another repository publishing into the same
+    // parent are not this repository's to classify, delete, or conflict over.
+    if (ownedPath && !isUnderPath(key, ownedPath)) {
       continue;
     }
     const liveHash = hashPageState(livePageState(managed, indexed));

@@ -1,6 +1,6 @@
 import { createReverseChanges } from "./reverse.js";
 import { planReconciliation } from "./reconcile.js";
-import { syncPages } from "./sync.js";
+import { resolveManagedPath, syncPages } from "./sync.js";
 
 export async function syncBidirectional(options) {
   const {
@@ -11,6 +11,7 @@ export async function syncBidirectional(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     cwd = process.cwd(),
     manifestFile = "",
@@ -20,8 +21,9 @@ export async function syncBidirectional(options) {
     githubServerUrl = "https://github.com",
     logger = console
   } = options;
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = await client.listPages();
-  const plan = planReconciliation({ desiredPages, existingPages });
+  const plan = planReconciliation({ desiredPages, existingPages, ownedPath });
   const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
   let publishPreview = emptyResult(true);
 
@@ -33,6 +35,7 @@ export async function syncBidirectional(options) {
       dryRun: true,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -105,6 +108,7 @@ export async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -120,6 +124,7 @@ export async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,

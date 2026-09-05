@@ -104,4 +104,35 @@ describe("planReconciliation", () => {
     expect(simultaneous.conflicts[0].reason).toMatch(/both changed/);
     expect(structural.conflicts[0].reason).toMatch(/status/);
   });
+
+  it("ignores managed pages owned by another repository below the same parent", () => {
+    const root = desiredPage({ key: "wordpress-plugins", slug: "wordpress-plugins", title: "WordPress Plugins" });
+    const mine = desiredPage({
+      key: "wordpress-plugins/mantle",
+      slug: "mantle",
+      parentKey: "wordpress-plugins",
+      sourcePath: "docs/mantle/index.md"
+    });
+    const theirs = desiredPage({
+      key: "wordpress-plugins/linchpin-blocks",
+      slug: "linchpin-blocks",
+      parentKey: "wordpress-plugins",
+      sourcePath: "docs/linchpin-blocks/index.md"
+    });
+    const existing = [
+      { ...existingFrom(root), id: 1, parent: 0 },
+      { ...existingFrom(mine), id: 2, parent: 1 },
+      { ...existingFrom(theirs, { body: paragraph("Edited in WordPress") }), id: 3, parent: 1 }
+    ];
+    const desiredPages = [root, mine];
+
+    const scoped = planReconciliation({ desiredPages, existingPages: existing, ownedPath: "wordpress-plugins/mantle" });
+    const unscoped = planReconciliation({ desiredPages, existingPages: existing });
+
+    expect(scoped.conflicts).toEqual([]);
+    expect(scoped.classifications.map((entry) => entry.key).sort())
+      .toEqual(["wordpress-plugins", "wordpress-plugins/mantle"]);
+    expect(unscoped.classifications.map((entry) => entry.key)).toContain("wordpress-plugins/linchpin-blocks");
+    expect(unscoped.conflicts).not.toEqual([]);
+  });
 });

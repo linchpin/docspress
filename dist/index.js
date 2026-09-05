@@ -91239,6 +91239,15 @@ function slugify(value, fallback = "page") {
   return slug || fallback;
 }
 
+function slugifyPath(value, fallback = "page") {
+  const segments = String(value || "")
+    .split("/")
+    .map((segment) => slugify(segment, ""))
+    .filter(Boolean);
+
+  return segments.length > 0 ? segments.join("/") : fallback;
+}
+
 function titleFromSlug(slug) {
   return String(slug || "")
     .split(/[-_]+/)
@@ -93024,6 +93033,7 @@ function normalizeGutenbergSerialization(value) {
 ;// CONCATENATED MODULE: ./src/sync.js
 
 
+
 async function syncPages(options) {
   const {
     desiredPages,
@@ -93032,6 +93042,7 @@ async function syncPages(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     versionTaxonomy = "docspress_versions",
     githubRepository = "",
@@ -93042,6 +93053,7 @@ async function syncPages(options) {
     logger = console
   } = options;
 
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = suppliedExistingPages || await client.listPages();
   const indexed = indexExistingPages(existingPages);
   const desiredKeys = new Set(desiredPages.map((page) => page.key));
@@ -93152,7 +93164,7 @@ async function syncPages(options) {
 
   const deletions = allowDeletions ? Array.from(indexed.managedByKey.values())
     .filter((page) => (
-      isUnderRoot(page.sentinel?.key, rootSlug)
+      isUnderPath(page.sentinel?.key, ownedPath)
       && !desiredKeys.has(page.sentinel.key)
       && !matchedExistingIds.has(page.id)
     ))
@@ -93499,8 +93511,31 @@ function normalizeBooleanMeta(value) {
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
-function isUnderRoot(key, rootSlug) {
-  return key === rootSlug || key?.startsWith(`${rootSlug}/`);
+function isUnderPath(key, path) {
+  return key === path || Boolean(key?.startsWith(`${path}/`));
+}
+
+/**
+ * Resolve the subtree this repository owns.
+ *
+ * The root defaults to the managed root page and is normalized exactly the way
+ * page keys are built in docs.js, so the ownership prefix always matches the
+ * keys it is compared against. An explicit managed-path narrows ownership to a
+ * branch below that root, which lets several repositories publish into one
+ * shared parent without deleting each other's pages.
+ */
+function resolveManagedPath(rootSlug, managedPath = "") {
+  const root = slugify(rootSlug || "docs", "docs");
+  if (!managedPath) {
+    return root;
+  }
+
+  const scoped = slugifyPath(managedPath, root);
+  if (!isUnderPath(scoped, root)) {
+    throw new Error(`managed-path '${managedPath}' resolves to '${scoped}', which is outside the managed root '${root}'. Use the root path or a path below it.`);
+  }
+
+  return scoped;
 }
 
 function indexExistingPages(pages) {
@@ -93547,7 +93582,7 @@ function pathForPage(page, byId, seen = new Set()) {
 
 
 function planReconciliation(options) {
-  const { desiredPages, existingPages } = options;
+  const { desiredPages, existingPages, ownedPath = "" } = options;
   const indexed = indexExistingPages(existingPages);
   const desiredByKey = new Map(desiredPages.map((page) => [page.key, page]));
   const wordpressChanges = [];
@@ -93606,6 +93641,11 @@ function planReconciliation(options) {
     if (desiredByKey.has(key)) {
       continue;
     }
+    // Managed pages owned by another repository publishing into the same
+    // parent are not this repository's to classify, delete, or conflict over.
+    if (ownedPath && !isUnderPath(key, ownedPath)) {
+      continue;
+    }
     const liveHash = hashPageState(livePageState(managed, indexed));
     if (liveHash !== managed.sentinel?.hash) {
       conflicts.push({
@@ -93659,6 +93699,7 @@ async function syncBidirectional(options) {
     dryRun = false,
     deleteMode = "trash",
     rootSlug = "docs",
+    managedPath = "",
     versionsRegistry = null,
     cwd = process.cwd(),
     manifestFile = "",
@@ -93668,8 +93709,9 @@ async function syncBidirectional(options) {
     githubServerUrl = "https://github.com",
     logger = console
   } = options;
+  const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = await client.listPages();
-  const plan = planReconciliation({ desiredPages, existingPages });
+  const plan = planReconciliation({ desiredPages, existingPages, ownedPath });
   const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
   let publishPreview = emptyResult(true);
 
@@ -93681,6 +93723,7 @@ async function syncBidirectional(options) {
       dryRun: true,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -93753,6 +93796,7 @@ async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -93768,6 +93812,7 @@ async function syncBidirectional(options) {
       dryRun: false,
       deleteMode,
       rootSlug,
+      managedPath,
       versionsRegistry,
       githubRepository,
       githubRef,
@@ -95326,11 +95371,28 @@ class WordPressClient {
 
     const response = await this.fetchImpl(requestUrl, init);
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+
+    // Parse defensively. Anything in front of WordPress — a CDN challenge, a
+    // WAF block, a PHP fatal — answers with HTML, and letting JSON.parse throw
+    // here would discard the status and body that identify the responder.
+    let data = null;
+    let parsed = true;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        parsed = false;
+      }
+    }
 
     if (!response.ok) {
-      const message = formatApiError(data, method, requestUrl, response.status);
-      throw new Error(message);
+      throw new Error(formatApiError(data, method, requestUrl, response.status, parsed ? null : text, response));
+    }
+
+    if (!parsed) {
+      throw new Error(
+        `${method} ${requestUrl} returned HTTP ${response.status} with a non-JSON body. ${describeBody(text, response)}`
+      );
     }
 
     return {
@@ -95340,14 +95402,44 @@ class WordPressClient {
   }
 }
 
-function formatApiError(data, method, requestUrl, status) {
-  const message = data?.message || data?.error || `${method} ${requestUrl} failed with HTTP ${status}`;
+function formatApiError(data, method, requestUrl, status, rawBody, response) {
+  const message = data?.message || data?.error
+    || (rawBody
+      ? `${method} ${requestUrl} failed with HTTP ${status}. ${describeBody(rawBody, response)}`
+      : `${method} ${requestUrl} failed with HTTP ${status}`);
 
   if (String(message).includes("Required scope: `global`")) {
     return `${message} Regenerate WP_ACCESS_TOKEN with the Docspress token helper so it requests the WordPress.com "global" OAuth scope.`;
   }
 
+  // A hosting WAF can reject the request body before WordPress ever sees it.
+  // WordPress.com Atomic answers 406 with an HTML page, and the usual trigger
+  // is a literal "../.." in documented file paths, which matches a path
+  // traversal rule.
+  if (status === 406 && rawBody) {
+    return `${message} A hosting firewall rejected the request body before it reached WordPress. This usually means a page documents a literal "../.." path; rewrite those as repository-relative paths or a build alias.`;
+  }
+
   return message;
+}
+
+const BODY_SNIPPET_LENGTH = 300;
+
+function describeBody(text, response) {
+  const contentType = response?.headers?.get?.("content-type") || "unknown";
+  const snippet = String(text).replace(/\s+/g, " ").trim().slice(0, BODY_SNIPPET_LENGTH);
+  const parts = [`Content-Type: ${contentType}.`];
+
+  // Edge responses carry the identifiers support will ask for.
+  for (const header of ["cf-ray", "x-ac", "server"]) {
+    const value = response?.headers?.get?.(header);
+    if (value) {
+      parts.push(`${header}: ${value}.`);
+    }
+  }
+
+  parts.push(`Body starts: ${snippet}`);
+  return parts.join(" ");
 }
 
 function normalizePage(page, taxonomies = []) {
@@ -95410,6 +95502,7 @@ async function main() {
     versionsFile: getInput("versions-file") || "",
     rootSlug: getInput("root-slug") || "docs",
     rootTitle: getInput("root-title") || "Docs",
+    managedPath: getInput("managed-path") || "",
     createH1: normalizeBoolean(getInput("create-h1") || "false"),
     rewriteLinks: normalizeBoolean(getInput("rewrite-links") || "true"),
     editLink: normalizeBoolean(getInput("edit-link") || "false"),
@@ -95478,6 +95571,7 @@ async function main() {
       dryRun: config.dryRun,
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
+      managedPath: config.managedPath,
       versionsRegistry,
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
@@ -95498,6 +95592,7 @@ async function main() {
       dryRun: config.dryRun,
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
+      managedPath: config.managedPath,
       versionsRegistry,
       cwd: process.cwd(),
       manifestFile: config.manifestFile,

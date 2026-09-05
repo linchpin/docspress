@@ -29,6 +29,7 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | `versions-file` | empty | Optional ordered API-version registry. Enables root, directory, suffix, and per-version manifest sources through DocsPress Blocks. |
 | `root-slug` | `docs` | Slug of the managed root Page. |
 | `root-title` | `Docs` | Fallback root title when no root document supplies one. |
+| `managed-path` | `root-slug` | Page path this repository owns, for example `docs/my-plugin`. Limits deletions and reconciliation to that subtree so several repositories can publish below one shared parent Page. Must be the root path or a path below it. |
 
 ## Content conversion and source links
 

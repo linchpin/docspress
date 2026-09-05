@@ -117,6 +117,83 @@ describe("WordPressClient", () => {
     await expect(client.listPages()).rejects.toThrow(/Regenerate WP_ACCESS_TOKEN/);
   });
 
+  it("reports status, edge headers, and a body snippet when an error response is not JSON", async () => {
+    const client = new WordPressClient({
+      baseUrl: "https://docs.example.test",
+      site: "docs.example.test",
+      token: "token",
+      fetchImpl: async () => ({
+        ok: false,
+        status: 403,
+        headers: {
+          get(name) {
+            return {
+              "content-type": "text/html; charset=UTF-8",
+              "cf-ray": "a2523780496d4fa8-EWR",
+              server: "cloudflare"
+            }[name.toLowerCase()] || null;
+          }
+        },
+        async text() {
+          return "<!DOCTYPE html><html><head><title>Attention Required</title></head><body>Blocked</body></html>";
+        }
+      })
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/HTTP 403/);
+    await expect(client.listPages()).rejects.toThrow(/text\/html/);
+    await expect(client.listPages()).rejects.toThrow(/a2523780496d4fa8-EWR/);
+    await expect(client.listPages()).rejects.toThrow(/Attention Required/);
+  });
+
+  it("explains the path traversal trigger behind a 406 firewall block", async () => {
+    const client = new WordPressClient({
+      baseUrl: "https://docs.example.test",
+      site: "docs.example.test",
+      token: "token",
+      fetchImpl: async () => ({
+        ok: false,
+        status: 406,
+        headers: { get: () => "text/html" },
+        async text() {
+          return "<!DOCTYPE html><html><body>406 Not Acceptable. Our sentries tell us that you should not be doing this.</body></html>";
+        }
+      })
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/hosting firewall/);
+    await expect(client.listPages()).rejects.toThrow(/\.\.\/\.\./);
+  });
+
+  it("reports a non-JSON body even when the response status is ok", async () => {
+    const client = new WordPressClient({
+      baseUrl: "https://docs.example.test",
+      site: "docs.example.test",
+      token: "token",
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        headers: { get: () => "text/html" },
+        async text() {
+          return "<!DOCTYPE html><html><body>surprise</body></html>";
+        }
+      })
+    });
+
+    await expect(client.listPages()).rejects.toThrow(/non-JSON body/);
+  });
+
+  it("still surfaces the WordPress message when an error response is valid JSON", async () => {
+    const client = new WordPressClient({
+      baseUrl: "https://public-api.wordpress.com",
+      site: "fkadev.blog",
+      token: "token",
+      fetchImpl: async () => jsonResponse({ message: "Sorry, you are not allowed to do that." }, { ok: false, status: 403 })
+    });
+
+    await expect(client.listPages()).rejects.toThrow("Sorry, you are not allowed to do that.");
+  });
+
   it("reads version taxonomy terms, Page metadata, and DocsPress settings", async () => {
     const calls = [];
     const client = new WordPressClient({
