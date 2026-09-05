@@ -1,0 +1,54 @@
+name: CI
+
+# The action is consumed as linchpin/docspress@v1, a tag that moves forward as
+# fixes land. Nothing downstream pins a commit any more, so a merge to main is
+# a merge to production for every repository that publishes documentation.
+# These checks are what make that safe.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Needed to diff against the base branch for the dist check below.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+
+      # dist/ is what actually executes when a workflow runs this action, so a
+      # source change without a rebuild ships nothing.
+      #
+      # This checks that the two moved together, rather than rebuilding and
+      # comparing: ncc output is not reproducible across Node versions, so a
+      # rebuild-and-diff fails on a perfectly healthy tree and would train
+      # everyone to ignore a red check.
+      - name: Check dist was rebuilt alongside src
+        if: github.event_name == 'pull_request'
+        run: |
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+
+          if echo "$changed" | grep -q '^src/' && ! echo "$changed" | grep -q '^dist/index.js$'; then
+            echo "::error::src/ changed but dist/index.js did not. Run 'npm run build' and commit the result, or the change will not take effect when the action runs."
+            exit 1
+          fi
+
+          echo "dist and src moved together"

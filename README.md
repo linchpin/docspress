@@ -54,6 +54,23 @@ WordPress Playground imports the Markdown as editable Pages and opens `/docs/`.
 
 The first two examples include the complete DocsPress presentation layer. The stock WordPress example installs neither optional package and shows repository Markdown as editable native Gutenberg blocks.
 
+## Versioning for Linchpin consumers
+
+Reference this action as `linchpin/docspress@v1`.
+
+`v1` is a tag that moves forward as fixes and backwards-compatible inputs land on `main`. A change that removes or repurposes an input, or alters what a run writes to WordPress, gets `v2` instead, so existing workflows keep working until they opt in.
+
+Do not pin a commit SHA. SHA pinning defends against a third party repointing a tag under you; this is a Linchpin fork in the Linchpin organisation, behind branch protection, consumed only by Linchpin repositories — the same trust boundary, so the pin buys nothing and costs a great deal. Seven repositories were pinned to one SHA for a month and none of them received the fix that reports what WordPress actually returned, which made a real sync failure undiagnosable.
+
+Genuinely third-party actions in these workflows, such as `actions/checkout`, should still be pinned.
+
+To move the tag after merging to `main`:
+
+```bash
+git tag -fa v1 -m "DocsPress action, major version 1" main
+git push -f origin v1
+```
+
 ## GitHub Actions
 
 ### Publish Markdown to WordPress
