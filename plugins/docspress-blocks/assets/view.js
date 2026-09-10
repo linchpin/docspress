@@ -17,7 +17,7 @@
 
 		let working = source;
 		const tokens = [];
-		const usesHashComments = [ 'bash', 'shell', 'python', 'yaml' ].includes( language );
+		const usesHashComments = [ 'bash', 'shell', 'python', 'yaml', 'toml', 'ini' ].includes( language );
 		const protectedTokenPattern = usesHashComments
 			? /<!--[\s\S]*?-->|(^|\s)#[^\n]*|`(?:\\.|[^`])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g
 			: /<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:\\.|[^`])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g;
@@ -41,11 +41,11 @@
 		html = html.replace( /\b(?:true|false|null)\b/g, '<span class="token-boolean">$&</span>' );
 		html = html.replace( /\b(?:0x[\da-f]+|\d+(?:\.\d+)?)\b/gi, '<span class="token-number">$&</span>' );
 
-		if ( [ 'json', 'css', 'yaml' ].includes( language ) ) {
+		if ( [ 'json', 'css', 'scss', 'yaml', 'toml', 'ini', 'http' ].includes( language ) ) {
 			html = html.replace( /(^|[\s,{])([A-Za-z_$][\w$-]*)(?=\s*:)/g, '$1<span class="token-property">$2</span>' );
 		}
 
-		if ( [ 'html', 'jsx', 'tsx' ].includes( language ) ) {
+		if ( [ 'html', 'jsx', 'tsx', 'xml', 'twig' ].includes( language ) ) {
 			html = html.replace( /(&lt;\/?)([A-Za-z][\w-]*)/g, '$1<span class="token-selector">$2</span>' );
 		}
 

@@ -126,6 +126,22 @@ html[data-theme="dark"] .docspress-preset-jetpack {
 	white-space: nowrap;
 }
 
+/* The filename doubles as a permalink into the source when the block names a path and the
+   page carries the repository metadata the sync Action writes. */
+a.docspress-code__source {
+	text-decoration: none;
+	text-decoration-color: color-mix(in srgb, var(--db-code-muted) 45%, transparent);
+	text-underline-offset: 0.25em;
+	transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+a.docspress-code__source:hover,
+a.docspress-code__source:focus-visible {
+	color: var(--db-code-fg, inherit);
+	text-decoration: underline;
+	text-decoration-color: currentColor;
+}
+
 .docspress-code__filename {
 	justify-self: end;
 }

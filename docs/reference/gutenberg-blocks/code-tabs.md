@@ -92,7 +92,7 @@ Each `tabs` item accepts:
         "required": false,
         "defaultValue": "plaintext",
         "description": "\u003cp\u003eSyntax language. Invalid values normalize to plaintext.\u003c/p\u003e",
-        "values": "bash, css, html, javascript, json, jsx, markdown, php, plaintext, python, shell, sql, tsx, typescript, yaml",
+        "values": "bash, cpp, css, diff, html, http, ini, javascript, json, jsx, markdown, php, plaintext, python, scss, shell, sql, toml, tsx, twig, typescript, xml, yaml",
         "deprecated": false
       },
       {

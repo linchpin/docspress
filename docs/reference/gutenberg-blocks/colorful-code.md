@@ -15,6 +15,26 @@ Enter code in the editor and choose its language and display filename. Add one-b
 
 When `copyMode` is `final`, Copy omits diff metadata and removed lines and strips the leading `+` from added lines. This lets readers copy the resulting file instead of the diff.
 
+## Link an excerpt back to its source
+
+Give the block a path and a line range and the filename in the header bar becomes a permalink
+into the repository, with the gutter numbering from the real first line instead of from 1:
+
+| Attribute | Purpose |
+| --- | --- |
+| `sourcePath` | Repository-relative path. Falls back to `filename`, so a fence written as `title="src/Foo.php"` already resolves. |
+| `sourceStartLine` | First line of the excerpt. Sets both the line anchor and the gutter origin. |
+| `sourceEndLine` | Last line of the excerpt. |
+| `sourceRef` | Branch or tag to link against. Defaults to the ref the page was synchronised from. |
+
+The repository, ref, and server URL come from the metadata the synchronization Action writes
+onto every page, so nothing extra is required in the workflow. Where the page carries no
+repository the path still renders, without a link.
+
+A language outside the list below is resolved through a small alias table first — `ts`, `js`,
+`sh`, `console`, `yml` and similar map onto the name the highlighter knows — and only then
+falls back to `plaintext`.
+
 ## Attributes
 
 <!-- docspress:block
@@ -31,7 +51,7 @@ When `copyMode` is `final`, Copy omits diff metadata and removed lines and strip
         "required": false,
         "defaultValue": "javascript",
         "description": "\u003cp\u003eSyntax language.\u003c/p\u003e",
-        "values": "bash, css, html, javascript, json, jsx, markdown, php, plaintext, python, shell, sql, tsx, typescript, yaml",
+        "values": "bash, cpp, css, diff, html, http, ini, javascript, json, jsx, markdown, php, plaintext, python, scss, shell, sql, toml, tsx, twig, typescript, xml, yaml",
         "deprecated": false
       },
       {

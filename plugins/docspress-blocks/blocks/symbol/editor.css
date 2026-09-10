@@ -1,0 +1,11 @@
+.docspress-symbol__editor-parameter {
+	margin-block: 12px;
+	padding: 12px;
+	border: 1px solid var(--dp-line, #d8e5ee);
+	border-radius: var(--dp-radius, 10px);
+	background: var(--dp-canvas, #f5faff);
+}
+
+.docspress-symbol--editor .docspress-symbol__summary {
+	min-height: 1.4em;
+}
