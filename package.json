@@ -29,7 +29,8 @@
     "playground:stock": "node scripts/build-playground-stock.mjs",
     "playground:versioning": "node scripts/build-playground-versioning.mjs",
     "test": "vitest run",
-    "token": "node scripts/create-wordpress-token.mjs"
+    "token": "node scripts/create-wordpress-token.mjs",
+    "block-catalog": "node scripts/generate-block-catalog.mjs"
   },
   "keywords": [
     "github-action",

@@ -89,9 +89,11 @@ function docspress_blocks_normalize_symbol_parameter( $parameter ) {
  */
 function docspress_blocks_render_symbol( $attributes ) {
 	$kinds = docspress_blocks_symbol_kinds();
+	// Call the map directly rather than through $kinds: scripts/generate-block-catalog.mjs
+	// reads these allow-lists out of the source, and it cannot follow a variable.
 	$kind  = docspress_blocks_allowed_value(
 		isset( $attributes['kind'] ) ? $attributes['kind'] : '',
-		array_keys( $kinds ),
+		array_keys( docspress_blocks_symbol_kinds() ),
 		'function'
 	);
 

@@ -50,3 +50,10 @@ jobs:
           fi
 
           echo "no dist changes in this pull request"
+
+      # The block catalog the docs-generation skill reads is generated from the plugin that
+      # registers the blocks. Hand-maintained copies drifted before — one documented 13 blocks
+      # while the plugin registered 17 — and the drift is invisible until an agent emits an
+      # attribute the renderer silently drops.
+      - name: Check the block catalog matches the plugin
+        run: node scripts/generate-block-catalog.mjs --check
