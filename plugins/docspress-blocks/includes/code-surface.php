@@ -23,6 +23,76 @@ function docspress_blocks_allowed_value( $value, $allowed, $fallback ) {
 }
 
 /**
+ * Resolve a fence language onto the set the highlighter knows.
+ *
+ * One list, used by every block that renders code. It used to be written out twice — here
+ * and in the Code Tabs block — so extending one silently left the other behind.
+ *
+ * Aliases are resolved rather than rejected. `ts`, `js` and `console` are what authors
+ * actually type, and falling back to plaintext turned a highlighted sample into a grey one
+ * with nothing to say why.
+ *
+ * @param string $value Candidate language.
+ * @return string
+ */
+function docspress_blocks_code_language( $value ) {
+	$aliases = array(
+		'c++'            => 'cpp',
+		'console'        => 'bash',
+		'js'             => 'javascript',
+		'md'             => 'markdown',
+		'node'           => 'javascript',
+		'sh'             => 'bash',
+		'shell-session'  => 'bash',
+		'text'           => 'plaintext',
+		'ts'             => 'typescript',
+		'txt'            => 'plaintext',
+		'yml'            => 'yaml',
+		'zsh'            => 'bash',
+	);
+
+	$value = strtolower( trim( (string) $value ) );
+	if ( isset( $aliases[ $value ] ) ) {
+		$value = $aliases[ $value ];
+	}
+
+	return docspress_blocks_allowed_value( $value, docspress_blocks_code_languages(), 'plaintext' );
+}
+
+/**
+ * Languages the code surface can highlight.
+ *
+ * @return array
+ */
+function docspress_blocks_code_languages() {
+	return array(
+		'bash',
+		'cpp',
+		'css',
+		'diff',
+		'html',
+		'http',
+		'ini',
+		'javascript',
+		'json',
+		'jsx',
+		'markdown',
+		'php',
+		'plaintext',
+		'python',
+		'scss',
+		'shell',
+		'sql',
+		'toml',
+		'tsx',
+		'twig',
+		'typescript',
+		'xml',
+		'yaml',
+	);
+}
+
+/**
  * Restore HTML-sensitive source characters after Gutenberg-safe serialization.
  *
  * DocsPress escapes these characters inside block-comment JSON so Markdown and
@@ -39,6 +109,140 @@ function docspress_blocks_decode_source( $value ) {
 		array( '&', '<', '>' ),
 		$value
 	);
+}
+
+/**
+ * Resolve where a code excerpt came from, as a label and a permalink.
+ *
+ * The synchronization Action already records the repository, ref and server URL on every
+ * page it writes, so a block only has to name a path and a line range to become a link into
+ * the real source. Nothing new is required of the workflow.
+ *
+ * Prefers the theme's resolver when the DocsPress theme is active, so the
+ * `docspress_github_source` filter still applies; otherwise reads the same meta directly.
+ *
+ * @param array $attributes Block attributes.
+ * @return array{label:string,url:string}
+ */
+function docspress_blocks_source_reference( $attributes ) {
+	$empty = array(
+		'label' => '',
+		'url'   => '',
+	);
+
+	$path = isset( $attributes['sourcePath'] ) ? (string) $attributes['sourcePath'] : '';
+	if ( '' === $path ) {
+		// A fence written as ```php title="src/Foo.php" carries the path as the filename.
+		$path = isset( $attributes['filename'] ) ? (string) $attributes['filename'] : '';
+	}
+	$path = ltrim( trim( $path ), '/' );
+	if ( '' === $path || false !== strpos( $path, '..' ) ) {
+		return $empty;
+	}
+
+	$start = isset( $attributes['sourceStartLine'] ) ? absint( $attributes['sourceStartLine'] ) : 0;
+	$end   = isset( $attributes['sourceEndLine'] ) ? absint( $attributes['sourceEndLine'] ) : 0;
+	$range = '';
+	if ( $start > 0 ) {
+		$range = $end > $start ? $start . '-' . $end : (string) $start;
+	}
+
+	$label = $range ? $path . ':' . $range : $path;
+
+	$source = function_exists( 'docspress_get_github_source' )
+		? docspress_get_github_source()
+		: docspress_blocks_github_source_meta();
+
+	$repository = isset( $source['repository'] ) ? (string) $source['repository'] : '';
+	$server_url = isset( $source['server_url'] ) ? (string) $source['server_url'] : '';
+	$ref        = isset( $attributes['sourceRef'] ) && '' !== $attributes['sourceRef']
+		? (string) $attributes['sourceRef']
+		: ( isset( $source['ref'] ) ? (string) $source['ref'] : '' );
+
+	if ( '' === $repository ) {
+		// Without a repository there is nowhere to point. Still show the path, so the reader
+		// knows which file the excerpt is from even when the link cannot be built.
+		return array(
+			'label' => $label,
+			'url'   => '',
+		);
+	}
+
+	$base = function_exists( 'docspress_normalize_repository_url' )
+		? docspress_normalize_repository_url( $repository, $server_url )
+		: docspress_blocks_repository_url( $repository, $server_url );
+
+	if ( '' === $base ) {
+		return array(
+			'label' => $label,
+			'url'   => '',
+		);
+	}
+
+	$ref      = '' !== $ref ? $ref : 'main';
+	$segments = implode( '/', array_map( 'rawurlencode', explode( '/', $path ) ) );
+	$fragment = '';
+	if ( $start > 0 ) {
+		$fragment = $end > $start ? '#L' . $start . '-L' . $end : '#L' . $start;
+	}
+
+	return array(
+		'label' => $label,
+		'url'   => $base . '/blob/' . rawurlencode( $ref ) . '/' . $segments . $fragment,
+	);
+}
+
+/**
+ * Read the Action-written GitHub metadata when the DocsPress theme is not active.
+ *
+ * @return array{repository:string,ref:string,server_url:string}
+ */
+function docspress_blocks_github_source_meta() {
+	$post_id = get_the_ID();
+	if ( ! $post_id ) {
+		return array(
+			'repository' => '',
+			'ref'        => '',
+			'server_url' => '',
+		);
+	}
+
+	return array(
+		'repository' => (string) get_post_meta( $post_id, '_docspress_github_repository', true ),
+		'ref'        => (string) get_post_meta( $post_id, '_docspress_github_ref', true ),
+		'server_url' => (string) get_post_meta( $post_id, '_docspress_github_server_url', true ),
+	);
+}
+
+/**
+ * Build a browsable repository URL from an `owner/name` pair or a full URL.
+ *
+ * Fallback for when the DocsPress theme is not providing its own.
+ *
+ * @param string $repository Repository URL or `owner/name` pair.
+ * @param string $server_url Server URL used with an `owner/name` pair.
+ * @return string
+ */
+function docspress_blocks_repository_url( $repository, $server_url = '' ) {
+	$repository = trim( (string) $repository );
+	if ( '' === $repository ) {
+		return '';
+	}
+
+	if ( preg_match( '#^https?://#i', $repository ) ) {
+		return untrailingslashit( esc_url_raw( $repository ) );
+	}
+
+	if ( ! preg_match( '#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository ) ) {
+		return '';
+	}
+
+	$server_url = untrailingslashit( trim( (string) $server_url ) );
+	if ( '' === $server_url ) {
+		$server_url = 'https://github.com';
+	}
+
+	return esc_url_raw( $server_url . '/' . $repository );
 }
 
 /**
@@ -77,11 +281,7 @@ function docspress_blocks_highlighted_lines( $value ) {
  * @return string
  */
 function docspress_blocks_code_surface( $attributes, $show_header = true ) {
-	$language          = docspress_blocks_allowed_value(
-		isset( $attributes['language'] ) ? $attributes['language'] : '',
-		array( 'bash', 'css', 'html', 'javascript', 'json', 'jsx', 'markdown', 'php', 'plaintext', 'python', 'shell', 'sql', 'tsx', 'typescript', 'yaml' ),
-		'plaintext'
-	);
+	$language          = docspress_blocks_code_language( isset( $attributes['language'] ) ? $attributes['language'] : '' );
 	$filename          = isset( $attributes['filename'] ) ? sanitize_text_field( $attributes['filename'] ) : '';
 	$code              = isset( $attributes['code'] ) ? docspress_blocks_decode_source( $attributes['code'] ) : '';
 	$highlighted       = docspress_blocks_highlighted_lines( isset( $attributes['highlightedLines'] ) ? $attributes['highlightedLines'] : '' );
@@ -109,6 +309,10 @@ function docspress_blocks_code_surface( $attributes, $show_header = true ) {
 			'content' => $content,
 		);
 	}
+	$source_reference  = docspress_blocks_source_reference( $attributes );
+	// An excerpt lifted from line 88 numbers from 88. Without this the gutter says the file
+	// starts here, which is wrong in a way the reader cannot see.
+	$start_line        = isset( $attributes['sourceStartLine'] ) ? max( 1, absint( $attributes['sourceStartLine'] ) ) : 1;
 	$lines             = preg_split( '/\r\n|\r|\n/', $code );
 	$classes           = 'docspress-code__surface';
 
@@ -126,7 +330,11 @@ function docspress_blocks_code_surface( $attributes, $show_header = true ) {
 		<?php if ( $show_header ) : ?>
 			<div class="docspress-code__bar">
 				<span class="docspress-code__language"><?php echo esc_html( $language ); ?></span>
-				<span class="docspress-code__filename"><?php echo esc_html( $filename ? $filename : $language ); ?></span>
+				<?php if ( $source_reference['url'] ) : ?>
+					<a class="docspress-code__filename docspress-code__source" href="<?php echo esc_url( $source_reference['url'] ); ?>" rel="noreferrer noopener"><?php echo esc_html( $source_reference['label'] ); ?></a>
+				<?php else : ?>
+					<span class="docspress-code__filename"><?php echo esc_html( $source_reference['label'] ? $source_reference['label'] : ( $filename ? $filename : $language ) ); ?></span>
+				<?php endif; ?>
 				<button class="docspress-code__copy" type="button" data-docspress-copy aria-label="<?php esc_attr_e( 'Copy code', 'docspress-blocks' ); ?>">
 					<span aria-hidden="true">⧉</span><b><?php esc_html_e( 'Copy', 'docspress-blocks' ); ?></b>
 				</button>
@@ -134,7 +342,7 @@ function docspress_blocks_code_surface( $attributes, $show_header = true ) {
 		<?php endif; ?>
 		<pre class="docspress-code__pre" tabindex="0"><code><?php
 		foreach ( $lines as $index => $line ) :
-			$number       = $index + 1;
+			$number       = $index + $start_line;
 			$line_classes = 'docspress-code__line';
 			if ( isset( $highlighted[ $number ] ) ) {
 				$line_classes .= ' is-highlighted';

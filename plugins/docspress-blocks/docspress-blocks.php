@@ -91,6 +91,7 @@ require_once DOCSPRESS_BLOCKS_PATH . 'blocks/callout/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/api-request/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/terminal-session/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/result/block.php';
+require_once DOCSPRESS_BLOCKS_PATH . 'blocks/symbol/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/flow/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/file-tree/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/prompt/block.php';

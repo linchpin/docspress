@@ -24,6 +24,9 @@ Every component guide includes at least three rendered examples: a practical bas
 | [Terminal Session](terminal-session.md) | A copyable command with optional read-only output |
 | [Live Code Playground](code-playground.md) | Editable HTML, CSS, and JavaScript with a sandboxed preview |
 | [Result](result.md) | The outcome of a task, check, or deployment |
+| [Symbol](symbol.md) | One function, hook, command, endpoint, or constant in an API reference |
+| [Version Switcher](version-switcher.md) | Move between maintained versions — place in a template, not a page |
+| [Version Notice](version-notice.md) | Warn that a page documents a historical version — place in a template, not a page |
 | [File Tree](file-tree.md) | A compact, optionally collapsible project structure |
 | [Prompt](prompt.md) | A reusable AI prompt with model, mode, and context |
 | [Interactive Troubleshooter](troubleshooter.md) | A short branching decision tree |

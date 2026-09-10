@@ -52,10 +52,16 @@
 		shadow: true
 	};
 
+	// Mirrors docspress_blocks_code_languages() in includes/code-surface.php. A value the
+	// editor offers but PHP rejects renders as plaintext, so the two lists move together.
 	const languages = [
 		{ label: 'Bash', value: 'bash' },
+		{ label: 'C++', value: 'cpp' },
 		{ label: 'CSS', value: 'css' },
+		{ label: 'Diff', value: 'diff' },
 		{ label: 'HTML', value: 'html' },
+		{ label: 'HTTP', value: 'http' },
+		{ label: 'INI', value: 'ini' },
 		{ label: 'JavaScript', value: 'javascript' },
 		{ label: 'JSON', value: 'json' },
 		{ label: 'JSX', value: 'jsx' },
@@ -63,10 +69,14 @@
 		{ label: 'PHP', value: 'php' },
 		{ label: __( 'Plain text', 'docspress-blocks' ), value: 'plaintext' },
 		{ label: 'Python', value: 'python' },
+		{ label: 'SCSS', value: 'scss' },
 		{ label: 'Shell', value: 'shell' },
 		{ label: 'SQL', value: 'sql' },
+		{ label: 'TOML', value: 'toml' },
 		{ label: 'TSX', value: 'tsx' },
+		{ label: 'Twig', value: 'twig' },
 		{ label: 'TypeScript', value: 'typescript' },
+		{ label: 'XML', value: 'xml' },
 		{ label: 'YAML', value: 'yaml' }
 	];
 
