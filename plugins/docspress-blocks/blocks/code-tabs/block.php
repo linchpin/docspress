@@ -28,13 +28,14 @@ function docspress_blocks_normalize_tabs( $tabs ) {
 
 		$normalized[] = array(
 			'label'    => isset( $tab['label'] ) ? sanitize_text_field( $tab['label'] ) : '',
-			'language' => docspress_blocks_allowed_value(
-				isset( $tab['language'] ) ? $tab['language'] : '',
-				array( 'bash', 'css', 'html', 'javascript', 'json', 'jsx', 'markdown', 'php', 'plaintext', 'python', 'shell', 'sql', 'tsx', 'typescript', 'yaml' ),
-				'plaintext'
-			),
+			'language' => docspress_blocks_code_language( isset( $tab['language'] ) ? $tab['language'] : '' ),
 			'filename' => isset( $tab['filename'] ) ? sanitize_text_field( $tab['filename'] ) : '',
 			'code'     => isset( $tab['code'] ) ? (string) $tab['code'] : '',
+			// Provenance is per tab: two tabs are usually two different files.
+			'sourcePath'      => isset( $tab['sourcePath'] ) ? sanitize_text_field( $tab['sourcePath'] ) : '',
+			'sourceStartLine' => isset( $tab['sourceStartLine'] ) ? absint( $tab['sourceStartLine'] ) : 0,
+			'sourceEndLine'   => isset( $tab['sourceEndLine'] ) ? absint( $tab['sourceEndLine'] ) : 0,
+			'sourceRef'       => isset( $tab['sourceRef'] ) ? sanitize_text_field( $tab['sourceRef'] ) : '',
 		);
 	}
 
@@ -73,10 +74,15 @@ function docspress_blocks_render_code_tabs( $attributes ) {
 				</div>
 				<div class="docspress-code-tabs__tools">
 					<?php foreach ( $tabs as $index => $tab ) :
-						$panel_id = $instance_id . '-panel-' . $index;
-						$filename = $tab['filename'] ? $tab['filename'] : $tab['language'];
+						$panel_id  = $instance_id . '-panel-' . $index;
+						$reference = docspress_blocks_source_reference( $tab );
+						$filename  = $reference['label'] ? $reference['label'] : ( $tab['filename'] ? $tab['filename'] : $tab['language'] );
 						?>
-						<span class="docspress-code-tabs__filename" data-docspress-tab-meta="<?php echo esc_attr( $panel_id ); ?>"<?php echo 0 === $index ? '' : ' hidden'; ?>><?php echo esc_html( $filename ); ?></span>
+						<?php if ( $reference['url'] ) : ?>
+							<a class="docspress-code-tabs__filename docspress-code__source" href="<?php echo esc_url( $reference['url'] ); ?>" rel="noreferrer noopener" data-docspress-tab-meta="<?php echo esc_attr( $panel_id ); ?>"<?php echo 0 === $index ? '' : ' hidden'; ?>><?php echo esc_html( $filename ); ?></a>
+						<?php else : ?>
+							<span class="docspress-code-tabs__filename" data-docspress-tab-meta="<?php echo esc_attr( $panel_id ); ?>"<?php echo 0 === $index ? '' : ' hidden'; ?>><?php echo esc_html( $filename ); ?></span>
+						<?php endif; ?>
 					<?php endforeach; ?>
 					<button class="docspress-code__copy docspress-code-tabs__copy" type="button" data-docspress-copy aria-label="<?php esc_attr_e( 'Copy code', 'docspress-blocks' ); ?>">
 						<span aria-hidden="true">⧉</span><b><?php esc_html_e( 'Copy', 'docspress-blocks' ); ?></b>
@@ -91,6 +97,7 @@ function docspress_blocks_render_code_tabs( $attributes ) {
 					'filename'        => $tab['filename'],
 					'code'            => $tab['code'],
 					'showLineNumbers' => $line_numbers,
+					'sourceStartLine' => $tab['sourceStartLine'],
 				);
 				?>
 				<div id="<?php echo esc_attr( $panel_id ); ?>" class="docspress-code-tabs__panel" role="tabpanel" aria-labelledby="<?php echo esc_attr( $tab_id ); ?>"<?php echo 0 === $index ? '' : ' hidden'; ?>><?php echo docspress_blocks_code_surface( $surface, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>

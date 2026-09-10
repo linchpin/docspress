@@ -150,6 +150,7 @@ const blockNames = [
   "hero",
   "prompt",
   "result",
+  "symbol",
   "terminal-session",
   "troubleshooter"
 ];

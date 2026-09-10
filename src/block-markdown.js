@@ -190,6 +190,37 @@ export const CUSTOM_BLOCK_DEFAULTS = {
     content: "<p>All documentation pages are up to date.</p>",
     meta: "12 pages · 1.8s"
   },
+  "docspress/symbol": {
+    kind: "function",
+    name: "mantle_register_module",
+    signature: "mantle_register_module( string $module_id, array $args = [] ): bool",
+    language: "php",
+    summary: "<p>Register a module with the loader so its settings, capabilities and routes are known.</p>",
+    parameters: [
+      {
+        name: "$module_id",
+        type: "string",
+        required: true,
+        defaultValue: "",
+        description: "Identifier of the module being registered."
+      },
+      {
+        name: "$args",
+        type: "array",
+        required: false,
+        defaultValue: "[]",
+        description: "Optional overrides merged over the module defaults."
+      }
+    ],
+    returns: "<p><code>true</code> when the module was registered, <code>false</code> when the identifier was already taken.</p>",
+    throws: "",
+    since: "",
+    deprecated: "",
+    sourcePath: "",
+    sourceStartLine: 0,
+    sourceEndLine: 0,
+    sourceRef: ""
+  },
   "docspress/terminal-session": {
     title: "Terminal",
     shell: "bash",
@@ -393,6 +424,7 @@ function renderCustomBlockPreview(name, attrs, service) {
     "docspress/hero": renderHero,
     "docspress/prompt": renderPrompt,
     "docspress/result": renderResult,
+    "docspress/symbol": renderSymbol,
     "docspress/terminal-session": renderTerminal,
     "docspress/troubleshooter": renderTroubleshooter,
     "docspress/version-notice": renderVersionNotice,
@@ -469,6 +501,46 @@ function renderColorfulCode(attrs) {
     label ? `**${escapeInline(label)}**` : "",
     fencedCode(attrs.code || "", attrs.language || "text")
   ].filter(Boolean).join("\n\n");
+}
+
+function renderSymbol(attrs, service) {
+  // The name is code, so it goes in a code span rather than being underscore-escaped into
+  // something no reader would recognise.
+  const heading = `#### ${escapeHeading(attrs.kind || "function")} ${inlineCode(attrs.name || "")}`;
+  const source = [attrs.sourcePath, lineRange(attrs)].filter(Boolean).join(":");
+  const parameters = Array.isArray(attrs.parameters) ? attrs.parameters.filter((parameter) => parameter && parameter.name) : [];
+
+  return [
+    heading,
+    attrs.deprecated ? `> [!CAUTION]\n> ${escapeInline(attrs.deprecated)}` : "",
+    attrs.since ? `_Since ${escapeInline(attrs.since)}._` : "",
+    htmlToMarkdown(attrs.summary, service),
+    attrs.signature ? fencedCode(attrs.signature, attrs.language || "text") : "",
+    parameters.length > 0
+      ? markdownTable(
+        ["Parameter", "Type", "Required", "Default", "Description"],
+        parameters.map((parameter) => [
+          inlineCode(parameter.name),
+          parameter.type ? inlineCode(parameter.type) : "",
+          parameter.required ? "yes" : "no",
+          parameter.defaultValue ? inlineCode(parameter.defaultValue) : "",
+          htmlToMarkdown(parameter.description, service).replace(/\n+/g, " ")
+        ])
+      )
+      : "",
+    attrs.returns ? `**Returns** — ${htmlToMarkdown(attrs.returns, service)}` : "",
+    attrs.throws ? `**Throws** — ${htmlToMarkdown(attrs.throws, service)}` : "",
+    source ? `_Source: ${escapeInline(source)}_` : ""
+  ].filter(Boolean).join("\n\n");
+}
+
+function lineRange(attrs) {
+  const start = Number(attrs.sourceStartLine) || 0;
+  const end = Number(attrs.sourceEndLine) || 0;
+  if (start <= 0) {
+    return "";
+  }
+  return end > start ? `${start}-${end}` : String(start);
 }
 
 function renderCodeTabs(attrs) {

@@ -78,6 +78,12 @@ function docspress_blocks_register_colorful_code() {
 				'diffMode'          => array( 'type' => 'string', 'default' => 'none' ),
 				'copyMode'          => array( 'type' => 'string', 'default' => 'all' ),
 				'annotations'       => array( 'type' => 'array', 'default' => array() ),
+				// Where the excerpt came from. `sourcePath` falls back to `filename`, so a
+				// fence written as ```php title="src/Foo.php" already resolves.
+				'sourcePath'        => array( 'type' => 'string', 'default' => '' ),
+				'sourceStartLine'   => array( 'type' => 'number', 'default' => 0 ),
+				'sourceEndLine'     => array( 'type' => 'number', 'default' => 0 ),
+				'sourceRef'         => array( 'type' => 'string', 'default' => '' ),
 			),
 			'supports'        => docspress_blocks_design_supports(),
 		)

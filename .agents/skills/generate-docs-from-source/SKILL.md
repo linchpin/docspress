@@ -1,301 +1,304 @@
 ---
 name: generate-docs-from-source
 description: Generate accurate DocsPress-compatible Markdown documentation from an existing source-code repository, including maintained API versions when required. Use when a project has incomplete, stale, or no documentation and an agent must derive installation, configuration, guides, API or CLI references, architecture, troubleshooting, DocsPress Gutenberg blocks, and a safe publication workflow from code and tests.
+version: 1.0.0
 ---
 
 # Generate Docs from Source
 
-Build documentation from evidence in the repository, not assumptions. Produce a navigable Markdown tree that DocsPress can convert into WordPress Pages, then hand publication setup to `$docspress-install`.
+Build documentation from evidence in the repository, not assumptions. Produce a navigable
+Markdown tree that DocsPress can convert into WordPress Pages, then hand publication setup to
+`$docspress-install`.
 
-## 1. Establish the source of truth
+Every claim traces to a file. Every code sample is either an excerpt with a path and a line
+range, or is labelled as illustrative. Anything that could not be verified is named in the
+completion report rather than quietly presented as fact.
 
-### Read the documentation brief first
+## When to use
 
-Look for a documentation brief at `.docspress/brief.md`, then `docs/.docspress/brief.md`, then the path the user names. Read it before inventorying anything else and treat it as this repository's contract: the audience, the repository shape, the pages that must exist, the non-goals, and the acceptance checks the finished tree has to pass.
+- A repository has no documentation, or documentation that no longer matches the code.
+- A project needs an API, CLI, or configuration reference derived from source.
+- A catalog repository — one repeated unit file — needs a page per unit and an index.
+- A maintained older API release needs its own documented version.
 
-The brief governs scope and shape. The repository still governs facts. Never let a brief justify a claim the source does not support; when the two disagree, document the source and report the disagreement.
+**Not this skill:** publishing the result to a WordPress target — that is `$docspress-install`,
+or Linchpin's `docspress-publish` wrapper for `docs.linchpin.com`. Writing one page by hand,
+or editing prose in docs that are already accurate.
 
-Satisfy every requirement in the brief, or name the ones you could not meet and why. When no brief exists, propose one from what the inventory taught you and offer to commit it, so the next run starts from the same expectations instead of rediscovering them.
+## Owns
 
-Keep the brief outside the published tree. The collector globs `**/*.md` under `docs-dir` with `dot: false`, so any ordinary Markdown file there becomes a WordPress Page, while a dot-directory is skipped.
+Canonical for: what gets documented and why, the evidence ledger, the provenance rule for code
+samples, the execution gate, quadrant planning, block selection, and the completion report.
+
+Defers: the block catalog's exact attributes and enums → `references/block-catalog.md`, which
+names the plugin source as the final authority. Publication target, workflow, and credentials →
+`$docspress-install`.
+
+## Preflight
+
+| Look for | Tells you | If missing |
+| --- | --- | --- |
+| `.docspress/brief.md`, then `docs/.docspress/brief.md` | Scope, shape, required pages, non-goals, acceptance checks | Propose one from the inventory and offer to commit it |
+| `docs/` with existing Markdown | What to preserve and update rather than replace | Plan a new tree in step 3 |
+| `docs-versions.json` | Multiple maintained API versions are already published | Assume a single unversioned tree |
+| `plugins/docspress-blocks/blocks/*/block.php` on the target | Which blocks and attribute values that revision accepts | Use `references/block-catalog.md` and say which revision you assumed |
+
+## 1. Read the brief
+
+Read it before inventorying anything, and treat it as this repository's contract: the audience,
+the shape, the pages that must exist, the non-goals, and the acceptance checks the finished tree
+has to pass.
+
+**The brief governs scope and shape. The repository governs facts.** Never let a brief justify a
+claim the source does not support; when the two disagree, document the source and report the
+disagreement.
+
+Satisfy every requirement, or name the ones you could not meet and why. When no brief exists,
+propose one from what the inventory taught you and offer to commit it, so the next run starts
+from the same expectations instead of rediscovering them.
+
+Keep the brief outside the published tree. The collector globs `**/*.md` under `docs-dir` with
+`dot: false`, so an ordinary Markdown file there becomes a Page while a dot-directory is skipped.
+
+## 2. Inventory, and build the evidence ledger
 
 1. Resolve the repository root and preserve unrelated working-tree changes.
-2. Inventory the project with `rg --files`. Inspect package manifests, lockfiles, entrypoints, exports, command definitions, schemas, environment examples, tests, examples, release configuration, and existing docs.
-3. Identify the intended audience and supported public surface from repository evidence.
-4. Determine whether the project currently supports multiple API releases. Require explicit evidence such as maintained release branches, versioned schemas, compatibility tests, or existing versioned docs; do not treat package history as a reason to publish old documentation.
-5. Build an internal coverage map before writing:
-   - installation commands → package manifests and lockfiles;
-   - configuration and environment variables → schemas, defaults, and code reads;
-   - API signatures → exported source and type declarations;
-   - CLI commands and flags → parser definitions and help output;
-   - behavior and edge cases → tests;
-   - operational steps → scripts and CI workflows;
-   - catalog entries → the repeated unit files themselves and their frontmatter.
-6. Treat tests and executable examples as stronger evidence than comments. Mark contradictions for resolution instead of choosing silently.
+2. Inventory with `rg --files`. Inspect package manifests, lockfiles, entrypoints, exports,
+   command definitions, schemas, environment examples, tests, examples, release configuration,
+   and existing docs.
+3. Identify the intended audience and the supported public surface from repository evidence.
+4. Determine whether the project currently supports multiple API releases. Require explicit
+   evidence — maintained release branches, versioned schemas, compatibility tests, existing
+   versioned docs. Package history is not a reason to publish old documentation.
 
-Name the repository's shape before planning pages, because the shape decides what a complete tree means:
+Then build the **evidence ledger**, before writing any prose. One row per thing you intend to
+document:
+
+| Symbol / command / setting | Evidence | Kind | Verified by |
+| --- | --- | --- | --- |
+| `Module_Loader::register()` | `includes/Core/Module_Loader.php:88-104` | source | signature diffed against source |
+| `wp mantle cache clear` | `includes/CLI/Cache.php:31` | source + help output | `--help` captured verbatim |
+| `mantle_core_modules` | `includes/Core/Modules.php:212` | source | `apply_filters` call read |
+| 404 on a disabled module | `tests/test-module-loader.php:77` | test | test read |
+
+Where each kind of claim comes from:
+
+- installation commands → package manifests and lockfiles;
+- configuration and environment variables → schemas, defaults, and the code that reads them;
+- API signatures → exported source and type declarations;
+- CLI commands and flags → parser definitions and captured help output;
+- behaviour and edge cases → tests;
+- design rationale and rejected alternatives → `NOTE:`/`WHY:` comments, `@since`/`@deprecated`
+  tags, ADRs, and `git log -S <symbol>`;
+- operational steps → scripts and CI workflows;
+- catalog entries → the repeated unit files themselves and their frontmatter.
+
+Treat tests and executable examples as stronger evidence than comments. Mark contradictions for
+resolution instead of choosing silently.
+
+Close this step with a count: *"Researched N files, K public surface items, M with executable
+evidence, J unverified."* A number makes under-research visible in a way prose does not.
+
+**An item with no ledger row does not get documented. A ledger row with no page is a reported
+gap.** The ledger is also where the `sourcePath` and `sourceStartLine` attributes in step 4 come
+from, so it is not bookkeeping — it is the input to the pages.
+
+Do not document private helpers as public APIs. Do not invent commands, options, URLs, support
+guarantees, performance claims, or output text.
+
+## 3. Plan the tree and the quadrants
+
+Name the repository's shape first, because the shape decides what a complete tree means:
 
 | Shape | Documented surface | Complete when |
 | --- | --- | --- |
 | Library | Exported symbols and types | Every public export appears in the reference |
 | Application or service | Routes, jobs, configuration, operations | Every operator task has a runbook |
-| Catalog | A repeated unit file such as `skills/*/SKILL.md`, `blocks/*/block.json`, or `packages/*/README.md` | Every unit has a page and an index row |
+| Catalog | A repeated unit file such as `skills/*/SKILL.md` or `blocks/*/block.json` | Every unit has a page and an index row |
 | Monorepo | Independently released packages | Every released package owns a section |
 
-A catalog repository usually has no exports, commands, or tests to enumerate, so the coverage map above finds almost nothing and the run produces one thin overview page. Enumerate the units instead: derive one page per unit from the unit file, and one section index that lists every unit with a link, a one-line purpose, and its trigger. Never shorten that list with "and others" — a missing unit is a defect, not an editorial choice.
+A catalog repository usually has no exports, commands, or tests to enumerate, so the evidence
+map above finds almost nothing and the run produces one thin overview page. Enumerate the units
+instead: one page per unit, plus one section index listing every unit with a link, a one-line
+purpose, and its trigger. **Never shorten that list with "and others" — a missing unit is a
+defect, not an editorial choice.**
 
-Do not document private helpers as public APIs. Do not invent commands, options, URLs, support guarantees, performance claims, or output text.
+Then decide which kinds of page each documented thing needs. Not everything needs all four:
 
-## 2. Reuse and plan the docs tree
+| What it is | Tutorial | How-to | Reference | Explanation |
+| --- | --- | --- | --- | --- |
+| A feature a user interacts with | yes | yes | yes | maybe |
+| A CLI command or flag | maybe | yes | yes | no |
+| An internal module or architecture | no | no | yes | yes |
+| A configuration option | no | yes | yes | no |
+| A design decision or constraint | no | no | no | yes |
+| An API endpoint | maybe | yes | yes | no |
+| A multi-step workflow | yes | yes | no | maybe |
 
-Preserve useful existing documentation and its voice. Update stale pages in place rather than replacing the whole directory.
+**Write reference first.** It is derived directly from the ledger and it fixes the vocabulary the
+other three then use. Explanation next, then how-tos, then tutorials — hardest last, because a
+tutorial consumes everything the others established.
 
-Scale the tree to the project. A typical structure is:
+Keep the quadrants apart. Reference states what a thing is and does not explain *why*.
+Explanation gives the rationale and trade-offs and does not restate the reference — it links to
+it. A how-to accomplishes one task for someone who already knows the vocabulary. A tutorial takes
+a newcomer to a working result, and if they have not seen something work by the third step, the
+tutorial is structured wrong.
 
-```text
-docs/
-  index.md
-  getting-started/
-    index.md
-    installation.md
-    configuration.md
-  guides/
-    index.md
-    first-real-workflow.md
-  reference/
-    index.md
-    api.md
-    cli.md
-  troubleshooting.md
-```
+**Explanation is the quadrant most often missing.** Trade-offs, alternatives considered, and the
+reason a surprising design is the way it is are the hardest things to recover later and the
+cheapest to recover now, while the `WHY:` comments and the git history are in front of you.
 
-A catalog repository is flatter: one section directory holding a page per unit beside its index.
+Preserve useful existing documentation and its voice; update stale pages in place rather than
+replacing the directory. Map `docs/index.md` to the Docs root and folder `index.md` files to
+section landing pages. Avoid multiple files that normalize to the same route.
 
-```text
-docs/
-  index.md
-  skills/
-    index.md
-    project-context.md
-    quality-gates.md
-  contributing.md
-```
+Tree layouts, the page pattern, the per-quadrant templates, and the versioned-tree registry:
+[`references/page-templates.md`](references/page-templates.md).
 
-Create only pages supported by the source. Small libraries may need only an overview, installation, usage, and API reference. Applications may need architecture, deployment, operations, and troubleshooting.
+## 4. Write
 
-Map `docs/index.md` to the Docs root. Use folder `index.md` files for section landing pages. Avoid multiple files that normalize to the same route.
+Frontmatter carries the `title`; body sections start at `##`, because the theme supplies the
+Page `h1`. Use relative Markdown links between pages. Use ordinary Markdown for prose, headings,
+lists, links, tables, and images, and a DocsPress block where its documentation-specific
+semantics apply.
 
-### Plan maintained API versions
+### Every code sample is one of two things
 
-Keep a single unversioned tree unless readers genuinely need multiple maintained API contracts. When they do, preserve the repository’s natural layout and add an ordered registry such as `docs-versions.json`:
+**An excerpt** — lifted from the repository. It carries the path and the line range from its
+ledger row, so the rendered block links to the declaration and numbers from the real first line:
 
-```json
-{
-  "latest": "v3",
-  "versions": [
-    { "id": "v3", "source": { "type": "root" } },
-    { "id": "v2", "source": { "type": "directory", "path": "v2" } },
-    { "id": "v1", "source": { "type": "suffix", "suffix": ".v1" } }
-  ]
+````markdown
+```php title="includes/Core/Bootstrap.php" lines="88-104" {91}
+public function run() {
+    $this->initialize_modules();
 }
 ```
+````
 
-The named latest can own unclaimed Markdown at the root. Other versions may use directories, filename suffixes, or repository-relative manifests with their own redirects. Give every source file exactly one owner and every version a unique logical route per Page. Link counterparts within the same version. When a Page does not exist in another version, let the Version Switcher fall back to that version’s root rather than inventing a counterpart.
+**Illustrative** — composed for the reader and not present in the repository. Say so, in the
+caption: `caption="Follows the shape used in src/modules/*/register.js"`. A reader who copies it
+should know they are copying a pattern, not a file.
 
-## 3. Write DocsPress-compatible Markdown
+A sample that is neither — a bare fence with no path and no caption, in a page that is otherwise
+documenting real code — is a defect. It is the shape a reader is most likely to trust and least
+able to check.
 
-Use this page pattern:
+A path in an excerpt must resolve in the repository at the documented ref. Step 5 checks this.
 
-```markdown
----
-title: Clear page title
----
+### The rest
 
-One short paragraph explaining the outcome of this page.
-
-## First section
-
-Verified instructions and examples.
-```
-
-Follow these constraints:
-
-- Prefer frontmatter `title` and begin body sections at `##`; the DocsPress theme supplies the Page `h1`.
-- Use `.md` or `.markdown` files and relative Markdown links between pages.
-- Keep paths stable and slugs readable; directories become parent Pages.
-- Use fenced code blocks with accurate language labels.
-- Use standard Markdown for ordinary prose, headings, lists, links, tables, and images. Use the DocsPress blocks below whenever their documentation-specific semantics apply.
-- Use a serialized `core/image` block when an image needs Gutenberg-managed width, size, caption, or link behavior; keep ordinary Markdown image syntax for unconstrained images.
-- Preserve existing serialized Gutenberg block comments when valid. Validate their attributes before reusing them.
-- Prefer `docspress/code-tabs` over Gutenberg Handbook-style `{% codetabs %}` when the DocsPress Blocks plugin is part of the target installation.
-- Explain prerequisites before commands and verification after commands.
+- Prefer a plain fence with an info string over hand-written block config. It is readable in a
+  pull request and it produces the same block. Reach for the envelope only when the sample needs
+  annotations, a tab set, or something no info string expresses.
+- Preserve exact spelling, types, defaults, exit behaviour, and errors. Capture `--help` output
+  verbatim rather than paraphrasing it.
 - Keep examples minimal but runnable. Never use real credentials or production identifiers.
-- Link conceptual claims to the relevant reference page instead of duplicating long explanations.
+- Explain prerequisites before commands and verification after commands.
+- Link a conceptual claim to the reference page instead of restating it.
+- Use a serialized `core/image` block when an image needs Gutenberg-managed width, size, caption,
+  or link behaviour; ordinary Markdown image syntax otherwise.
 
-## 4. Use DocsPress Gutenberg blocks
+### Blocks
 
-Always review the complete plugin catalog—two landing blocks, thirteen documentation blocks, and two version-interface blocks—before writing the docs and make a page-by-page block plan. Use every relevant block, but do not force a block where ordinary Markdown communicates the material better.
+Make a page-by-page block plan before writing, and follow the brief's `## Block plan` when it has
+one. If the brief has none, produce one and include it in the completion report. Report block
+coverage per page.
 
-DocsPress preserves serialized Gutenberg comments in Markdown and normalizes HTML-sensitive attribute characters to WordPress-safe Unicode escapes during conversion. These plugin blocks are dynamic, so write one self-closing comment with valid compact JSON and no rendered HTML body:
+This matters because the failure mode is silent: a run that reaches for no blocks produces plain
+Markdown that looks fine in the repository and loses every affordance on the docs site. Two of
+our own doc sets have zero blocks across every page.
 
-```html
-<!-- wp:docspress/block-name {"attribute":"value"} /-->
-```
+Use every block whose semantics fit, and no block where ordinary Markdown communicates better. A
+table of rules is a table. `docspress/fields` is for typed values — parameters, configuration
+keys, environment variables, response properties. `docspress/symbol` is for a named thing in the
+code: a function, method, class, action, filter, CLI command, endpoint, or constant.
 
-In generated Markdown, emit the comment directly, without the surrounding code fence. JSON-escape quotes, backslashes, control characters, and literal newlines inside attribute strings. Never add trailing commas, JavaScript object syntax, invented attributes, or custom colors. The plugin inherits colors, typography, radius, borders, and light/dark presentation from the active DocsPress preset.
+The catalog, its attributes, its enum values, and the envelope syntax:
+[`references/block-catalog.md`](references/block-catalog.md).
 
-### Block selection and schemas
+## 5. Verify
 
-| Editor block | Serialized name | Use for | Supported attributes |
-| --- | --- | --- | --- |
-| DocsPress: Hero | `docspress/hero` | A landing-page introduction with actions and an image or built-in synchronization diagram | `eyebrow`, `title`, `description`, `primaryLabel`, `primaryUrl`, `primaryNewTab`, `secondaryLabel`, `secondaryUrl`, `secondaryNewTab`, `mediaId`, `mediaUrl`, `mediaAlt`, `visualLabel`, `visualVariant`, `layout`, `mediaPosition`, `mediaWidth`, `imageScale`, `height`, `tone`, `textAlign`, `showGrid`, `showOrbit`, `panelColor`, `visualColor`, `accentColor` |
-| DocsPress: Audience Paths | `docspress/audience-paths` | One to six cards routing distinct reader audiences to the right workflow | `eyebrow`, `title`, `description`, `paths`, `columns`, `tone`, `textAlign`, `compact`, `showNumbers`, `panelColor`, `accentColor`; each path has `title`, `description`, `url`, `cta`, `icon`, `accent`, `newTab` |
-| DocsPress: Colorful Code | `docspress/colorful-code` | One source, annotated example, or unified diff that benefits from filename, highlighting, line numbers, caption, and copy | `language`, `filename`, `code`, `highlightedLines`, `showLineNumbers`, `caption`, `diffMode`, `copyMode`, `annotations`; each annotation has `line`, `content` |
-| DocsPress: Code Tabs | `docspress/code-tabs` | Two to eight equivalent implementations, package managers, languages, or platforms | `tabs`, `showLineNumbers`, `caption`; each tab has `label`, `language`, `filename`, `code` |
-| DocsPress: Callout | `docspress/callout` | Important notes, tips, warnings, hazards, or success guidance | `tone`, `title`, `content`, `collapsible`, `open` |
-| DocsPress: Flow | `docspress/flow` | A connected, automatically numbered procedure | `start`, `steps`; each step has `title`, `content` |
-| DocsPress: API Request / Response | `docspress/api-request` | A verified HTTP request and its response as one unit, optionally runnable in the browser | `method`, `endpoint`, `headers`, `requestBody`, `requestBodyFormat`, `responseStatus`, `responseBody`, `responseBodyFormat`, `runnable`, `editable`, `allowUnsafe`, `baseUrl`, `allowedOrigins`, `timeout` |
-| DocsPress: Fields / Schema | `docspress/fields` | Typed API parameters, configuration keys, environment variables, CLI options, or response properties | `title`, `description`, `fields`, `searchable`, `compact`; each field has `name`, `type`, `required`, `defaultValue`, `description`, `values`, `deprecated` |
-| DocsPress: Live Code Playground | `docspress/code-playground` | A small self-contained HTML, CSS, and JavaScript example readers should edit and run | `title`, `html`, `css`, `javascript`, `height`, `autoRun`, `showConsole`, `allowNetwork` |
-| DocsPress: Diagram | `docspress/diagram` | A compact flow or sequence diagram without an external rendering dependency | `title`, `type`, `source`, `caption` |
-| DocsPress: Troubleshooter | `docspress/troubleshooter` | A short branching support or onboarding flow | `title`, `intro`, `startId`, `questions`, `outcomes`, `showProgress`; questions route by ID and outcomes have `status`, `title`, `content` |
-| DocsPress: Terminal Session | `docspress/terminal-session` | A copyable command with optional read-only output | `title`, `shell`, `prompt`, `command`, `output` |
-| DocsPress: Result | `docspress/result` | A concise verified outcome after a build, check, command, or procedure | `status`, `title`, `content`, `meta` |
-| DocsPress: File Tree | `docspress/file-tree` | A relevant project or generated-directory structure | `root`, `tree`, `caption` |
-| DocsPress: Prompt | `docspress/prompt` | A reusable AI prompt with model, mode, context, and caption | `prompt`, `model`, `mode`, `thinking`, `context`, `caption` |
-| DocsPress: Version Switcher | `docspress/version-switcher` | Switching API versions by logical route; normally place in a Site Editor template rather than Page Markdown | `label`, `showLabel`, `presentation`, `showLatestBadge`, `hideSingle`, `unavailableLabel` |
-| DocsPress: Version Notice | `docspress/version-notice` | Warning only on historical API versions; normally place below the Header in the Page template | `message`, `latestLinkLabel`, `showIcon`, `dismissible` |
+Run the cheapest relevant checks first and record exact results. The full ladder, with commands:
+[`references/verification.md`](references/verification.md).
 
-Use only these allowed values:
+1. Every generated page is nonempty and has a unique route and title.
+2. Every relative link and local image path resolves from the file containing it.
+3. Every `sourcePath` and excerpt `title=` resolves to a real file at the documented ref, and
+   every line range is inside that file.
+4. Every documented signature, flag, default, and environment variable matches its ledger row.
+5. `--help` output is captured, not paraphrased.
+6. **Every runnable sample runs, or is marked unverified** — in the page's caption as well as the
+   completion report. An unrun example presented as verified is the one failure this skill exists
+   to prevent.
+7. No placeholders survive: `TODO`, `TBD`, `YOUR_*`, fake domains, unverified version numbers.
+   Deliberate placeholders stay only inside clearly labelled templates.
+8. Every `wp:docspress/*` and `docspress:block` payload parses, and its block name, attributes,
+   and enum values are valid for the target plugin revision.
+9. Representative Markdown round-trips through the pinned converter. **Parse both sides and
+   compare the attribute objects** — DocsPress normalizes HTML-sensitive characters to Unicode
+   escapes, so a byte comparison reports differences that are not defects.
+10. For a version registry, run the pinned collector and verify source ownership, safe paths,
+    unique logical routes, latest ownership, per-version redirects, and version-aware links.
+11. Run the repository's own formatter, lint, typecheck, tests, and build in proportion to the
+    change. Inspect scripts and dependency lifecycle hooks before executing them.
+12. `git diff --check`, then scan the docs diff for credential-shaped strings. Generated
+    configuration examples are where secrets leak: an invented key that looks real is a support
+    problem, and a real one copied out of a `.env` read during step 2 is an incident.
+13. If a check cannot run, state why and narrow the claim.
 
-- Code `language`: `bash`, `css`, `html`, `javascript`, `json`, `jsx`, `markdown`, `php`, `plaintext`, `python`, `shell`, `sql`, `tsx`, `typescript`, or `yaml`.
-- `highlightedLines`: comma-separated one-based lines and ranges such as `2,4-6`.
-- Colorful Code `diffMode`: `none` or `unified`; `copyMode`: `all` or `final`. Annotations use one-based line numbers and formatted content.
-- Callout `tone`: `note`, `tip`, `warning`, `danger`, or `success`. Set `open` only when `collapsible` is `true`.
-- API `method`: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. Write headers as one `Name: value` pair per line. Body formats are `json` or `raw`. Runnable examples should default to a same-origin GET, must never contain real credentials, and may use an external origin only when `allowedOrigins` explicitly includes it. Mutating requests require `allowUnsafe: true` and still show reader confirmation.
-- Field `type`: `string`, `number`, `boolean`, `object`, `array`, `enum`, `url`, `date`, or `any`.
-- Playground `height`: 180–720. Keep `allowNetwork: false` unless the verified example requires network access; never put secrets in iframe source.
-- Diagram `type`: `flow` or `sequence`. Write one `Source -> Target: optional label` relationship per source line.
-- Troubleshooter outcome `status`: `success`, `neutral`, `warning`, or `error`. Every answer destination must match a question or outcome ID.
-- Result `status`: `success`, `neutral`, `warning`, or `error`.
-- Prompt `mode`: `chat`, `code`, `ask`, or `plan`. `context` is a comma-separated list of at most 12 items; `$` denotes an installed skill, `@` a mention, `#` an image, `http://` or `https://` a URL, and other values a file. Always invoke installed skills as `$skill-name`, never as a `SKILL.md` file path inside a user-facing prompt.
-- File trees use two spaces per depth level and a trailing slash for folders.
-- Hero `visualVariant`: `image` or `sync-diagram`; `layout`: `split` or `editorial`; `mediaPosition`: `left` or `right`; `height`: `compact`, `standard`, or `tall`; `tone`: `theme`, `midnight`, `paper`, or `brand`; `textAlign`: `left` or `center`. Keep media width at 34–58 and image scale at 60–120.
-- Audience Paths `columns`: 1–3; `tone`: `theme`, `paper`, `ink`, or `blueprint`; `textAlign`: `left` or `center`; path `accent`: `blue`, `gold`, `coral`, or `green`.
-- Version Switcher `presentation`: `select` or `links`. Version Notice `message` may contain only the safe `{current}` and `{latest}` placeholders.
+When a brief exists, run its acceptance checks last and report each as met or unmet with the
+number or name it produced. An unmet brief requirement is a reported gap, never a silent
+omission.
 
-### Canonical examples
+Do not weaken tests or alter product behaviour to make a documentation example pass. If source
+behaviour is broken or ambiguous, report it separately.
 
-```html
-<!-- wp:docspress/hero {"eyebrow":"Developer documentation","title":"Build your first integration","description":"Choose a verified workflow and ship a working request.","primaryLabel":"Get started","primaryUrl":"/docs/getting-started/","primaryNewTab":false,"secondaryLabel":"API reference","secondaryUrl":"/docs/reference/api/","secondaryNewTab":false,"visualVariant":"sync-diagram","layout":"split","mediaPosition":"right","mediaWidth":44,"imageScale":100,"height":"standard","tone":"theme","textAlign":"left","showGrid":false,"showOrbit":false} /-->
+## 6. Configure publication when missing
 
-<!-- wp:docspress/audience-paths {"eyebrow":"Choose a path","title":"What are you building?","description":"Start with the workflow that matches your integration.","paths":[{"title":"Server integration","description":"Authenticate and call the API from a trusted backend.","url":"/docs/guides/server/","cta":"Build on the server","icon":"api","accent":"blue","newTab":false},{"title":"Browser application","description":"Use the supported public client flow.","url":"/docs/guides/browser/","cta":"Build for the browser","icon":"code","accent":"gold","newTab":false}],"columns":2,"tone":"theme","textAlign":"left","compact":false,"showNumbers":false} /-->
+Search `.github/workflows/` for an existing DocsPress action. If none exists, invoke
+`$docspress-install` and let it own the workflow, the credentials, and the promotion ladder.
+Documentation generation must still complete when WordPress credentials are unavailable — leave
+the workflow ready and report the exact authentication step the user must perform.
 
-<!-- wp:docspress/colorful-code {"language":"typescript","filename":"src/client.ts","code":"import { Client } from \"pkg\";\n\nconst client = new Client();","highlightedLines":"3","showLineNumbers":true,"caption":"Create the client."} /-->
+## Guardrails
 
-<!-- wp:docspress/code-tabs {"tabs":[{"label":"npm","language":"bash","filename":"Terminal","code":"npm install example"},{"label":"pnpm","language":"bash","filename":"Terminal","code":"pnpm add example"}],"showLineNumbers":false,"caption":"Install with the package manager used by the project."} /-->
+- **Never present an unrun example as verified.** Mark it on the page, not only in the report.
+- **Never invent** a command, option, URL, output string, support guarantee, or performance claim.
+  Absence of evidence is a gap to report, not a blank to fill.
+- **Never document a private helper as public API.**
+- **Never shorten a catalog with "and others."**
+- **Never edit product source, tests, or behaviour** to make documentation true. Report the
+  mismatch instead.
+- **Never commit a credential.** Fake every secret in an example, and scan the diff before
+  finishing.
+- **Never bump a pinned revision** — `upstream.json`, an action SHA, a plugin version — as a side
+  effect of generating documentation.
+- Do not push, dispatch a workflow, add secrets, install or activate a plugin or theme, or write
+  WordPress Pages without separate authorization.
 
-<!-- wp:docspress/callout {"tone":"warning","title":"Protect credentials","content":"<p>Store the token in a secret manager.</p>","collapsible":false} /-->
+## Done
 
-<!-- wp:docspress/flow {"start":1,"steps":[{"title":"Configure","content":"<p>Set the verified options.</p>"},{"title":"Run","content":"<p>Execute the documented command.</p>"},{"title":"Verify","content":"<p>Confirm the expected result.</p>"}]} /-->
-
-<!-- wp:docspress/api-request {"method":"GET","endpoint":"/wp-json/","headers":"Accept: application/json","requestBody":"","requestBodyFormat":"json","responseStatus":"200 OK","responseBody":"{\n  \"name\": \"WordPress\"\n}","responseBodyFormat":"json","runnable":true,"editable":true,"allowUnsafe":false,"timeout":10000} /-->
-
-<!-- wp:docspress/fields {"title":"Configuration","fields":[{"name":"site","type":"string","required":true,"defaultValue":"","description":"WordPress site domain.","values":"","deprecated":false}],"searchable":true,"compact":false} /-->
-
-<!-- wp:docspress/code-playground {"title":"Live example","html":"<button>Run</button>","css":"button { color: blue; }","javascript":"console.log( 'Ready' );","height":320,"autoRun":true,"showConsole":true,"allowNetwork":false} /-->
-
-<!-- wp:docspress/diagram {"title":"Publishing flow","type":"flow","source":"Markdown -> DocsPress: collect\nDocsPress -> WordPress: publish","caption":"Verified system relationships."} /-->
-
-<!-- wp:docspress/troubleshooter {"title":"Find the next step","startId":"source","questions":[{"id":"source","question":"Do docs exist?","yesLabel":"Yes","yesNext":"sync","noLabel":"No","noNext":"generate"}],"outcomes":[{"id":"sync","status":"success","title":"Publish","content":"<p>Run a draft sync.</p>"},{"id":"generate","status":"neutral","title":"Generate docs","content":"<p>Create source-grounded Markdown first.</p>"}],"showProgress":true} /-->
-
-<!-- wp:docspress/terminal-session {"title":"Run the checks","shell":"bash","prompt":"$","command":"npm test","output":"Tests: 24 passed"} /-->
-
-<!-- wp:docspress/result {"status":"success","title":"Verification passed","content":"<p>All documented examples completed successfully.</p>","meta":"24 tests"} /-->
-
-<!-- wp:docspress/file-tree {"root":"project/","tree":"docs/\n  index.md\n  guides/\n    first-task.md","caption":"Generated documentation tree."} /-->
-
-<!-- wp:docspress/prompt {"prompt":"Use $generate-docs-from-source to review the public API and identify undocumented error cases.","model":"GPT-5","mode":"code","thinking":true,"context":"$generate-docs-from-source, @repository, src/index.ts, test/api.test.ts","caption":"API coverage review prompt"} /-->
-```
-
-Use verified source values in real docs instead of copying these placeholders. Keep secrets fake. Use HTML only in the `content` and `caption` attributes that support formatted text, and keep it minimal and valid.
-
-This catalog matches the DocsPress Blocks source shipped with the skill revision. If a verified target plugin revision differs, inspect its `blocks/*/block.php` registrations and render allow-lists, then use that revision as the source of truth.
-
-### Keep template-owned features out of ordinary Page content
-
-Use the Site Editor for shared reading-interface blocks. The bundled Header places Version Switcher before Command Search, and the Page template places Version Notice as a full-width bar below the Header. The theme also owns `docspress/was-this-helpful`, which is movable and customizable in the Page template and stores aggregate Helpful/Not helpful totals per Page. Native WordPress comments provide optional threaded discussions through the editable Comments template part.
-
-Do not duplicate these blocks into every Markdown Page. Do not serialize `docspress/was-this-helpful` unless the target uses the DocsPress theme revision that registers it. Keep presentation under Global Styles and block supports instead of adding custom colors to generated content.
-
-## 5. Generate from evidence
-
-### Overview and getting started
-
-Explain what the project does, who it is for, its real prerequisites, installation, and the smallest useful workflow. Derive package-manager commands from the checked-in package metadata and lockfile.
-
-### Configuration
-
-Document only settings read by the application. Include name, required/default state, accepted values, effect, and security sensitivity. Distinguish build-time, runtime, client-visible, and secret values.
-
-### Guides
-
-Choose workflows demonstrated by examples, tests, or normal source composition. Make each guide outcome-oriented and verify every referenced file and command.
-
-### API or CLI reference
-
-Enumerate public exports or registered commands from source. Preserve exact spelling, types, defaults, exit behavior, and errors. Generate help output locally when a safe `--help` command exists.
-
-### Troubleshooting
-
-Include failures evidenced by tests, explicit error messages, issue templates, or defensive branches. Pair symptoms with concrete checks and safe recovery steps.
-
-## 6. Verify before calling the docs complete
-
-Run the cheapest relevant checks first and record exact results.
-
-1. Confirm every generated page is nonempty and has a unique route and title.
-2. Resolve every relative link and local image path from the file containing it.
-3. For a version registry, run the pinned DocsPress collector and verify source ownership, safe paths, unique logical routes, latest ownership, per-version redirects, and version-aware links.
-4. Search for placeholders such as `TODO`, `TBD`, `YOUR_*`, fake domains, and unverified version numbers. Keep deliberate placeholders only inside clearly labeled templates.
-5. Match documented exports, flags, environment variables, filenames, and defaults back to source.
-6. Run code samples when they are safe and practical. Prefer examples already covered by tests.
-7. Parse every `wp:docspress/*` attribute object as JSON. Confirm the block name, attributes, enum values, tab count, tree indentation, and required plugin support against this catalog or the verified plugin source.
-8. Run representative generated Markdown through the pinned DocsPress converter and confirm every custom block comment is preserved byte-for-byte.
-9. Inspect repository scripts and dependency lifecycle hooks before executing them. Run the existing formatter, lint, typecheck, tests, and build in proportion to the changes; isolate commands that rewrite generated files in a temporary copy or worktree when practical.
-10. Run `git diff --check` and inspect the complete docs diff for accidental source changes or copied secrets.
-11. If a check cannot run, state why and narrow the claim. Never present an unrun example as verified.
-
-When a documentation brief exists, run its acceptance checks last and report each one as met or unmet with the number or name it produced. An unmet brief requirement is a reported gap, never a silent omission.
-
-Do not weaken tests or alter product behavior merely to make documentation examples pass. If source behavior is broken or ambiguous, report it separately.
-
-## 7. Configure publication when missing
-
-Search `.github/workflows/` for an existing DocsPress action. If none exists:
-
-1. Invoke `$docspress-install`.
-2. Create one `.github/workflows/sync-docs.yml` targeting the generated docs directory.
-3. Start with `status: draft`, `dry-run: true`, and `delete-mode: trash`.
-4. Reference `${{ secrets.WP_ACCESS_TOKEN }}`; never create a plaintext credential file.
-5. Resolve checkout and DocsPress actions to verified immutable commit SHAs, then validate all inputs against `action.yml` at the pinned DocsPress revision.
-6. Detect the repository default branch rather than hard-coding `main`, but begin with `workflow_dispatch` only. Add a default-branch push trigger after the manual dry-run and draft-write lifecycle succeeds and the user approves ongoing synchronization.
-7. If any `wp:docspress/*` blocks are present, require the verified matching `plugins/docspress-blocks/` plugin on the WordPress target. Ask separately before installing or activating it.
-8. When a registry exists, pass it as `versions-file`, include it in workflow path filters, and require the matching DocsPress Blocks plugin even when Page bodies use no plugin blocks.
-9. Validate the workflow locally. Do not push, dispatch, add secrets, install or activate plugins, activate a theme, or write WordPress Pages unless the user separately authorized those external changes.
-
-Documentation generation must still complete when WordPress credentials are unavailable. Leave the workflow ready and report the exact authentication step the user must perform.
+- [ ] The brief was read, and every acceptance check is reported as met or unmet.
+- [ ] An evidence ledger exists, with a closing count, and nothing is documented without a row.
+- [ ] Every code excerpt carries a path and line range that resolves; every illustrative sample
+      says it is illustrative.
+- [ ] Every runnable sample was run, or is marked unverified on the page.
+- [ ] A block plan exists and block coverage is reported per page.
+- [ ] Links, routes, block payloads, and the converter round-trip all check out.
+- [ ] Lint, tests, and build pass, and the docs diff carries no credentials and no source changes.
+- [ ] The completion report names every unverified claim and every source contradiction.
 
 ## Completion report
 
 Report:
 
 - pages created, updated, and intentionally preserved;
-- each acceptance check from the documentation brief, with its result;
+- the ledger counts, and any row that produced no page;
+- each acceptance check from the brief, with its result;
 - source files used as evidence;
-- code examples and commands actually executed;
-- DocsPress blocks used, their locations, serialization validation, and plugin requirement;
-- version registry, source layouts, repository latest, logical-route validation, and intentionally missing counterparts;
+- code samples and commands actually executed, and those marked unverified;
+- blocks used, their locations, payload validation, and the plugin revision assumed;
+- version registry, source layouts, latest ownership, and intentionally missing counterparts;
 - lint, test, build, link, and workflow validation results;
-- DocsPress workflow state;
-- any unverified claims, source contradictions, or required user decisions.
+- any unverified claims, source contradictions, or decisions the user needs to make.

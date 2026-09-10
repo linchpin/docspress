@@ -19,6 +19,7 @@ const customPreviewCases = [
   ["docspress/hero", { eyebrow: "Docs", title: "Ship better docs", description: "One source.", primaryLabel: "Read", primaryUrl: "/docs/" }, "## Ship better docs"],
   ["docspress/prompt", { prompt: "Review the docs.", model: "GPT-5", mode: "code", thinking: true, context: "docs/", caption: "Review prompt" }, "> Review the docs."],
   ["docspress/result", { status: "success", title: "Checks passed", content: "<p>Everything is current.</p>", meta: "42 tests" }, "> [!TIP]"],
+  ["docspress/symbol", { kind: "hook", name: "mantle_core_modules", signature: "apply_filters( 'mantle_core_modules', array $modules )", language: "php", summary: "<p>Filter the registered module array.</p>", parameters: [{ name: "$modules", type: "array", required: true, defaultValue: "", description: "Registered modules." }], sourcePath: "includes/Core/Modules.php", sourceStartLine: 212 }, "#### hook `mantle_core_modules`"],
   ["docspress/terminal-session", { title: "Verify", shell: "bash", prompt: "$", command: "npm test", output: "42 passed" }, "$ npm test"],
   ["docspress/troubleshooter", { title: "Choose a fix", intro: "Answer this.", questions: [{ id: "docs", question: "Do docs exist?", yesLabel: "Yes", noLabel: "No" }], outcomes: [] }, "- **Do docs exist?** — Yes / No"],
   ["docspress/version-notice", { message: "You are viewing {current}.", latestLinkLabel: "Latest", showIcon: true, dismissible: false }, "> [!WARNING]"],

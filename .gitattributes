@@ -1,0 +1,8 @@
+# dist/ is the ncc bundle that action.yml executes. It is generated on main by
+# .github/workflows/build-dist.yml, never edited by hand and never committed in a pull
+# request — two branches rebuilding it from the same base produce divergent output that
+# conflicts on every merge.
+#
+# linguist-generated keeps it out of language stats and collapses it in GitHub diffs;
+# -diff keeps `git diff` from printing two megabytes of bundle.
+dist/** linguist-generated=true -diff
