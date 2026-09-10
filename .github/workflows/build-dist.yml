@@ -1,0 +1,58 @@
+name: Build dist
+
+# dist/ is what actually executes when a workflow runs this action, so it has to exist on
+# main — consumers pin linchpin/docspress@v1. But it cannot be built in a pull request:
+# two branches rebuilding the same base produce divergent ncc output, and the bundle then
+# conflicts on every merge while burying the real change under ~18,000 lines of diff.
+#
+# So main builds it. A pull request carries source only; this commits the bundle after the
+# merge lands.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package-lock.json'
+      - 'package.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  # Never let two builds race to commit dist. Do not cancel in progress: a superseded run
+  # still has to finish committing, or main is left with a bundle older than its source.
+  group: build-dist
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Rebuild and commit dist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Commit dist when it changed
+        run: |
+          if git diff --quiet -- dist; then
+            echo "dist is already current for this commit"
+            exit 0
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist
+
+          # [skip ci] keeps this from retriggering the workflow. Without it the rebuild
+          # would run again, find nothing to commit, and stop — harmless but noisy.
+          git commit -m "chore(NO-TASK): Rebuild dist for ${GITHUB_SHA::7} [skip ci]"
+          git push
