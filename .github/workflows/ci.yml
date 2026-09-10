@@ -34,21 +34,19 @@ jobs:
 
       - run: npm test
 
-      # dist/ is what actually executes when a workflow runs this action, so a
-      # source change without a rebuild ships nothing.
-      #
-      # This checks that the two moved together, rather than rebuilding and
-      # comparing: ncc output is not reproducible across Node versions, so a
-      # rebuild-and-diff fails on a perfectly healthy tree and would train
-      # everyone to ignore a red check.
-      - name: Check dist was rebuilt alongside src
+      # dist/ is built on main by .github/workflows/build-dist.yml, not in a pull request.
+      # Two branches rebuilding the same base produce divergent ncc output, so a committed
+      # bundle conflicts on every merge and buries the real change: #12 and #13 differed by
+      # ~18,000 lines each, and dist/index.js plus its map were the only paths that
+      # conflicted between them.
+      - name: Check the pull request does not contain dist
         if: github.event_name == 'pull_request'
         run: |
           changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
 
-          if echo "$changed" | grep -q '^src/' && ! echo "$changed" | grep -q '^dist/index.js$'; then
-            echo "::error::src/ changed but dist/index.js did not. Run 'npm run build' and commit the result, or the change will not take effect when the action runs."
+          if echo "$changed" | grep -q '^dist/'; then
+            echo "::error::This pull request modifies dist/. Remove those changes and commit source only — main rebuilds the bundle after the merge. To drop them: git checkout origin/${{ github.base_ref }} -- dist && git commit"
             exit 1
           fi
 
-          echo "dist and src moved together"
+          echo "no dist changes in this pull request"
