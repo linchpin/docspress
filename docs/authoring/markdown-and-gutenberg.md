@@ -42,7 +42,10 @@ The cropped screenshots focus on two compatibility contracts: GitHub turns a Doc
 | Headings | `core/heading` |
 | Ordered, unordered, nested, and task lists | `core/list` |
 | Blockquotes | `core/quote` |
+| GitHub alerts (`> [!WARNING]`) | `docspress/callout` |
 | Fenced code | `core/code` |
+| Fenced code with an info string | `docspress/colorful-code` |
+| `{% codetabs %}` | `docspress/code-tabs` |
 | GFM tables | `core/table` |
 | Images | `core/image` |
 | Horizontal rules | `core/separator` |
@@ -51,6 +54,43 @@ The cropped screenshots focus on two compatibility contracts: GitHub turns a Doc
 | Styled or structural core blocks | readable Markdown preview plus lossless hidden configuration |
 | DocsPress blocks | block-specific Markdown preview plus versioned hidden configuration |
 | Legacy serialized Gutenberg comments | accepted and normalized for backward compatibility |
+
+## Code fences
+
+A bare fence stays a `core/code` block. That is the portable thing: it needs no plugin, and
+it is what every existing page already contains.
+
+A fence that carries metadata is asking for something `core/code` cannot express, so it
+becomes a `docspress/colorful-code` block instead:
+
+````markdown
+```php title="includes/Core/Bootstrap.php" lines="88-104" {3,7} copy=final
+public function run() {
+    $this->initialize_modules();
+}
+```
+````
+
+| Info-string token | Attribute | Notes |
+| --- | --- | --- |
+| `title="…"`, `filename="…"` | `filename` | The path shown in the header bar |
+| `lines="88-104"`, `lines="88"` | `sourceStartLine`, `sourceEndLine` | Where the excerpt came from, so numbering starts at the real first line |
+| `{3,7}`, `{2-6}`, `highlight=2-4` | `highlightedLines` | One-based lines and ranges |
+| `caption="…"` | `caption` | Rendered below the block |
+| `copy=all`, `copy=final` | `copyMode` | `final` drops removed diff lines from the copied text |
+| `diff`, `diff=unified` | `diffMode` | |
+| `linenumbers`, `nolinenumbers` | `showLineNumbers` | On by default |
+
+Annotations have no info-string spelling. A block that needs them stays a `docspress:block`
+envelope.
+
+The language is normalized against the block's allow-list only when the fence is promoted —
+a promoted ```` ```ts ```` becomes `typescript`, while a bare ```` ```ts ```` keeps the tag
+the author wrote so a reverse sync never rewrites it.
+
+A promoted fence returns as the same fence on the way back, so an untouched page is never
+rewritten. Where an attribute has no info-string spelling, or where writing one back would
+change a stored value, the block keeps its envelope instead.
 
 ## Conversion algorithm
 

@@ -1,14 +1,22 @@
-import { escapeAttribute, escapeHtml } from "./utils.js";
+import { normalizeLanguage } from "./code-fence.js";
+import { escapeAttribute, escapeHtml, safeJson } from "./utils.js";
 
 const VOID_BLOCKS = new Set(["core/more", "core/nextpage"]);
 
-export function serializeBlock(name, attrs, html) {
-  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${JSON.stringify(attrs)}` : "";
+// Dynamic blocks render from their attributes and carry no saved markup, so they serialize
+// as a single self-closing comment. This is the one place that shape is emitted — the
+// DocsPress plugin blocks and core's void blocks both come through here.
+export function selfClosingBlock(name, attrs) {
+  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${safeJson(attrs)}` : "";
+  return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} /-->`;
+}
 
+export function serializeBlock(name, attrs, html) {
   if (VOID_BLOCKS.has(name)) {
-    return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} /-->`;
+    return selfClosingBlock(name, attrs);
   }
 
+  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${JSON.stringify(attrs)}` : "";
   return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} -->\n${html}\n<!-- /wp:${name.replace(/^core\//, "")} -->`;
 }
 
@@ -37,20 +45,34 @@ export function codeBlock(value, lang) {
   return serializeBlock("core/code", null, `<pre class="wp-block-code"><code${className}>${escapeHtml(value)}</code></pre>`);
 }
 
+// `docspress/colorful-code` is dynamic: the source lives in the `code` attribute rather than
+// in saved markup, which is why the language survives an editor round-trip here and does not
+// on `core/code`.
+export function colorfulCodeBlock(value, language, attrs = {}) {
+  return selfClosingBlock("docspress/colorful-code", {
+    ...(language ? { language } : {}),
+    ...attrs,
+    code: String(value ?? "")
+  });
+}
+
+export function calloutBlock(attrs) {
+  return selfClosingBlock("docspress/callout", attrs);
+}
+
 export function codetabsBlock(tabs) {
-  const html = (tabs || []).map((tab, index) => {
-    const label = escapeHtml(tab.label || `Tab ${index + 1}`);
-    const language = escapeAttribute(tab.language || "");
-    const activeClass = index === 0 ? " is-active" : "";
-    const codeClass = language ? ` class="language-${language}"` : "";
+  const normalized = (tabs || []).slice(0, 8).map((tab, index) => ({
+    label: String(tab.label || `Tab ${index + 1}`),
+    language: normalizeLanguage(tab.language || ""),
+    filename: String(tab.filename || ""),
+    code: String(tab.code ?? "")
+  }));
 
-    return [
-      `<button type="button" data-language="${escapeAttribute(tab.label || "")}" class="code-tab${activeClass}">${label}</button>`,
-      `<div class="code-tab-block${activeClass}"><pre><code${codeClass}>${escapeHtml(tab.code || "")}</code></pre></div>`
-    ].join("");
-  }).join("");
+  if (normalized.length === 0) {
+    return "";
+  }
 
-  return htmlBlock(`<div class="code-tabs">${html}</div>`);
+  return selfClosingBlock("docspress/code-tabs", { tabs: normalized });
 }
 
 export function preformattedBlock(value) {

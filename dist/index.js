@@ -16883,7 +16883,7 @@ exports.createIncrementalHTMLParser = function() {
         document: function() {
           return parser.document();
         },
-    };
+    };  
 };
 
 exports.createWindow = function(html, address) {
@@ -64787,7 +64787,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /************************************************************************/
 /******/ // The module cache
 /******/ var __webpack_module_cache__ = {};
-/******/
+/******/ 
 /******/ // The require function
 /******/ function __nccwpck_require__(moduleId) {
 /******/ 	// Check if module is in cache
@@ -64801,7 +64801,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		// no module.loaded needed
 /******/ 		exports: {}
 /******/ 	};
-/******/
+/******/ 
 /******/ 	// Execute the module function
 /******/ 	var threw = true;
 /******/ 	try {
@@ -64810,11 +64810,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 	} finally {
 /******/ 		if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 	}
-/******/
+/******/ 
 /******/ 	// Return the exports of the module
 /******/ 	return module.exports;
 /******/ }
-/******/
+/******/ 
 /************************************************************************/
 /******/ /* webpack/runtime/create fake namespace object */
 /******/ (() => {
@@ -64845,7 +64845,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		return ns;
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/define property getters */
 /******/ (() => {
 /******/ 	// define getter functions for harmony exports
@@ -64857,12 +64857,12 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		}
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/make namespace object */
 /******/ (() => {
 /******/ 	// define __esModule on exports
@@ -64873,11 +64873,11 @@ legacyRestEndpointMethods.VERSION = VERSION;
 /******/ 		Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 	};
 /******/ })();
-/******/
+/******/ 
 /******/ /* webpack/runtime/compat */
-/******/
+/******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
-/******/
+/******/ 
 /************************************************************************/
 var __webpack_exports__ = {};
 
@@ -66029,8 +66029,8 @@ class OidcClient {
             const res = yield httpclient
                 .getJson(id_token_url)
                 .catch(error => {
-                throw new Error(`Failed to get ID Token. \n
-        Error Code : ${error.statusCode}\n
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
@@ -90378,7 +90378,508 @@ function lib_isUint8Array(value) {
   )
 }
 
+;// CONCATENATED MODULE: ./src/code-fence.js
+// Fence info-string parsing.
+//
+// A bare fence stays a `core/code` block: that is the portable thing, it needs no plugin, and
+// changing it would rewrite every existing page. A fence that carries any of the metadata
+// below is asking for something `core/code` cannot express — a filename, highlighted lines,
+// a caption, a diff, a line origin — so it becomes `docspress/colorful-code` instead.
+//
+//   ```php title="includes/Core/Bootstrap.php" lines="88-104" {3,7} copy=final
+//
+// The language itself is deliberately not a trigger. `core/code` carries the language as a
+// `language-*` class, and promoting every fence would make the DocsPress Blocks plugin a hard
+// requirement for any repository that writes a code sample.
+
+// Aliases readers actually type, mapped onto the names the block renders. Without this a
+// ```ts fence silently renders as plaintext, because the plugin's allow-list only knows
+// `typescript`. Normalising at authoring time keeps the surprise out of the published page.
+const LANGUAGE_ALIASES = {
+  "c++": "cpp",
+  "console": "bash",
+  "js": "javascript",
+  "md": "markdown",
+  "node": "javascript",
+  "sh": "bash",
+  "shell-session": "bash",
+  "text": "plaintext",
+  "ts": "typescript",
+  "txt": "plaintext",
+  "yml": "yaml",
+  "zsh": "bash"
+};
+
+// `key="value"`, `key=value`, `{1,3-5}`, or a bare `flag`.
+const TOKEN_PATTERN = /(\{[^}]*\})|([\w-]+)=("([^"]*)"|'([^']*)'|[^\s]*)|([\w-]+)/g;
+
+const LINE_RANGE_PATTERN = /^(\d+)(?:\s*-\s*(\d+))?$/;
+
+function normalizeLanguage(language) {
+  const value = String(language || "").trim().toLowerCase();
+  return LANGUAGE_ALIASES[value] || value;
+}
+
+// Returns { rawLanguage, language, attrs } where `attrs` is empty when the fence carries no
+// metadata. An empty `attrs` is the caller's signal to keep the plain `core/code` path.
+//
+// `rawLanguage` is the author's tag verbatim and `language` is the alias-resolved form. They
+// are kept apart on purpose: `core/code` round-trips through the `language-*` class, so
+// rewriting the author's ```js to ```javascript there would churn the source file on every
+// sync. Only the promoted block, whose allow-list actually rejects unknown names, normalises.
+function parseFenceInfo(info) {
+  const raw = String(info || "").trim();
+  if (!raw) {
+    return { rawLanguage: "", language: "", attrs: {} };
+  }
+
+  const [languageToken, ...rest] = raw.split(/\s+/);
+  const rawLanguage = languageToken || "";
+  const language = normalizeLanguage(rawLanguage);
+  const remainder = rest.join(" ");
+  const attrs = {};
+
+  let match;
+  const pattern = new RegExp(TOKEN_PATTERN.source, "g");
+  while ((match = pattern.exec(remainder))) {
+    const [, braced, key, rawValue, doubleQuoted, singleQuoted, flag] = match;
+
+    if (braced) {
+      const lines = braced.slice(1, -1).trim();
+      if (lines) {
+        attrs.highlightedLines = lines;
+      }
+      continue;
+    }
+
+    if (key) {
+      const value = doubleQuoted ?? singleQuoted ?? rawValue ?? "";
+      applyPair(attrs, key.toLowerCase(), value);
+      continue;
+    }
+
+    if (flag) {
+      applyFlag(attrs, flag.toLowerCase());
+    }
+  }
+
+  return { rawLanguage, language, attrs };
+}
+
+// Attribute values the block treats as "nothing was set". A reverse sync merges the block's
+// defaults in before we get here, so without this every fence would come back carrying
+// `diff=none copy=all linenumbers` noise that the author never wrote.
+const FENCE_DEFAULTS = {
+  filename: "",
+  caption: "",
+  highlightedLines: "",
+  showLineNumbers: true,
+  diffMode: "none",
+  copyMode: "all"
+};
+
+// Attributes with no info-string spelling. A block carrying one of these cannot be written
+// as a fence without losing it, so it stays an envelope.
+const UNEXPRESSIBLE = ["annotations", "sourceRef"];
+
+// The inverse of `parseFenceInfo`, used on the way back out of WordPress so a fence that was
+// promoted on the way in returns as the same fence rather than as a verbose envelope.
+//
+// Returns null when the block cannot be represented losslessly. The check is not a
+// hand-maintained list of what is safe — the formatted string is parsed back and compared,
+// so anything that would not survive the round-trip falls through to the envelope by
+// construction.
+function formatFenceInfo(language, attributes = {}) {
+  const attrs = attributes || {};
+
+  for (const key of UNEXPRESSIBLE) {
+    const value = attrs[key];
+    if (Array.isArray(value) ? value.length > 0 : Boolean(value)) {
+      return null;
+    }
+  }
+
+  const meaningful = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === "code" || UNEXPRESSIBLE.includes(key)) {
+      continue;
+    }
+    if (Object.hasOwn(FENCE_DEFAULTS, key) && value === FENCE_DEFAULTS[key]) {
+      continue;
+    }
+    meaningful[key] = value;
+  }
+
+  const normalizedLanguage = normalizeLanguage(language || meaningful.language || "");
+  delete meaningful.language;
+
+  const tokens = [];
+  if (meaningful.filename !== undefined) {
+    tokens.push(`title=${quote(meaningful.filename)}`);
+    delete meaningful.filename;
+  }
+  if (meaningful.sourceStartLine !== undefined) {
+    const end = meaningful.sourceEndLine;
+    tokens.push(`lines="${meaningful.sourceStartLine}${end !== undefined ? `-${end}` : ""}"`);
+    delete meaningful.sourceStartLine;
+    delete meaningful.sourceEndLine;
+  }
+  if (meaningful.highlightedLines !== undefined) {
+    tokens.push(`{${meaningful.highlightedLines}}`);
+    delete meaningful.highlightedLines;
+  }
+  if (meaningful.caption !== undefined) {
+    tokens.push(`caption=${quote(meaningful.caption)}`);
+    delete meaningful.caption;
+  }
+  if (meaningful.diffMode !== undefined) {
+    tokens.push(`diff=${meaningful.diffMode}`);
+    delete meaningful.diffMode;
+  }
+  if (meaningful.copyMode !== undefined) {
+    tokens.push(`copy=${meaningful.copyMode}`);
+    delete meaningful.copyMode;
+  }
+  if (meaningful.showLineNumbers !== undefined) {
+    tokens.push(meaningful.showLineNumbers ? "linenumbers" : "nolinenumbers");
+    delete meaningful.showLineNumbers;
+  }
+
+  // Anything left over has no spelling here — an attribute added to the block since this was
+  // written, most likely. Keep the envelope rather than dropping it silently.
+  if (Object.keys(meaningful).length > 0 || tokens.length === 0) {
+    return null;
+  }
+
+  const info = [normalizedLanguage, ...tokens].filter(Boolean).join(" ");
+  return roundTrips(info, normalizedLanguage, attrs) ? info : null;
+}
+
+function roundTrips(info, language, attrs) {
+  const parsed = parseFenceInfo(info);
+  if (parsed.language !== language) {
+    return false;
+  }
+
+  // The stored language has to survive verbatim. A block holding `js` would come back as a
+  // ```javascript fence, and the next forward sync would write `javascript` into WordPress —
+  // a reverse sync rewriting content it was only meant to read. Keep the envelope instead.
+  if (attrs.language !== undefined && attrs.language !== parsed.language) {
+    return false;
+  }
+
+  const expected = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === "code" || key === "language" || UNEXPRESSIBLE.includes(key)) {
+      continue;
+    }
+    if (Object.hasOwn(FENCE_DEFAULTS, key) && value === FENCE_DEFAULTS[key]) {
+      continue;
+    }
+    expected[key] = value;
+  }
+
+  return JSON.stringify(sortKeys(expected)) === JSON.stringify(sortKeys(parsed.attrs));
+}
+
+function sortKeys(value) {
+  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)));
+}
+
+// Values reaching here are filenames and captions, so a double quote is the only delimiter
+// that needs escaping; a value carrying one falls back to single quotes.
+function quote(value) {
+  const text = String(value ?? "");
+  return text.includes('"') ? `'${text}'` : `"${text}"`;
+}
+
+function applyPair(attrs, key, value) {
+  switch (key) {
+    case "title":
+    case "filename":
+      if (value) {
+        attrs.filename = value;
+      }
+      return;
+    case "caption":
+      if (value) {
+        attrs.caption = value;
+      }
+      return;
+    case "highlight":
+      if (value) {
+        attrs.highlightedLines = value;
+      }
+      return;
+    case "lines":
+      applyLineRange(attrs, value);
+      return;
+    case "copy":
+      if (value === "all" || value === "final") {
+        attrs.copyMode = value;
+      }
+      return;
+    case "diff":
+      if (value === "unified" || value === "none") {
+        attrs.diffMode = value;
+      }
+      return;
+    case "linenumbers":
+      attrs.showLineNumbers = value !== "false";
+      return;
+    default:
+  }
+}
+
+function applyFlag(attrs, flag) {
+  switch (flag) {
+    case "diff":
+      attrs.diffMode = "unified";
+      return;
+    case "linenumbers":
+    case "showlinenumbers":
+      attrs.showLineNumbers = true;
+      return;
+    case "nolinenumbers":
+      attrs.showLineNumbers = false;
+      return;
+    default:
+  }
+}
+
+// `lines="88-104"` records where the excerpt came from, so the rendered block can number from
+// the real first line and link back to the range instead of implying the file starts here.
+function applyLineRange(attrs, value) {
+  const match = String(value || "").trim().match(LINE_RANGE_PATTERN);
+  if (!match) {
+    return;
+  }
+
+  const start = Number(match[1]);
+  if (!Number.isSafeInteger(start) || start < 1) {
+    return;
+  }
+
+  attrs.sourceStartLine = start;
+
+  if (match[2] !== undefined) {
+    const end = Number(match[2]);
+    if (Number.isSafeInteger(end) && end >= start) {
+      attrs.sourceEndLine = end;
+    }
+  }
+}
+
+// EXTERNAL MODULE: external "node:crypto"
+var external_node_crypto_ = __nccwpck_require__(7598);
+;// CONCATENATED MODULE: ./src/utils.js
+
+
+
+function normalizeBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+function stripTrailingSlash(value) {
+  return String(value || "").replace(/\/+$/, "");
+}
+
+function utils_toPosixPath(value) {
+  return String(value).split(external_node_path_namespaceObject.sep).join("/");
+}
+
+function slugify(value, fallback = "page") {
+  const slug = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || fallback;
+}
+
+function slugifyPath(value, fallback = "page") {
+  const segments = String(value || "")
+    .split("/")
+    .map((segment) => slugify(segment, ""))
+    .filter(Boolean);
+
+  return segments.length > 0 ? segments.join("/") : fallback;
+}
+
+function titleFromSlug(slug) {
+  return String(slug || "")
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ") || "Docs";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, "&#96;");
+}
+
+function sha256(value) {
+  return external_node_crypto_.createHash("sha256").update(String(value)).digest("hex");
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+// Block attributes are serialized inside an HTML comment, so any `--` would close the
+// comment early and any raw `<`, `>` or `&` would be re-interpreted by WordPress on the way
+// back in. Escaping them as Unicode sequences keeps the JSON byte-safe in that position and
+// still parses to the same value. Every self-closing block comment goes through this.
+function safeJson(value, spacing) {
+  return JSON.stringify(value, null, spacing)
+    .replace(/--/g, "\\u002d\\u002d")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
+
+;// CONCATENATED MODULE: ./src/gutenberg.js
+
+
+
+const VOID_BLOCKS = new Set(["core/more", "core/nextpage"]);
+
+// Dynamic blocks render from their attributes and carry no saved markup, so they serialize
+// as a single self-closing comment. This is the one place that shape is emitted — the
+// DocsPress plugin blocks and core's void blocks both come through here.
+function selfClosingBlock(name, attrs) {
+  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${safeJson(attrs)}` : "";
+  return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} /-->`;
+}
+
+function serializeBlock(name, attrs, html) {
+  if (VOID_BLOCKS.has(name)) {
+    return selfClosingBlock(name, attrs);
+  }
+
+  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${JSON.stringify(attrs)}` : "";
+  return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} -->\n${html}\n<!-- /wp:${name.replace(/^core\//, "")} -->`;
+}
+
+function paragraphBlock(html) {
+  return serializeBlock("core/paragraph", null, `<p>${html}</p>`);
+}
+
+function headingBlock(level, html) {
+  const safeLevel = Math.min(Math.max(Number(level) || 2, 1), 6);
+  const attrs = safeLevel === 2 ? null : { level: safeLevel };
+  return serializeBlock("core/heading", attrs, `<h${safeLevel}>${html}</h${safeLevel}>`);
+}
+
+function listBlock(html, ordered = false) {
+  const tag = ordered ? "ol" : "ul";
+  const attrs = ordered ? { ordered: true } : null;
+  return serializeBlock("core/list", attrs, `<${tag}>${html}</${tag}>`);
+}
+
+function quoteBlock(html) {
+  return serializeBlock("core/quote", null, `<blockquote class="wp-block-quote">${html}</blockquote>`);
+}
+
+function codeBlock(value, lang) {
+  const className = lang ? ` class="language-${escapeAttribute(lang)}"` : "";
+  return serializeBlock("core/code", null, `<pre class="wp-block-code"><code${className}>${escapeHtml(value)}</code></pre>`);
+}
+
+// `docspress/colorful-code` is dynamic: the source lives in the `code` attribute rather than
+// in saved markup, which is why the language survives an editor round-trip here and does not
+// on `core/code`.
+function colorfulCodeBlock(value, language, attrs = {}) {
+  return selfClosingBlock("docspress/colorful-code", {
+    ...(language ? { language } : {}),
+    ...attrs,
+    code: String(value ?? "")
+  });
+}
+
+function calloutBlock(attrs) {
+  return selfClosingBlock("docspress/callout", attrs);
+}
+
+function codetabsBlock(tabs) {
+  const normalized = (tabs || []).slice(0, 8).map((tab, index) => ({
+    label: String(tab.label || `Tab ${index + 1}`),
+    language: normalizeLanguage(tab.language || ""),
+    filename: String(tab.filename || ""),
+    code: String(tab.code ?? "")
+  }));
+
+  if (normalized.length === 0) {
+    return "";
+  }
+
+  return selfClosingBlock("docspress/code-tabs", { tabs: normalized });
+}
+
+function preformattedBlock(value) {
+  return serializeBlock("core/preformatted", null, `<pre class="wp-block-preformatted">${escapeHtml(value)}</pre>`);
+}
+
+function separatorBlock() {
+  return serializeBlock("core/separator", null, '<hr class="wp-block-separator has-alpha-channel-opacity"/>');
+}
+
+function htmlBlock(value) {
+  return serializeBlock("core/html", null, String(value || ""));
+}
+
+function imageBlock(node) {
+  const url = node.url || "";
+  const alt = node.alt || "";
+  const title = node.title || "";
+  const attrs = { url, alt };
+  const caption = title ? `<figcaption class="wp-element-caption">${escapeHtml(title)}</figcaption>` : "";
+  return serializeBlock(
+    "core/image",
+    attrs,
+    `<figure class="wp-block-image"><img src="${escapeAttribute(url)}" alt="${escapeAttribute(alt)}"/>${caption}</figure>`
+  );
+}
+
+function tableBlock(html) {
+  return serializeBlock("core/table", null, `<figure class="wp-block-table"><table>${html}</table></figure>`);
+}
+
+function sourceLinkBlock(url, label = "Edit this page on GitHub") {
+  return serializeBlock(
+    "core/paragraph",
+    { className: "docspress-source-link" },
+    `<p class="docspress-source-link"><a href="${escapeAttribute(url)}">${escapeHtml(label)}</a></p>`
+  );
+}
+
 ;// CONCATENATED MODULE: ./src/block-markdown.js
+
+
+
 
 
 const DOCSPRESS_BLOCK_VERSION = 1;
@@ -90652,7 +91153,7 @@ function markdownBlockSyntaxToGutenberg(source, protectedRanges = []) {
     replacements.push({
       start: match.index,
       end: pattern.lastIndex,
-      value: config.serialized || serializeSelfClosingBlock(config.name, config.attrs)
+      value: config.serialized || selfClosingBlock(config.name, config.attrs)
     });
   }
 
@@ -90684,6 +91185,17 @@ function findMarkdownBlockRanges(source, protectedRanges = []) {
 
 function customBlockToMarkdown(name, attributes, service) {
   const attrs = { ...(attributes || {}) };
+
+  // A Colorful Code block whose attributes all have an info-string spelling goes back as the
+  // fence it came from. The forward pass promotes that same fence to this same block, so the
+  // two directions agree and an untouched page is never rewritten.
+  if (name === "docspress/colorful-code") {
+    const info = formatFenceInfo(attrs.language, attrs);
+    if (info !== null) {
+      return fencedCodeWithInfo(attrs.code || "", info);
+    }
+  }
+
   const preview = renderCustomBlockPreview(name, attrs, service);
   return serializeMarkdownBlock({ name, attrs }, preview);
 }
@@ -90734,13 +91246,6 @@ function validateSerializedBlock(value, expectedName) {
   }
 }
 
-function serializeSelfClosingBlock(name, attrs) {
-  const attributes = attrs && Object.keys(attrs).length > 0
-    ? ` ${safeJson(attrs)}`
-    : "";
-  return `<!-- wp:${name}${attributes} /-->`;
-}
-
 function serializeMarkdownBlock(config, preview) {
   const payload = safeJson({
     version: DOCSPRESS_BLOCK_VERSION,
@@ -90750,14 +91255,6 @@ function serializeMarkdownBlock(config, preview) {
     .replace(/<!--\s*\/?docspress:block/g, "&lt;!-- docspress:block")
     .trim() || `**WordPress block: \`${config.name}\`**`;
   return `<!-- docspress:block\n${payload}\n-->\n${safePreview}\n<!-- /docspress:block -->`;
-}
-
-function safeJson(value, spacing) {
-  return JSON.stringify(value, null, spacing)
-    .replace(/--/g, "\\u002d\\u002d")
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026");
 }
 
 function renderCustomBlockPreview(name, attrs, service) {
@@ -91149,11 +91646,19 @@ function quoteMarkdown(value) {
 }
 
 function fencedCode(value, language = "") {
+  const safeLanguage = String(language || "").match(/^[\w+-]+$/)?.[0] || "text";
+  return fencedCodeWithInfo(value, safeLanguage);
+}
+
+// Same fence, but the info string may carry attributes as well as a language. Newlines and
+// backticks are stripped because either could end the fence early; everything else is the
+// caller's business, and `formatFenceInfo` has already proved this string parses back.
+function fencedCodeWithInfo(value, info) {
   const content = String(value || "");
   const longest = Math.max(0, ...(content.match(/`+/g) || []).map((run) => run.length));
   const fence = "`".repeat(Math.max(3, longest + 1));
-  const safeLanguage = String(language || "").match(/^[\w+-]+$/)?.[0] || "text";
-  return `${fence}${safeLanguage}\n${content}\n${fence}`;
+  const safeInfo = String(info || "").replace(/[\r\n`]+/g, " ").trim();
+  return `${fence}${safeInfo}\n${content}\n${fence}`;
 }
 
 function block_markdown_markdownTable(headers, rows) {
@@ -91206,179 +91711,74 @@ function maskRanges(source, ranges) {
   return characters.join("");
 }
 
-// EXTERNAL MODULE: external "node:crypto"
-var external_node_crypto_ = __nccwpck_require__(7598);
-;// CONCATENATED MODULE: ./src/utils.js
+;// CONCATENATED MODULE: ./src/gfm-alert.js
+// GitHub alert syntax (`> [!WARNING]`) mapped onto `docspress/callout`.
+//
+// The reverse direction already emits this syntax — `renderCallout` turns a callout's tone
+// into `[!TIP]`, `[!WARNING]` and so on — but the forward direction did not read it back, so
+// a hand-written alert became a plain `core/quote` and a round-tripped one degraded on its
+// next sync. These two tables are inverses of each other, which is what makes the pair stable.
 
+// Forward: alert type to callout tone. `IMPORTANT` is deliberately absent — the block's tone
+// allow-list is note/tip/warning/danger/success, so nothing maps back to it and converting
+// one would silently reappear as `[!NOTE]`. It stays a quote instead.
+const TYPE_TO_TONE = {
+  NOTE: "note",
+  TIP: "tip",
+  WARNING: "warning",
+  CAUTION: "danger"
+};
 
+const ALERT_PATTERN = /^\[!([A-Z]+)\]\s*$/;
 
-function normalizeBoolean(value) {
-  if (typeof value === "boolean") {
-    return value;
+// Reads the leading `[!TYPE]` marker off a blockquote's children.
+// Returns null when this is an ordinary quote, which is the common case.
+function matchAlert(node) {
+  if (node?.type !== "blockquote") {
+    return null;
   }
 
-  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
-}
-
-function stripTrailingSlash(value) {
-  return String(value || "").replace(/\/+$/, "");
-}
-
-function utils_toPosixPath(value) {
-  return String(value).split(external_node_path_namespaceObject.sep).join("/");
-}
-
-function slugify(value, fallback = "page") {
-  const slug = String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || fallback;
-}
-
-function slugifyPath(value, fallback = "page") {
-  const segments = String(value || "")
-    .split("/")
-    .map((segment) => slugify(segment, ""))
-    .filter(Boolean);
-
-  return segments.length > 0 ? segments.join("/") : fallback;
-}
-
-function titleFromSlug(slug) {
-  return String(slug || "")
-    .split(/[-_]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ") || "Docs";
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value).replace(/`/g, "&#96;");
-}
-
-function sha256(value) {
-  return external_node_crypto_.createHash("sha256").update(String(value)).digest("hex");
-}
-
-function stableJson(value) {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  const children = node.children || [];
+  const first = children[0];
+  if (first?.type !== "paragraph") {
+    return null;
   }
 
-  if (value && typeof value === "object") {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  // remark keeps `[!NOTE]` as a single text node followed by the line break.
+  const firstText = first.children?.[0];
+  if (firstText?.type !== "text") {
+    return null;
   }
 
-  return JSON.stringify(value);
-}
-
-;// CONCATENATED MODULE: ./src/gutenberg.js
-
-
-const VOID_BLOCKS = new Set(["core/more", "core/nextpage"]);
-
-function serializeBlock(name, attrs, html) {
-  const serializedAttrs = attrs && Object.keys(attrs).length > 0 ? ` ${JSON.stringify(attrs)}` : "";
-
-  if (VOID_BLOCKS.has(name)) {
-    return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} /-->`;
+  const [markerLine, ...restLines] = String(firstText.value || "").split("\n");
+  const match = markerLine.trim().match(ALERT_PATTERN);
+  if (!match) {
+    return null;
   }
 
-  return `<!-- wp:${name.replace(/^core\//, "")}${serializedAttrs} -->\n${html}\n<!-- /wp:${name.replace(/^core\//, "")} -->`;
-}
+  const tone = TYPE_TO_TONE[match[1]];
+  if (!tone) {
+    return null;
+  }
 
-function paragraphBlock(html) {
-  return serializeBlock("core/paragraph", null, `<p>${html}</p>`);
-}
+  // Rebuild the first paragraph without the marker line. When the marker was the whole
+  // paragraph the paragraph goes away entirely.
+  const remainderText = restLines.join("\n").replace(/^\n+/, "");
+  const remainingInline = [
+    ...(remainderText ? [{ type: "text", value: remainderText }] : []),
+    ...(first.children || []).slice(1)
+  ];
+  const body = [
+    ...(remainingInline.length > 0 ? [{ ...first, children: remainingInline }] : []),
+    ...children.slice(1)
+  ];
 
-function headingBlock(level, html) {
-  const safeLevel = Math.min(Math.max(Number(level) || 2, 1), 6);
-  const attrs = safeLevel === 2 ? null : { level: safeLevel };
-  return serializeBlock("core/heading", attrs, `<h${safeLevel}>${html}</h${safeLevel}>`);
-}
-
-function listBlock(html, ordered = false) {
-  const tag = ordered ? "ol" : "ul";
-  const attrs = ordered ? { ordered: true } : null;
-  return serializeBlock("core/list", attrs, `<${tag}>${html}</${tag}>`);
-}
-
-function quoteBlock(html) {
-  return serializeBlock("core/quote", null, `<blockquote class="wp-block-quote">${html}</blockquote>`);
-}
-
-function codeBlock(value, lang) {
-  const className = lang ? ` class="language-${escapeAttribute(lang)}"` : "";
-  return serializeBlock("core/code", null, `<pre class="wp-block-code"><code${className}>${escapeHtml(value)}</code></pre>`);
-}
-
-function codetabsBlock(tabs) {
-  const html = (tabs || []).map((tab, index) => {
-    const label = escapeHtml(tab.label || `Tab ${index + 1}`);
-    const language = escapeAttribute(tab.language || "");
-    const activeClass = index === 0 ? " is-active" : "";
-    const codeClass = language ? ` class="language-${language}"` : "";
-
-    return [
-      `<button type="button" data-language="${escapeAttribute(tab.label || "")}" class="code-tab${activeClass}">${label}</button>`,
-      `<div class="code-tab-block${activeClass}"><pre><code${codeClass}>${escapeHtml(tab.code || "")}</code></pre></div>`
-    ].join("");
-  }).join("");
-
-  return htmlBlock(`<div class="code-tabs">${html}</div>`);
-}
-
-function preformattedBlock(value) {
-  return serializeBlock("core/preformatted", null, `<pre class="wp-block-preformatted">${escapeHtml(value)}</pre>`);
-}
-
-function separatorBlock() {
-  return serializeBlock("core/separator", null, '<hr class="wp-block-separator has-alpha-channel-opacity"/>');
-}
-
-function htmlBlock(value) {
-  return serializeBlock("core/html", null, String(value || ""));
-}
-
-function imageBlock(node) {
-  const url = node.url || "";
-  const alt = node.alt || "";
-  const title = node.title || "";
-  const attrs = { url, alt };
-  const caption = title ? `<figcaption class="wp-element-caption">${escapeHtml(title)}</figcaption>` : "";
-  return serializeBlock(
-    "core/image",
-    attrs,
-    `<figure class="wp-block-image"><img src="${escapeAttribute(url)}" alt="${escapeAttribute(alt)}"/>${caption}</figure>`
-  );
-}
-
-function tableBlock(html) {
-  return serializeBlock("core/table", null, `<figure class="wp-block-table"><table>${html}</table></figure>`);
-}
-
-function sourceLinkBlock(url, label = "Edit this page on GitHub") {
-  return serializeBlock(
-    "core/paragraph",
-    { className: "docspress-source-link" },
-    `<p class="docspress-source-link"><a href="${escapeAttribute(url)}">${escapeHtml(label)}</a></p>`
-  );
+  return { tone, body };
 }
 
 ;// CONCATENATED MODULE: ./src/markdown.js
+
+
 
 
 
@@ -91619,9 +92019,9 @@ function renderBlock(node, context = {}) {
     case "list":
       return listBlock(renderListItems(node.children || [], context), Boolean(node.ordered));
     case "blockquote":
-      return quoteBlock(renderQuoteChildren(node.children || [], context));
+      return renderBlockquote(node, context);
     case "code":
-      return node.lang ? codeBlock(node.value || "", node.lang) : codeBlock(node.value || "", "");
+      return renderCode(node);
     case "html":
       return htmlBlock(node.value || "");
     case "thematicBreak":
@@ -91645,6 +92045,51 @@ function renderBlock(node, context = {}) {
       }
       return "";
   }
+}
+
+// A blockquote opening with `[!WARNING]` is a callout; anything else is a quote.
+function renderBlockquote(node, context = {}) {
+  const alert = matchAlert(node);
+  if (!alert) {
+    return quoteBlock(renderQuoteChildren(node.children || [], context));
+  }
+
+  // A leading bold-only paragraph is the callout title. `renderCallout` emits the title that
+  // way on the way out, so reading it back here keeps the two directions symmetrical.
+  const [first, ...rest] = alert.body;
+  const boldTitle = onlyStrongText(first);
+  const bodyNodes = boldTitle ? rest : alert.body;
+
+  // Only the three attributes the alert syntax carries; `collapsible` and `open` keep the
+  // block's own defaults rather than being pinned to a value the author never wrote.
+  return calloutBlock({
+    tone: alert.tone,
+    title: boldTitle || "",
+    content: renderQuoteChildren(bodyNodes, context)
+  });
+}
+
+function onlyStrongText(node) {
+  if (node?.type !== "paragraph") {
+    return "";
+  }
+  const children = (node.children || []).filter((child) => !(child.type === "text" && !String(child.value || "").trim()));
+  if (children.length !== 1 || children[0].type !== "strong") {
+    return "";
+  }
+  return lib_toString(children[0]).trim();
+}
+
+// remark splits the info string into `lang` (up to the first space) and `meta` (the rest).
+function renderCode(node) {
+  const info = [node.lang || "", node.meta || ""].filter(Boolean).join(" ");
+  const { rawLanguage, language, attrs } = parseFenceInfo(info);
+
+  if (Object.keys(attrs).length === 0) {
+    return codeBlock(node.value || "", rawLanguage);
+  }
+
+  return colorfulCodeBlock(node.value || "", language, attrs);
 }
 
 function renderParagraph(node, context = {}) {
@@ -91815,257 +92260,6 @@ const REVERSE_BLOCKS = new Set([
 
 const markdownParser = unified().use(remarkParse).use(remarkGfm);
 const BLOCK_TOKEN_PATTERN = /<!--\s+(\/)?wp:([a-z][a-z0-9_-]*\/)?([a-z][a-z0-9_-]*)\s+({(?:(?=([^}]+|}+(?=})|(?!}\s+\/?-->)[^])*)\5|[^]*?)}\s+)?(\/)?-->/g;
-const reverse_CUSTOM_BLOCK_DEFAULTS = {
-  "docspress/api-request": {
-    method: "GET",
-    endpoint: "/wp-json/wp/v2/pages",
-    headers: "Accept: application/json\nAuthorization: Bearer $WP_ACCESS_TOKEN",
-    requestBody: "",
-    requestBodyFormat: "json",
-    responseStatus: "200 OK",
-    responseBody: "{\n  \"id\": 42,\n  \"slug\": \"getting-started\"\n}",
-    responseBodyFormat: "json",
-    runnable: false,
-    editable: true,
-    allowUnsafe: false,
-    baseUrl: "",
-    allowedOrigins: "",
-    timeout: 10000
-  },
-  "docspress/audience-paths": {
-    eyebrow: "Choose a starting point",
-    title: "Where are your docs today?",
-    description: "Follow the path that matches your repository.",
-    paths: [
-      {
-        title: "I already have Markdown docs",
-        description: "Connect an existing docs folder to WordPress and begin with a safe draft sync.",
-        url: "/docs/publish-existing-docs/",
-        cta: "Publish existing docs",
-        icon: "MD",
-        accent: "blue",
-        newTab: false
-      },
-      {
-        title: "I need to create docs",
-        description: "Generate source-grounded documentation with AI, review it, then publish it.",
-        url: "/docs/create-docs-with-ai/",
-        cta: "Create docs with AI",
-        icon: "AI",
-        accent: "gold",
-        newTab: false
-      }
-    ],
-    columns: 2,
-    tone: "theme",
-    textAlign: "left",
-    compact: false,
-    showNumbers: false,
-    showIcons: true,
-    showLinks: true,
-    panelColor: "",
-    accentColor: ""
-  },
-  "docspress/callout": {
-    tone: "note",
-    title: "Good to know",
-    content: "<p>Add the detail readers need at exactly the right moment.</p>",
-    collapsible: false,
-    open: true
-  },
-  "docspress/code-tabs": {
-    tabs: [
-      { label: "JavaScript", language: "javascript", filename: "example.js", code: "const docs = await publish();" },
-      { label: "PHP", language: "php", filename: "example.php", code: "$docs = docspress_publish();" }
-    ],
-    showLineNumbers: true,
-    caption: ""
-  },
-  "docspress/code-playground": {
-    title: "Live example",
-    html: "<button class=\"demo-button\">Publish docs</button>",
-    css: ".demo-button {\n  padding: 0.75rem 1rem;\n  border: 0;\n  border-radius: 0.4rem;\n  background: #3858e9;\n  color: white;\n  font: inherit;\n}",
-    javascript: "document.querySelector( '.demo-button' ).addEventListener( 'click', () => {\n  console.log( 'Documentation published' );\n} );",
-    height: 320,
-    autoRun: true,
-    showConsole: true,
-    allowNetwork: false
-  },
-  "docspress/colorful-code": {
-    language: "javascript",
-    filename: "",
-    code: "const hello = \"DocsPress\";\nconsole.log( hello );",
-    highlightedLines: "",
-    showLineNumbers: true,
-    caption: "",
-    diffMode: "none",
-    copyMode: "all",
-    annotations: []
-  },
-  "docspress/diagram": {
-    title: "Publishing flow",
-    type: "flow",
-    source: "Markdown -> DocsPress: collect\nDocsPress -> WordPress: publish\nWordPress -> Reader: serve",
-    caption: ""
-  },
-  "docspress/fields": {
-    title: "Configuration fields",
-    description: "Typed options, defaults, and constraints in one scannable reference.",
-    fields: [
-      {
-        name: "site",
-        type: "string",
-        required: true,
-        defaultValue: "",
-        description: "WordPress site domain or numeric site ID.",
-        values: "",
-        deprecated: false
-      },
-      {
-        name: "status",
-        type: "string",
-        required: false,
-        defaultValue: "draft",
-        description: "Publication status for synchronized Pages.",
-        values: "draft, publish, private",
-        deprecated: false
-      },
-      {
-        name: "dryRun",
-        type: "boolean",
-        required: false,
-        defaultValue: "false",
-        description: "Preview reconciliation without writing changes.",
-        values: "true, false",
-        deprecated: false
-      }
-    ],
-    searchable: true,
-    compact: false
-  },
-  "docspress/file-tree": {
-    root: "project/",
-    tree: "docs/\n  getting-started.md\n  api/\n    endpoints.md\npackage.json",
-    caption: "",
-    collapsible: true,
-    open: true
-  },
-  "docspress/flow": {
-    start: 1,
-    steps: [
-      { title: "Choose", content: "<p>Select the option that matches your project.</p>" },
-      { title: "Configure", content: "<p>Set the values required by your environment.</p>" },
-      { title: "Verify", content: "<p>Run the check and confirm the expected result.</p>" }
-    ]
-  },
-  "docspress/hero": {
-    eyebrow: "Documentation, publishing, and community",
-    title: "Docs that stay connected to your GitHub repo",
-    description: "Write beside your code. Publish a WordPress experience that guides every reader to the docs written for them.",
-    primaryLabel: "Browse documentation",
-    primaryUrl: "",
-    primaryNewTab: false,
-    secondaryLabel: "Latest updates",
-    secondaryUrl: "",
-    secondaryNewTab: false,
-    mediaId: 0,
-    mediaUrl: "",
-    mediaAlt: "",
-    visualLabel: "",
-    visualVariant: "image",
-    layout: "split",
-    mediaPosition: "right",
-    mediaWidth: 44,
-    imageScale: 100,
-    height: "standard",
-    tone: "theme",
-    textAlign: "left",
-    showGrid: false,
-    showOrbit: false,
-    panelColor: "",
-    visualColor: "",
-    accentColor: ""
-  },
-  "docspress/prompt": {
-    prompt: "Use $docspress-install to review this repository's documentation setup. Return a short plan before writing code.",
-    model: "GPT-5",
-    mode: "code",
-    thinking: true,
-    context: "$docspress-install, @repository, src/sync.js, docs/",
-    caption: "Prompt example"
-  },
-  "docspress/result": {
-    status: "success",
-    title: "Deployment completed",
-    content: "<p>All documentation pages are up to date.</p>",
-    meta: "12 pages · 1.8s"
-  },
-  "docspress/terminal-session": {
-    title: "Terminal",
-    shell: "bash",
-    prompt: "$",
-    command: "npx docspress publish ./docs",
-    output: "✓ Read 12 documents\n✓ Published 12 WordPress pages"
-  },
-  "docspress/troubleshooter": {
-    title: "Find the next step",
-    intro: "Answer two quick questions to get the right DocsPress workflow.",
-    startId: "source",
-    questions: [
-      {
-        id: "source",
-        question: "Do you already have Markdown documentation?",
-        yesLabel: "Yes, the docs exist",
-        yesNext: "connected",
-        noLabel: "Not yet",
-        noNext: "generate"
-      },
-      {
-        id: "connected",
-        question: "Is the repository connected to WordPress?",
-        yesLabel: "Yes, it is connected",
-        yesNext: "sync",
-        noLabel: "No, connect it",
-        noNext: "install"
-      }
-    ],
-    outcomes: [
-      {
-        id: "install",
-        status: "warning",
-        title: "Connect the publishing target",
-        content: "<p>Run the DocsPress installer, add the WordPress access token, and verify the repository connection before publishing.</p>"
-      },
-      {
-        id: "sync",
-        status: "success",
-        title: "Publish the documentation",
-        content: "<p>Run the sync command, review the proposed changes, and verify the rendered documentation on WordPress.</p>"
-      },
-      {
-        id: "generate",
-        status: "neutral",
-        title: "Generate a documentation starter",
-        content: "<p>Generate a small documentation tree from the source, then review every example against the implementation before publishing.</p>"
-      }
-    ],
-    showProgress: true
-  },
-  "docspress/version-notice": {
-    message: "You are viewing {current}. The latest version is {latest}.",
-    latestLinkLabel: "Switch to latest",
-    showIcon: true,
-    dismissible: false
-  },
-  "docspress/version-switcher": {
-    label: "Version",
-    showLabel: true,
-    presentation: "select",
-    showLatestBadge: true,
-    hideSingle: true,
-    unavailableLabel: "Page unavailable"
-  }
-};
 
 function blocksToMarkdown(content, options = {}) {
   const chunks = contentBlockChunks(content, options);
@@ -92328,7 +92522,7 @@ function normalizeBlockForComparison(block) {
 
 function effectiveCustomAttributes(name, attributes) {
   return {
-    ...(reverse_CUSTOM_BLOCK_DEFAULTS[name] || {}),
+    ...(CUSTOM_BLOCK_DEFAULTS[name] || {}),
     ...(attributes || {})
   };
 }
@@ -92361,7 +92555,7 @@ function serializeCustomBlockForMarkdown(block, originalBlock, service) {
 }
 
 function mergeCustomAttributes(name, original, live) {
-  const defaults = reverse_CUSTOM_BLOCK_DEFAULTS[name] || {};
+  const defaults = CUSTOM_BLOCK_DEFAULTS[name] || {};
   const result = {};
   const keys = new Set([...Object.keys(defaults), ...Object.keys(original), ...Object.keys(live)]);
 

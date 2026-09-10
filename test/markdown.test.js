@@ -175,10 +175,14 @@ wp.element.createElement(Button);
 {% end %}
 `, { fallbackTitle: "Fallback" });
 
-    expect(result.blocks).toContain("<!-- wp:html -->");
-    expect(result.blocks).toContain("code-tabs");
-    expect(result.blocks).toContain('data-language="JSX"');
-    expect(result.blocks).toContain('class="language-jsx"');
+    // Legacy `{% codetabs %}` targets the real Code Tabs block. It used to emit a
+    // `core/html` blob whose `.code-tabs` markup nothing in the theme or plugin styled.
+    expect(result.blocks).toContain("<!-- wp:docspress/code-tabs ");
+    expect(result.blocks).not.toContain("<!-- wp:html -->");
+    expect(result.blocks).toContain('"label":"JSX"');
+    expect(result.blocks).toContain('"language":"jsx"');
+    // `js` is not in the block's language allow-list; it resolves to `javascript`.
+    expect(result.blocks).toContain('"language":"javascript"');
     expect(result.blocks).toContain("wp.element.createElement");
   });
 });
