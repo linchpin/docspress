@@ -4,9 +4,13 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { markdownBlockSyntaxToGutenberg } from "./block-markdown.js";
+import { parseFenceInfo } from "./code-fence.js";
+import { matchAlert } from "./gfm-alert.js";
 import {
+  calloutBlock,
   codeBlock,
   codetabsBlock,
+  colorfulCodeBlock,
   headingBlock,
   htmlBlock,
   imageBlock,
@@ -250,9 +254,9 @@ function renderBlock(node, context = {}) {
     case "list":
       return listBlock(renderListItems(node.children || [], context), Boolean(node.ordered));
     case "blockquote":
-      return quoteBlock(renderQuoteChildren(node.children || [], context));
+      return renderBlockquote(node, context);
     case "code":
-      return node.lang ? codeBlock(node.value || "", node.lang) : codeBlock(node.value || "", "");
+      return renderCode(node);
     case "html":
       return htmlBlock(node.value || "");
     case "thematicBreak":
@@ -276,6 +280,51 @@ function renderBlock(node, context = {}) {
       }
       return "";
   }
+}
+
+// A blockquote opening with `[!WARNING]` is a callout; anything else is a quote.
+function renderBlockquote(node, context = {}) {
+  const alert = matchAlert(node);
+  if (!alert) {
+    return quoteBlock(renderQuoteChildren(node.children || [], context));
+  }
+
+  // A leading bold-only paragraph is the callout title. `renderCallout` emits the title that
+  // way on the way out, so reading it back here keeps the two directions symmetrical.
+  const [first, ...rest] = alert.body;
+  const boldTitle = onlyStrongText(first);
+  const bodyNodes = boldTitle ? rest : alert.body;
+
+  // Only the three attributes the alert syntax carries; `collapsible` and `open` keep the
+  // block's own defaults rather than being pinned to a value the author never wrote.
+  return calloutBlock({
+    tone: alert.tone,
+    title: boldTitle || "",
+    content: renderQuoteChildren(bodyNodes, context)
+  });
+}
+
+function onlyStrongText(node) {
+  if (node?.type !== "paragraph") {
+    return "";
+  }
+  const children = (node.children || []).filter((child) => !(child.type === "text" && !String(child.value || "").trim()));
+  if (children.length !== 1 || children[0].type !== "strong") {
+    return "";
+  }
+  return mdastToString(children[0]).trim();
+}
+
+// remark splits the info string into `lang` (up to the first space) and `meta` (the rest).
+function renderCode(node) {
+  const info = [node.lang || "", node.meta || ""].filter(Boolean).join(" ");
+  const { rawLanguage, language, attrs } = parseFenceInfo(info);
+
+  if (Object.keys(attrs).length === 0) {
+    return codeBlock(node.value || "", rawLanguage);
+  }
+
+  return colorfulCodeBlock(node.value || "", language, attrs);
 }
 
 function renderParagraph(node, context = {}) {

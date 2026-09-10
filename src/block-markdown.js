@@ -1,4 +1,7 @@
 import { parse as parseBlocks } from "@wordpress/block-serialization-default-parser";
+import { formatFenceInfo } from "./code-fence.js";
+import { selfClosingBlock } from "./gutenberg.js";
+import { safeJson } from "./utils.js";
 
 export const DOCSPRESS_BLOCK_VERSION = 1;
 
@@ -271,7 +274,7 @@ export function markdownBlockSyntaxToGutenberg(source, protectedRanges = []) {
     replacements.push({
       start: match.index,
       end: pattern.lastIndex,
-      value: config.serialized || serializeSelfClosingBlock(config.name, config.attrs)
+      value: config.serialized || selfClosingBlock(config.name, config.attrs)
     });
   }
 
@@ -303,6 +306,17 @@ export function findMarkdownBlockRanges(source, protectedRanges = []) {
 
 export function customBlockToMarkdown(name, attributes, service) {
   const attrs = { ...(attributes || {}) };
+
+  // A Colorful Code block whose attributes all have an info-string spelling goes back as the
+  // fence it came from. The forward pass promotes that same fence to this same block, so the
+  // two directions agree and an untouched page is never rewritten.
+  if (name === "docspress/colorful-code") {
+    const info = formatFenceInfo(attrs.language, attrs);
+    if (info !== null) {
+      return fencedCodeWithInfo(attrs.code || "", info);
+    }
+  }
+
   const preview = renderCustomBlockPreview(name, attrs, service);
   return serializeMarkdownBlock({ name, attrs }, preview);
 }
@@ -353,13 +367,6 @@ function validateSerializedBlock(value, expectedName) {
   }
 }
 
-function serializeSelfClosingBlock(name, attrs) {
-  const attributes = attrs && Object.keys(attrs).length > 0
-    ? ` ${safeJson(attrs)}`
-    : "";
-  return `<!-- wp:${name}${attributes} /-->`;
-}
-
 function serializeMarkdownBlock(config, preview) {
   const payload = safeJson({
     version: DOCSPRESS_BLOCK_VERSION,
@@ -369,14 +376,6 @@ function serializeMarkdownBlock(config, preview) {
     .replace(/<!--\s*\/?docspress:block/g, "&lt;!-- docspress:block")
     .trim() || `**WordPress block: \`${config.name}\`**`;
   return `<!-- docspress:block\n${payload}\n-->\n${safePreview}\n<!-- /docspress:block -->`;
-}
-
-function safeJson(value, spacing) {
-  return JSON.stringify(value, null, spacing)
-    .replace(/--/g, "\\u002d\\u002d")
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026");
 }
 
 function renderCustomBlockPreview(name, attrs, service) {
@@ -768,11 +767,19 @@ function quoteMarkdown(value) {
 }
 
 function fencedCode(value, language = "") {
+  const safeLanguage = String(language || "").match(/^[\w+-]+$/)?.[0] || "text";
+  return fencedCodeWithInfo(value, safeLanguage);
+}
+
+// Same fence, but the info string may carry attributes as well as a language. Newlines and
+// backticks are stripped because either could end the fence early; everything else is the
+// caller's business, and `formatFenceInfo` has already proved this string parses back.
+function fencedCodeWithInfo(value, info) {
   const content = String(value || "");
   const longest = Math.max(0, ...(content.match(/`+/g) || []).map((run) => run.length));
   const fence = "`".repeat(Math.max(3, longest + 1));
-  const safeLanguage = String(language || "").match(/^[\w+-]+$/)?.[0] || "text";
-  return `${fence}${safeLanguage}\n${content}\n${fence}`;
+  const safeInfo = String(info || "").replace(/[\r\n`]+/g, " ").trim();
+  return `${fence}${safeInfo}\n${content}\n${fence}`;
 }
 
 function markdownTable(headers, rows) {

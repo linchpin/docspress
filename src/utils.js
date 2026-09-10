@@ -73,3 +73,15 @@ export function stableJson(value) {
 
   return JSON.stringify(value);
 }
+
+// Block attributes are serialized inside an HTML comment, so any `--` would close the
+// comment early and any raw `<`, `>` or `&` would be re-interpreted by WordPress on the way
+// back in. Escaping them as Unicode sequences keeps the JSON byte-safe in that position and
+// still parses to the same value. Every self-closing block comment goes through this.
+export function safeJson(value, spacing) {
+  return JSON.stringify(value, null, spacing)
+    .replace(/--/g, "\\u002d\\u002d")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
