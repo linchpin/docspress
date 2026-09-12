@@ -1,0 +1,124 @@
+name: Release
+
+# This fork is its own product line. Upstream (Automattic/docspress) versions the
+# theme and plugin in a 0.x series; ours starts at 1.0.0 so an upstream release can
+# never sort above what we publish to packagist.linchpin.com. Before this, both our
+# theme and upstream's claimed "0.10.7" and nothing could tell them apart — a forked
+# theme shipped to packagist wearing upstream's number.
+#
+# One version line covers all three artifacts in this repo: the Action (dist/), the
+# theme, and the blocks plugin. They have to move together — the Action emits blocks
+# only our plugin registers, so a sync from a newer Action against an older plugin
+# renders those blocks as nothing at all.
+#
+# Cutting a release publishes it in the same run: both jobs below are gated on
+# release-please's own release_created output, the way mantle and linchpin-blocks do
+# it, rather than reacting to a `release: published` event that GitHub may not raise.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to sync the floating major tag to (e.g. v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Serialise release runs. Without this, every push to main starts its own
+# release-please and merges landing close together race each other — mantle lost the
+# zip for v2.1.33 that way (four merges in 51 seconds; one run created the tag, so the
+# run for the release commit found nothing to do and the build job never fired).
+#
+# cancel-in-progress is deliberately false: making the next release wait beats
+# cancelling one part-way through.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release Please
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # GH_BOT_TOKEN, not GITHUB_TOKEN. Work created by GITHUB_TOKEN raises no events
+      # — GitHub suppresses them so a workflow cannot trigger itself — so the release
+      # pull request gets no CI checks, and nothing else can react to the release.
+      # Publishing below does not depend on that event, so a missing token degrades
+      # rather than breaks. Same token linchpin-blocks and mantle use.
+      - name: Warn when the bot token is missing
+        env:
+          GH_BOT_TOKEN: ${{ secrets.GH_BOT_TOKEN }}
+        run: |
+          if [ -z "${GH_BOT_TOKEN:-}" ]; then
+            echo "::warning::GH_BOT_TOKEN is not set, so the release pull request will be created with GITHUB_TOKEN and will not run CI checks. Publishing still works. Add the secret to get checks on the release pull request."
+          fi
+
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ secrets.GH_BOT_TOKEN || github.token }}
+
+  # Build both packages and install them on packagist.linchpin.com. Gated on
+  # release_created so it runs once, in the same run that cut the tag.
+  publish:
+    name: Publish
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    uses: ./.github/workflows/publish-packages.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
+
+  # The Action is consumed as `linchpin/docspress@v1` and the README tells consumers
+  # not to pin a SHA, so v1 has to keep resolving to the newest v1.x.y release — the
+  # same contract GitHub's own actions offer, and the one linchpin/actions uses.
+  update-major-tag:
+    name: Update floating major tag
+    needs: release-please
+    if: ${{ always() && (needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Move the major tag to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.release-please.outputs.tag_name || inputs.tag }}"
+          MAJOR="${TAG%%.*}"
+
+          if ! echo "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "::error::'$TAG' is not a vX.Y.Z release tag"
+            exit 1
+          fi
+
+          # Never create a tag that shadows a branch of the same name — the ref would
+          # be ambiguous and `@v1` could resolve to either.
+          if gh api "repos/${{ github.repository }}/branches/$MAJOR" --silent 2>/dev/null; then
+            echo "::warning::Branch '$MAJOR' still exists — skipping the floating tag to avoid an ambiguous ref. Delete the branch, then re-run this workflow (workflow_dispatch, tag=$TAG)."
+            exit 0
+          fi
+
+          SHA=$(gh api "repos/${{ github.repository }}/commits/$TAG" --jq '.sha')
+          echo "Pointing $MAJOR at $TAG ($SHA)"
+
+          # /git/ref/ (singular) is the exact-match endpoint — /git/refs/ does prefix
+          # matching and would match v1.0.0 when asked for v1.
+          if gh api "repos/${{ github.repository }}/git/ref/tags/$MAJOR" --silent 2>/dev/null; then
+            gh api --method PATCH "repos/${{ github.repository }}/git/refs/tags/$MAJOR" \
+              --field sha="$SHA" --field force=true
+          else
+            gh api --method POST "repos/${{ github.repository }}/git/refs" \
+              --field ref="refs/tags/$MAJOR" --field sha="$SHA"
+          fi
+          echo "::notice::$MAJOR now resolves to $TAG"

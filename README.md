@@ -26,10 +26,20 @@ The complete product and setup documentation lives at [docs.press/docs](https://
 
 You do not have to install the DocsPress theme. An unversioned DocsPress sync works with the site's existing theme and native WordPress blocks.
 
-- [Download the latest DocsPress theme](https://github.com/Automattic/docspress/releases/latest/download/docspress-theme.zip)
-- [Download the latest DocsPress Blocks plugin](https://github.com/Automattic/docspress/releases/latest/download/docspress-blocks.zip)
+Linchpin sites install both over Composer from packagist.linchpin.com:
+
+```bash
+composer require linchpin/docspress linchpin/docspress-blocks
+```
+
+Or download them directly:
+
+- [Download the latest DocsPress theme](https://github.com/linchpin/docspress/releases/latest/download/docspress-theme.zip)
+- [Download the latest DocsPress Blocks plugin](https://github.com/linchpin/docspress/releases/latest/download/docspress-blocks.zip)
 
 Install the theme for the complete documentation layout. Install the Blocks plugin for rich DocsPress blocks; it is required when API versioning is enabled.
+
+Install the Blocks plugin from this fork, not from upstream. The sync emits blocks upstream does not register — `docspress/symbol`, and source-provenance attributes on `docspress/colorful-code` and `docspress/code-tabs`. Dynamic blocks serialize self-closing, so an unregistered one renders **nothing**: the content is simply absent from the page, with no error anywhere.
 
 ## Preview local docs from the CLI
 
@@ -54,22 +64,43 @@ WordPress Playground imports the Markdown as editable Pages and opens `/docs/`.
 
 The first two examples include the complete DocsPress presentation layer. The stock WordPress example installs neither optional package and shows repository Markdown as editable native Gutenberg blocks.
 
-## Versioning for Linchpin consumers
+## Releases and versioning
+
+<!-- x-release-please-start-version -->
+Current release: `0.10.7`
+<!-- x-release-please-end -->
+
+This fork is its own product line. Upstream versions the theme and plugin in a `0.x` series; ours starts at `1.0.0`, so an upstream release can never sort above what we publish. Before that break both claimed `0.10.7` and nothing — not Composer, not the WordPress admin, not SatisPress — could tell them apart.
+
+All three artifacts here share one version: the Action, the theme, and the blocks plugin. They have to move together. The Action emits blocks only our plugin registers, so a sync from a newer Action against an older plugin drops that content silently.
+
+Releases are cut by [release-please](https://github.com/googleapis/release-please) from [Conventional Commits](https://www.conventionalcommits.org) on `main`. Nobody edits a version by hand:
+
+1. `commitlint` enforces the message format on commit (`feat(LINCHPIN-1234): Subject`, or `NO-TASK`).
+2. release-please opens a release pull request as commits land.
+3. Merging it tags the release, bumps every version header, and writes `CHANGELOG.md`.
+4. The same run then moves the floating `v1`, attaches both zips to the release, and installs the theme and plugin on packagist.linchpin.com.
+
+### Consuming the action
 
 Reference this action as `linchpin/docspress@v1`.
 
-`v1` is a tag that moves forward as fixes and backwards-compatible inputs land on `main`. A change that removes or repurposes an input, or alters what a run writes to WordPress, gets `v2` instead, so existing workflows keep working until they opt in.
+`v1` moves forward as fixes and backwards-compatible inputs land on `main`. A change that removes or repurposes an input, or alters what a run writes to WordPress, gets `v2` instead, so existing workflows keep working until they opt in.
 
 Do not pin a commit SHA. SHA pinning defends against a third party repointing a tag under you; this is a Linchpin fork in the Linchpin organisation, behind branch protection, consumed only by Linchpin repositories — the same trust boundary, so the pin buys nothing and costs a great deal. Seven repositories were pinned to one SHA for a month and none of them received the fix that reports what WordPress actually returned, which made a real sync failure undiagnosable.
 
 Genuinely third-party actions in these workflows, such as `actions/checkout`, should still be pinned.
 
-To move the tag after merging to `main`:
+### Tracking upstream
+
+`upstream` is `Automattic/docspress`. Nothing merges from it automatically — this fork carries changes upstream does not have, and at the time of writing upstream has merged no external pull request. Fetch and review deliberately:
 
 ```bash
-git tag -fa v1 -m "DocsPress action, major version 1" main
-git push -f origin v1
+git fetch upstream
+git log --oneline main..upstream/main
 ```
+
+Changes here that are not Linchpin-specific are worth proposing upstream; a merged one is a change this fork stops carrying.
 
 ## GitHub Actions
 

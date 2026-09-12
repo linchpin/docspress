@@ -1,0 +1,228 @@
+name: Publish Packages
+
+# Publish the theme and the blocks plugin to packagist.linchpin.com.
+#
+# packagist.linchpin.com is SatisPress on a Pressable site. It serves whatever is
+# installed there, taking the package name from the top-level directory inside the zip
+# (docspress/ -> linchpin/docspress) and the version from the WordPress header — which
+# is why release-please annotates theme/style.css and docspress-blocks.php, and why the
+# version must never appear in the zip filename.
+#
+# Publishing is therefore: rsync the zip, then `wp theme install` / `wp plugin install
+# --force`, exactly as linchpin-blocks and mantle do it, with the same SSH_HOST /
+# SSH_USER / SSH_PASS secrets. (linchpin.com prefixes its copies PACKAGIST_* because a
+# site repo also deploys to its own host and needs to tell the two destinations apart.
+# A plugin repo has one destination.)
+#
+# Called by release-please.yml when a release is cut. Also dispatchable on its own, so
+# a failed publish can be retried without cutting another release — a gap in either
+# version series is a permanent hole that 404s on a cold `composer install`.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag to build and publish."
+        required: true
+        type: string
+      dry_run:
+        description: "Build and attach the zips, but do not touch packagist."
+        required: false
+        default: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and publish. Defaults to the latest release."
+        required: false
+        type: string
+      dry_run:
+        description: "Build and attach the zips, but do not touch packagist."
+        required: false
+        default: false
+        type: boolean
+
+# Serialise. Two releases landing close together would race each other installing onto
+# the same SatisPress site, and `wp plugin install --force` is last-writer-wins.
+# cancel-in-progress is false: a half-finished publish is worse than a queued one.
+concurrency:
+  group: publish-packages
+  cancel-in-progress: false
+
+# contents: write is for `gh release upload` only; everything else is read-only.
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.slug }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # One package failing must not stop the other from publishing — a gap in either
+      # version series is a permanent hole.
+      fail-fast: false
+      matrix:
+        include:
+          - key: theme
+            slug: docspress
+            asset: docspress-theme
+            wp_command: theme
+            version_file: theme/style.css
+          - key: blocks
+            slug: docspress-blocks
+            asset: docspress-blocks
+            wp_command: plugin
+            version_file: plugins/docspress-blocks/docspress-blocks.php
+
+    steps:
+      - name: Resolve the tag to build
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_TAG:-}" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$(gh release view --repo "${{ github.repository }}" --json tagName -q .tagName)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Building ${{ matrix.slug }} from $TAG"
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      # Nothing compiles here — the theme and plugin are plain PHP, CSS and
+      # hand-authored JavaScript — so this is a staged copy renamed to its install
+      # folder and zipped. The same script builds these locally, on purpose: the zip CI
+      # publishes and the zip a developer builds are the same artifact.
+      - name: Build the distributable
+        run: node scripts/build-release-zips.mjs --only ${{ matrix.key }}
+
+      # The version SatisPress publishes comes from the WordPress header, not the tag,
+      # so a header that failed to bump republishes the previous version's number over
+      # the top of it — silently, because `--force` is last-writer-wins. That is exactly
+      # what happened before this pipeline existed: our forked theme went out as
+      # upstream's 0.10.7. Assert the two agree before anything leaves the runner.
+      - name: Verify the header version matches the tag
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          # [[:space:]] rather than a literal \t — POSIX bracket expressions do not
+          # decode backslash escapes, so [ \t] matches a backslash, not a tab.
+          HEADER="$(grep -m1 -oE '^[[:space:]/*#@]*Version:[[:space:]]*[^[:space:]*/]+' "${{ matrix.version_file }}" \
+            | sed -E 's/.*Version:[[:space:]]*//')"
+
+          if [ "$HEADER" != "$VERSION" ]; then
+            echo "::error::${{ matrix.version_file }} declares $HEADER but the release is $VERSION."
+            echo "::error::release-please updates this header through the x-release-please-start-version markers in release-please-config.json. If the markers were moved or removed, the header stops tracking the tag and SatisPress republishes the old version number."
+            exit 1
+          fi
+          echo "::notice::${{ matrix.slug }} header and tag agree on $VERSION"
+
+      # Makes the zip downloadable and inspectable without a rebuild, and gives dry runs
+      # something to show for themselves. The filename is unversioned so the README's
+      # releases/latest/download/<asset>.zip links keep resolving.
+      - name: Attach ${{ matrix.asset }}.zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ steps.tag.outputs.tag }}" \
+            "release/${{ matrix.asset }}.zip" \
+            --clobber --repo "${{ github.repository }}"
+
+      # sshpass with an empty password fails with a bare "permission denied", which
+      # reads like a credential problem rather than a missing secret. Name the missing
+      # one instead.
+      - name: Configure the SSH connection to Pressable
+        if: ${{ !inputs.dry_run }}
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for required in SSH_HOST SSH_USER SSH_PASS; do
+            if [ -z "${!required:-}" ]; then
+              echo "::error::$required is not set. ${{ matrix.slug }} cannot be published to packagist.linchpin.com."
+              exit 1
+            fi
+          done
+
+          SSH_PATH="$HOME/.ssh"
+          mkdir -p "$SSH_PATH/ctl"
+          ssh-keyscan -t rsa "$SSH_HOST" >> "$SSH_PATH/known_hosts"
+          chmod 700 "$SSH_PATH"
+          chmod 644 "$SSH_PATH/known_hosts"
+
+          cat >> "$SSH_PATH/config" <<END
+            Host pressable
+            HostName $SSH_HOST
+            User $SSH_USER
+            StrictHostKeyChecking no
+            ControlMaster auto
+            ControlPath $SSH_PATH/ctl/%C
+            PasswordAuthentication yes
+            PubkeyAuthentication no
+          END
+
+      - name: Upload the zip
+        if: ${{ !inputs.dry_run }}
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        run: |
+          sshpass -p "$SSH_PASS" rsync -e "ssh -p 22" -W --progress \
+            "release/${{ matrix.asset }}.zip" "pressable:/tmp"
+
+      # The install is what publishes: SatisPress archives the artifact on
+      # `upgrader_post_install`, synchronously inside this command. That archive push has
+      # been seen to throw long after the package itself installed cleanly, taking the
+      # command's exit code down with it — so this command's exit code is not the
+      # verdict. Retry it, then let the read-back below decide.
+      - name: Install the release on Linchpin Packagist
+        if: ${{ !inputs.dry_run }}
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+        run: |
+          set -uo pipefail
+          for attempt in 1 2; do
+            if sshpass -p "$SSH_PASS" ssh -p 22 pressable \
+              "cd ~/htdocs && wp ${{ matrix.wp_command }} install /tmp/${{ matrix.asset }}.zip --force"; then
+              exit 0
+            fi
+            echo "::warning::Attempt $attempt of the ${{ matrix.slug }} install exited non-zero."
+            sleep 10
+          done
+          echo "::warning::wp ${{ matrix.wp_command }} install kept exiting non-zero for ${{ matrix.slug }}. Not failing here — the next step asserts what actually landed."
+
+      # This step, not the install, decides whether the release published. SatisPress
+      # serves the version in the WordPress header of what is installed on that site, so
+      # reading it back is the closest thing to asking packagist without needing a
+      # registry credential this repo does not carry.
+      - name: Verify the installed version
+        if: ${{ !inputs.dry_run }}
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          INSTALLED="$(sshpass -p "$SSH_PASS" ssh -p 22 pressable \
+            "cd ~/htdocs && wp ${{ matrix.wp_command }} get ${{ matrix.slug }} --field=version" | tr -d '\r')"
+
+          if [ "$INSTALLED" != "$VERSION" ]; then
+            echo "::error::packagist.linchpin.com has ${{ matrix.slug }} at '$INSTALLED', but this release is $VERSION."
+            echo "::error::linchpin/${{ matrix.slug }}:$VERSION will not resolve for consumers. Re-running this workflow is safe and will retry the install."
+            exit 1
+          fi
+          echo "::notice::linchpin/${{ matrix.slug }} $VERSION is installed on packagist.linchpin.com"
