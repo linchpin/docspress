@@ -335,10 +335,10 @@ describe("DocsPress block theme constraints", () => {
       "examples%2Fstock-wordpress%2Fblueprint.json"
     );
     expect(readme).toContain(
-      "https://github.com/Automattic/docspress/releases/latest/download/docspress-theme.zip"
+      "https://github.com/linchpin/docspress/releases/latest/download/docspress-theme.zip"
     );
     expect(readme).toContain(
-      "https://github.com/Automattic/docspress/releases/latest/download/docspress-blocks.zip"
+      "https://github.com/linchpin/docspress/releases/latest/download/docspress-blocks.zip"
     );
     expect(readme).toContain("npx @wp-playground/cli@3.1.46 start");
     expect(readme).toContain("You do not have to install the DocsPress theme.");
@@ -1067,10 +1067,10 @@ describe("DocsPress block theme constraints", () => {
     expect(setup).toContain("Download Blocks");
     expect(setup).toContain("Preview Kitchen Sink");
     expect(setup).toContain(
-      "https://github.com/Automattic/docspress/releases/latest/download/docspress-theme.zip"
+      "https://github.com/linchpin/docspress/releases/latest/download/docspress-theme.zip"
     );
     expect(setup).toContain(
-      "https://github.com/Automattic/docspress/releases/latest/download/docspress-blocks.zip"
+      "https://github.com/linchpin/docspress/releases/latest/download/docspress-blocks.zip"
     );
     expect(styles).toContain(".home-proof-strip {");
     expect(styles).toContain(".home-sync-section {");

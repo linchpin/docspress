@@ -626,7 +626,7 @@ $home_content .= <<<'HTML'
 <!-- wp:group {"className":"home-download-card__actions","layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-group home-download-card__actions"><!-- wp:buttons -->
 <div class="wp-block-buttons"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://github.com/Automattic/docspress/releases/latest/download/docspress-theme.zip">Download theme .zip</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://github.com/linchpin/docspress/releases/latest/download/docspress-theme.zip">Download theme .zip</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:group -->
@@ -666,7 +666,7 @@ $home_content .= <<<'HTML'
 <!-- wp:group {"className":"home-download-card__actions","layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-group home-download-card__actions"><!-- wp:buttons -->
 <div class="wp-block-buttons"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://github.com/Automattic/docspress/releases/latest/download/docspress-blocks.zip">Download plugins .zip</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://github.com/linchpin/docspress/releases/latest/download/docspress-blocks.zip">Download plugins .zip</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 
