@@ -14,6 +14,10 @@ const pages = await collectDesiredPages({
   docsDir: "docs",
   rootSlug: "docs",
   rootTitle: "DocsPress on stock WordPress",
+  // This example exists to prove a sync works with no DocsPress plugin installed, and the
+  // docspress/sentinel block needs the Blocks plugin to render. Stock WordPress gets the
+  // legacy comment sentinel instead; the guard below keeps that honest.
+  sentinelFormat: "comment",
   createH1: false,
   rewriteLinks: true,
   editLink: false,

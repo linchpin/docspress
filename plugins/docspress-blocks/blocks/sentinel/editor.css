@@ -1,0 +1,109 @@
+/* The sentinel is plumbing, not content: it reads as a quiet strip above the article rather
+   than as the first thing on the Page. It has no style.css because it renders nothing on the
+   front end. */
+.editor-styles-wrapper .docspress-sentinel {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	flex-wrap: wrap;
+	margin-block: 0 1.5rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px dashed var(--wp-admin-theme-color, #3858e9);
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.02);
+	color: #50575e;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.docspress-sentinel__icon svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+	stroke-linecap: round;
+}
+
+.docspress-sentinel__label code {
+	padding: 0.1em 0.35em;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.06);
+	font-size: 12px;
+}
+
+.docspress-sentinel__view {
+	margin-inline-start: auto;
+}
+
+.docspress-sentinel-modal {
+	max-width: 780px;
+}
+
+.docspress-sentinel-modal__intro {
+	margin-block-start: 0;
+	max-width: 62ch;
+	color: #50575e;
+}
+
+.docspress-sentinel-modal__summary {
+	display: grid;
+	grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+	gap: 0.35rem 1rem;
+	margin-block: 0 1.5rem;
+}
+
+.docspress-sentinel-modal__summary dt {
+	color: #50575e;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.docspress-sentinel-modal__summary dd {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.docspress-sentinel-modal__panel + .docspress-sentinel-modal__panel {
+	margin-block-start: 1.5rem;
+}
+
+.docspress-sentinel-modal__panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-block-end: 0.5rem;
+}
+
+.docspress-sentinel-modal__panel-header h3 {
+	margin: 0;
+	font-size: 13px;
+}
+
+.docspress-sentinel-modal__code {
+	max-height: 40vh;
+	margin: 0;
+	padding: 0.75rem;
+	overflow: auto;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	background: #f6f7f7;
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	tab-size: 2;
+}
+
+@media (max-width: 600px) {
+	.docspress-sentinel-modal__summary {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0 0;
+	}
+
+	.docspress-sentinel-modal__summary dd {
+		margin-block-end: 0.75rem;
+	}
+}

@@ -52,6 +52,14 @@ inputs:
       shared parent page without removing each other's pages. Must be the root path or below it.
     required: false
     default: ""
+  sentinel-format:
+    description: >-
+      How the management sentinel is written into Page content. Use block for a locked
+      docspress/sentinel block the DocsPress Blocks plugin renders as a small placeholder, or
+      comment for the legacy bare HTML comment, which the block editor shows as a Classic block
+      containing the raw record. Choose comment only on sites that do not run the plugin.
+    required: false
+    default: block
   create-h1:
     description: Add the page title as an H1 block at the top of generated WordPress content.
     required: false

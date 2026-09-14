@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { collectDesiredPages } from "../src/docs.js";
 import { GitHubPullRequestClient } from "../src/github.js";
 import { createReverseChanges } from "../src/reverse.js";
-import { readSentinel } from "../src/sentinel.js";
+import { prependSentinel, readSentinel, stripSentinel } from "../src/sentinel.js";
 import { syncPages } from "../src/sync.js";
 import { readVersionsRegistry } from "../src/versions.js";
 
@@ -299,10 +299,13 @@ describe("version synchronization and reverse proposals", () => {
       pages.find(({ key }) => key === "docs/v3/hello")
     ];
     const latest = desiredPages[2];
+    // A Page published before the sentinel became a block: the record is the bare HTML comment
+    // the Action used to write, which readSentinel() still has to understand.
     const legacySentinel = { ...readSentinel(latest.content), key: "docs/hello" };
-    const legacyContent = latest.content.replace(
-      /<!--\s*docspress:.*?\s*-->/s,
-      `<!-- docspress:${JSON.stringify(legacySentinel)} -->`
+    const legacyContent = prependSentinel(
+      stripSentinel(latest.content),
+      legacySentinel,
+      { format: "comment" }
     );
     const calls = [];
     let nextId = 100;

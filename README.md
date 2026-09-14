@@ -39,7 +39,7 @@ Or download them directly:
 
 Install the theme for the complete documentation layout. Install the Blocks plugin for rich DocsPress blocks; it is required when API versioning is enabled.
 
-Install the Blocks plugin from this fork, not from upstream. The sync emits blocks upstream does not register — `docspress/symbol`, and source-provenance attributes on `docspress/colorful-code` and `docspress/code-tabs`. Dynamic blocks serialize self-closing, so an unregistered one renders **nothing**: the content is simply absent from the page, with no error anywhere.
+Install the Blocks plugin from this fork, not from upstream. The sync emits blocks upstream does not register — `docspress/sentinel` and `docspress/symbol`, and source-provenance attributes on `docspress/colorful-code` and `docspress/code-tabs`. Dynamic blocks serialize self-closing, so an unregistered one renders **nothing** on the front end: the content is simply absent from the page, with no error anywhere. In the editor an unregistered block is worse — it shows the "Your site doesn't include support for this block" card. `docspress/sentinel` sits at the top of every synced Page, so on a site without this plugin set [`sentinel-format`](docs/reference/action-inputs.md) to `comment` and the sync writes the legacy HTML comment instead.
 
 ## Preview local docs from the CLI
 

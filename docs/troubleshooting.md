@@ -16,6 +16,21 @@ Start with the GitHub Actions summary, then match the symptom to the narrowest s
 
 Do not print the token while debugging. Verify only the secret name with `gh secret list`.
 
+## A Page opens with a Classic block full of JSON
+
+The Page carries the legacy comment sentinel. WordPress has no block for a bare HTML comment, so
+it parses the record as freeform content and the editor shows it as a Classic block whose body is
+the raw record.
+
+Do not convert that Classic block to blocks. The conversion turns the record into a visible
+paragraph, which destroys it: the next run finds no sentinel, treats the Page as unmanaged, and
+reports a conflict instead of publishing.
+
+Install DocsPress Blocks, leave `sentinel-format` at its default of `block`, and run the Action
+again. It rewrites the record as a locked `docspress/sentinel` block that the editor shows as a
+one-line placeholder. If the site cannot run the plugin, set `sentinel-format` to `comment` and
+leave the Classic block alone.
+
 ## An unmanaged Page conflict stops the run
 
 DocsPress found a WordPress Page at a desired path without a valid management sentinel. This is intentional protection.

@@ -288,6 +288,7 @@ describe("DocsPress block theme constraints", () => {
       docsDir: "docs",
       rootSlug: "docs",
       rootTitle: "DocsPress on stock WordPress",
+      sentinelFormat: "comment",
       createH1: false,
       rewriteLinks: true,
       editLink: false,
