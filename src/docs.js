@@ -711,7 +711,7 @@ function finalizePage(page, options) {
     sentinel.sidebarId = page.sidebarId;
     sentinel.sidebarRoot = Boolean(page.sidebarRoot);
   }
-  const content = prependSentinel(body, sentinel);
+  const content = prependSentinel(body, sentinel, { format: options.sentinelFormat });
 
   return {
     ...page,

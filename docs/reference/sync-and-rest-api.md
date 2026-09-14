@@ -82,13 +82,25 @@ Updates use `POST /pages/{id}`. Deletions use `DELETE /pages/{id}` and add `forc
 
 ## Management sentinel
 
-Every generated Page starts with a hidden comment containing version, Page key, source path, and content hash:
+Every generated Page starts with a record containing version, Page key, source path, and content hash. By default it is a locked `docspress/sentinel` block:
+
+```html
+<!-- wp:docspress/sentinel {"lock":{"move":true,"remove":true},"sentinel":{"version":1,"key":"docs/getting-started","source":"docs/getting-started.md","hash":"…"}} /-->
+```
+
+The hash covers the Page key, source, title, slug, parent key, status, and converted body. A content, route, hierarchy, source, or status change therefore schedules an update.
+
+The whole record lives in one `sentinel` attribute rather than one attribute per key. The Action adds keys to it — the documentation version, the sidebar identity, a base64 copy of the source Markdown — and the block editor discards any attribute a block did not register, so a record spread across separate attributes would lose those keys the first time an author saved the Page. A lost hash makes the Page unmanageable.
+
+The block renders nothing on the front end. In the editor it appears as a one-line placeholder naming the source file, with a **View record** button that opens the record and the Markdown behind it. It is locked against removal and hidden from the inserter: deleting it disconnects the Page from its source, and the next run then reports an unmanaged Page on a managed path rather than publishing.
+
+Rendering the placeholder needs the DocsPress Blocks plugin. Set [`sentinel-format`](action-inputs.md) to `comment` on a site that does not run it, and the Action writes the original bare HTML comment instead:
 
 ```html
 <!-- docspress:{"version":1,"key":"docs/getting-started","source":"docs/getting-started.md","hash":"…"} -->
 ```
 
-The hash covers the Page key, source, title, slug, parent key, status, and converted body. A content, route, hierarchy, source, or status change therefore schedules an update.
+WordPress has no block for a bare comment, so it collects that record into a freeform block: the editor shows a Classic block whose body is the raw JSON, and converting that Classic block to blocks turns the record into a visible paragraph and destroys it. Both spellings are read, so Pages published before the block existed keep working; the first run after the switch rewrites each one.
 
 In `propose` and `reconcile` modes, the same hash acts as a common ancestor. DocsPress computes the current GitHub and live WordPress states against that ancestor before it performs any write.
 

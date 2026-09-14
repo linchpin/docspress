@@ -3,6 +3,7 @@ import { syncBidirectional } from "./bidirectional.js";
 import { collectDesiredPages } from "./docs.js";
 import { isManagedPullRequestMerge } from "./github-event.js";
 import { githubContext, GitHubPullRequestClient } from "./github.js";
+import { normalizeSentinelFormat } from "./sentinel.js";
 import { syncPages } from "./sync.js";
 import { normalizeBoolean } from "./utils.js";
 import { WordPressClient } from "./wordpress.js";
@@ -24,6 +25,7 @@ async function main() {
     rootTitle: core.getInput("root-title") || "Docs",
     managedPath: core.getInput("managed-path") || "",
     createH1: normalizeBoolean(core.getInput("create-h1") || "false"),
+    sentinelFormat: normalizeSentinelFormat(core.getInput("sentinel-format")),
     rewriteLinks: normalizeBoolean(core.getInput("rewrite-links") || "true"),
     editLink: normalizeBoolean(core.getInput("edit-link") || "false"),
     editLinkText: core.getInput("edit-link-text") || "Edit this page on GitHub",
@@ -66,6 +68,7 @@ async function main() {
     rootSlug: config.rootSlug,
     rootTitle: config.rootTitle,
     createH1: config.createH1,
+    sentinelFormat: config.sentinelFormat,
     rewriteLinks: config.rewriteLinks,
     editLink: config.editLink,
     editLinkText: config.editLinkText,

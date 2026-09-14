@@ -85,6 +85,7 @@ function docspress_blocks_design_supports( $align = false ) {
 
 require_once DOCSPRESS_BLOCKS_PATH . 'includes/code-surface.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'includes/versioning.php';
+require_once DOCSPRESS_BLOCKS_PATH . 'blocks/sentinel/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/version-switcher/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/version-notice/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/hero/block.php';

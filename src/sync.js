@@ -1,4 +1,4 @@
-import { readSentinel } from "./sentinel.js";
+import { readSentinel, sentinelFormat } from "./sentinel.js";
 import { slugify, slugifyPath } from "./utils.js";
 
 export async function syncPages(options) {
@@ -260,6 +260,10 @@ function managedMetadataMatches(desired, managed, options = {}) {
     ? (managed.terms?.[options.versionTaxonomy] || []).length === 0
     : termsMatch(managed.terms?.[options.versionTaxonomy], options.versionTermId ? [options.versionTermId] : []);
   const containerMatches = normalizeBooleanMeta(managed.meta?._docspress_version_container) === Boolean(desired.versionContainer);
+  // A Page published before the sentinel became a block still carries the bare HTML comment,
+  // which the block editor shows as a Classic block full of JSON. The hash is unchanged, so
+  // nothing else here would schedule the update that rewrites it.
+  const sentinelFormatMatches = sentinelFormat(managed.content) === sentinelFormat(desired.content);
 
   return positionMatches
     && collapsedMatches
@@ -272,7 +276,8 @@ function managedMetadataMatches(desired, managed, options = {}) {
     && sourcePathMatches
     && githubMatches
     && containerMatches
-    && taxonomyMatches;
+    && taxonomyMatches
+    && sentinelFormatMatches;
 }
 
 function sidebarPageMeta(page, managed) {

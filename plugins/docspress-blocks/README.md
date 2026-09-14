@@ -21,6 +21,7 @@ Documentation-focused Gutenberg blocks for the DocsPress theme. The plugin has n
 - **Prompt** — a first-class, copyable AI prompt with model, mode, optional Thinking state, highlighted `$skill-name` references, classified context chips, and an editable caption.
 - **Version Switcher** — a template-ready select or link list that keeps the current logical Page when a counterpart exists and explains unavailable counterparts before falling back to that version's documentation root.
 - **Version Notice** — a historical-version warning with customizable `{current}` and `{latest}` placeholders, an optional icon, a latest-version action, and dismissible behavior.
+- **DocsPress Sentinel** — the synchronization record the DocsPress Action writes at the top of every Page it publishes, shown as a one-line placeholder with a modal that displays the record and the Markdown it was built from. It is not in the inserter, it renders nothing on the front end, and nobody adds one by hand.
 
 The inserter also includes **Homepage hero**, **Documentation starting paths**, **Documentation page starter**, **API request example**, **Runnable API console**, **API reference toolkit**, **Interactive guide**, and **AI prompt example** patterns under the **DocsPress** category.
 
@@ -57,7 +58,8 @@ docspress-blocks/
 │   ├── file-tree/
 │   ├── prompt/
 │   ├── version-switcher/
-│   └── version-notice/
+│   ├── version-notice/
+│   └── sentinel/
 ├── assets/
 │   ├── editor-shared.js
 │   ├── code.css

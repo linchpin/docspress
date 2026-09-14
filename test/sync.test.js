@@ -25,7 +25,7 @@ function desiredPage(key, overrides = {}) {
     title: overrides.title || key,
     status: overrides.status || "draft",
     hash,
-    content: prependSentinel(body, sentinel),
+    content: prependSentinel(body, sentinel, { format: overrides.sentinelFormat }),
     depth: segments.length,
     ...overrides
   };
@@ -46,7 +46,7 @@ function existingPage(id, key, options = {}) {
   }
   const content = options.managed === false
     ? "<p>Manual page</p>"
-    : prependSentinel("<p>Managed page</p>", sentinel);
+    : prependSentinel("<p>Managed page</p>", sentinel, { format: options.sentinelFormat });
 
   return {
     id,
@@ -118,6 +118,38 @@ describe("syncPages", () => {
     expect(result.unchanged).toBe(1);
     expect(client.calls[0][0]).toBe("update");
     expect(client.calls[0][1]).toBe(1);
+  });
+
+  it("rewrites a Page still carrying the legacy comment sentinel", async () => {
+    // The hash, the parent and every piece of metadata match. Only the spelling of the record
+    // differs, and a Page left on the comment spelling is the one the editor shows as a Classic
+    // block full of JSON.
+    const client = mockClient([existingPage(1, "docs", { sentinelFormat: "comment" })]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs")],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+    expect(result.unchanged).toBe(0);
+    expect(client.calls[0][2].content).toContain("<!-- wp:docspress/sentinel ");
+  });
+
+  it("leaves a Page alone when the comment sentinel is what was asked for", async () => {
+    const client = mockClient([existingPage(1, "docs", { sentinelFormat: "comment" })]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("docs", { sentinelFormat: "comment" })],
+      client,
+      dryRun: false,
+      rootSlug: "docs",
+      logger: { info() {} }
+    });
+
+    expect(result.unchanged).toBe(1);
+    expect(client.calls).toEqual([]);
   });
 
   it("updates legacy and changed embedded Markdown source independently of the content hash", async () => {

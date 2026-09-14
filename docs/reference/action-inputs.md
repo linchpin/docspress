@@ -30,6 +30,7 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | `root-slug` | `docs` | Slug of the managed root Page. |
 | `root-title` | `Docs` | Fallback root title when no root document supplies one. |
 | `managed-path` | `root-slug` | Page path this repository owns, for example `docs/my-plugin`. Limits deletions and reconciliation to that subtree so several repositories can publish below one shared parent Page. Must be the root path or a path below it. |
+| `sentinel-format` | `block` | How the [management sentinel](sync-and-rest-api.md#management-sentinel) is written into Page content. `block` writes a locked `docspress/sentinel` block that DocsPress Blocks renders as a small placeholder. `comment` writes the legacy bare HTML comment, which the block editor shows as a Classic block containing the raw record. Use `comment` only where the plugin is not installed. |
 
 ## Content conversion and source links
 
