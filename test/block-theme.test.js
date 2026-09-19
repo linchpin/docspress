@@ -835,6 +835,29 @@ describe("DocsPress block theme constraints", () => {
     }
   });
 
+  it("keeps the parent stylesheet in the block editor when a child theme is active", async () => {
+    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
+    const filter = functions.slice(
+      functions.indexOf("function docspress_block_editor_parent_theme_styles"),
+      functions.indexOf("add_filter( 'block_editor_settings_all', 'docspress_block_editor_parent_theme_styles' )")
+    );
+
+    expect(functions).toContain("add_editor_style( 'style.css' )");
+    expect(functions).toContain(
+      "add_filter( 'block_editor_settings_all', 'docspress_block_editor_parent_theme_styles' )"
+    );
+    // Core resolves add_editor_style() files with get_theme_file_path(), which
+    // returns only the child's copy; the filter must read the parent copy itself.
+    expect(filter).toContain("is_child_theme()");
+    expect(filter).toContain("get_template_directory()");
+    expect(filter).toContain("get_theme_file_path( $style ) === $file");
+    expect(filter).toContain("'baseURL'        => $template_uri . '/' . $style");
+    expect(filter).toContain("'isGlobalStyles' => false");
+    // Parent lands ahead of the child stylesheet so child rules still win.
+    expect(filter).toContain("array_splice( $styles, $index, 0, $parent_styles )");
+    expect(filter).not.toContain("wp_remote_get");
+  });
+
   it("preserves the original DocsPress design as the block theme default", async () => {
     const theme = JSON.parse(await fs.readFile(path.join(root, "theme", "theme.json"), "utf8"));
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
