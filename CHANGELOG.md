@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.1](https://github.com/linchpin/docspress/compare/v1.0.0...v1.0.1) (2026-09-19)
+
+
+### Bug Fixes 🐛
+
+* **LINCHPIN-5635:** Keep the parent stylesheet in the block editor under a child theme ([6040d97](https://github.com/linchpin/docspress/commit/6040d971cc177dbc96e15f8403b3ba4e70550fa7))
+* **LINCHPIN-5635:** Keep the parent stylesheet in the block editor under a child theme ([f0c5010](https://github.com/linchpin/docspress/commit/f0c501035f9354213ac42814aa9b9ca30acb1ba5))
+
+
+### Miscellaneous Chores 🧹
+
+* **NO-TASK:** Rebuild dist for 59ffa17 [skip ci] ([8a784d0](https://github.com/linchpin/docspress/commit/8a784d099729526c3a8bf320439d6fd2d715016f))
+
 ## [1.0.0](https://github.com/linchpin/docspress/compare/v0.10.7...v1.0.0) (2026-09-12)
 
 
