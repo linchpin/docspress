@@ -37,6 +37,76 @@ function docspress_setup() {
 add_action( 'after_setup_theme', 'docspress_setup' );
 
 /**
+ * Give the block editor the parent copy of every registered editor style when
+ * a child theme is active.
+ *
+ * add_editor_style( 'style.css' ) above registers a relative file name, and
+ * get_block_editor_theme_styles() resolves it with get_theme_file_path(), which
+ * returns only the child theme's copy. Because every child theme ships its own
+ * style.css, activating one silently replaces the parent stylesheet in the post
+ * and Site Editor canvases and the documentation shell renders unstyled. The
+ * classic editor's get_editor_stylesheets() already loads the parent copy ahead
+ * of the child's; this mirrors that for the block editor.
+ *
+ * @param array<string,mixed> $settings Block editor settings.
+ * @return array<string,mixed>
+ */
+function docspress_block_editor_parent_theme_styles( $settings ) {
+	global $editor_styles;
+
+	if ( ! is_child_theme() || empty( $editor_styles ) || ! is_array( $editor_styles ) || ! current_theme_supports( 'editor-styles' ) ) {
+		return $settings;
+	}
+
+	$template_dir  = get_template_directory();
+	$template_uri  = get_template_directory_uri();
+	$parent_styles = array();
+
+	foreach ( array_unique( array_filter( $editor_styles ) ) as $style ) {
+		if ( ! is_string( $style ) || preg_match( '~^(https?:)?//~', $style ) ) {
+			continue;
+		}
+
+		$file = $template_dir . '/' . $style;
+		// When the child does not override the file, core already loaded this copy.
+		if ( ! is_file( $file ) || get_theme_file_path( $style ) === $file ) {
+			continue;
+		}
+
+		$css = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( false === $css ) {
+			continue;
+		}
+
+		$parent_styles[] = array(
+			'css'            => $css,
+			'baseURL'        => $template_uri . '/' . $style,
+			'__unstableType' => 'theme',
+			'isGlobalStyles' => false,
+		);
+	}
+
+	if ( ! $parent_styles ) {
+		return $settings;
+	}
+
+	$styles = isset( $settings['styles'] ) && is_array( $settings['styles'] ) ? array_values( $settings['styles'] ) : array();
+	$index  = count( $styles );
+	// Land ahead of the first theme (child) stylesheet so the child still cascades over the parent.
+	foreach ( $styles as $position => $style ) {
+		if ( is_array( $style ) && isset( $style['__unstableType'] ) && 'theme' === $style['__unstableType'] && empty( $style['isGlobalStyles'] ) ) {
+			$index = $position;
+			break;
+		}
+	}
+	array_splice( $styles, $index, 0, $parent_styles );
+	$settings['styles'] = $styles;
+
+	return $settings;
+}
+add_filter( 'block_editor_settings_all', 'docspress_block_editor_parent_theme_styles' );
+
+/**
  * Refresh WordPress's persistent theme.json cache after bundled style files
  * change. This matters for mounted Playground themes as well as upgrades.
  */
