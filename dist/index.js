@@ -91544,10 +91544,44 @@ function renderSymbol(attrs, service) {
         ])
       )
       : "",
+    renderSymbolRelations(attrs),
     attrs.returns ? `**Returns** — ${htmlToMarkdown(attrs.returns, service)}` : "",
     attrs.throws ? `**Throws** — ${htmlToMarkdown(attrs.throws, service)}` : "",
     source ? `_Source: ${escapeInline(source)}_` : ""
   ].filter(Boolean).join("\n\n");
+}
+
+// Relations are grouped by kind so the projection reads "Extends: A" rather than
+// one line per entry, which is how a class with three interfaces would otherwise land.
+const SYMBOL_RELATION_LABELS = {
+  extends: "Extends",
+  implements: "Implements",
+  uses: "Uses",
+  see: "See also"
+};
+
+function renderSymbolRelations(attrs) {
+  const relations = Array.isArray(attrs.relations)
+    ? attrs.relations.filter((relation) => relation && relation.name)
+    : [];
+
+  if (relations.length === 0) {
+    return "";
+  }
+
+  return Object.entries(SYMBOL_RELATION_LABELS)
+    .map(([kind, label]) => {
+      const matching = relations.filter((relation) => (relation.relation || "see") === kind);
+      if (matching.length === 0) {
+        return "";
+      }
+      const names = matching
+        .map((relation) => (relation.url ? `[${block_markdown_inlineCode(relation.name)}](${relation.url})` : block_markdown_inlineCode(relation.name)))
+        .join(", ");
+      return `**${label}** — ${names}`;
+    })
+    .filter(Boolean)
+    .join("  \n");
 }
 
 function lineRange(attrs) {
