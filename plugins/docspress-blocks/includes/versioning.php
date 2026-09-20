@@ -625,6 +625,14 @@ function docspress_blocks_versions_settings_page() {
 						</select>
 					</td>
 				</tr>
+				<?php
+				/**
+				 * Extra DocsPress settings fields (Modern Pages list, etc.).
+				 *
+				 * @since 1.0.1
+				 */
+				do_action( 'docspress_versions_settings_fields' );
+				?>
 			</table>
 			<?php submit_button(); ?>
 		</form>

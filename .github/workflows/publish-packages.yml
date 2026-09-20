@@ -101,10 +101,9 @@ jobs:
         with:
           node-version: 20
 
-      # Nothing compiles here — the theme and plugin are plain PHP, CSS and
-      # hand-authored JavaScript — so this is a staged copy renamed to its install
-      # folder and zipped. The same script builds these locally, on purpose: the zip CI
-      # publishes and the zip a developer builds are the same artifact.
+      # The theme is plain PHP/CSS/JS. The blocks package compiles the Modern
+      # Pages list admin bundle (DataViews) before staging — see
+      # scripts/build-release-zips.mjs.
       - name: Build the distributable
         run: node scripts/build-release-zips.mjs --only ${{ matrix.key }}
 

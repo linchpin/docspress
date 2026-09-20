@@ -7,3 +7,6 @@ coverage/
 
 # Locally built release packages
 release/
+
+# Blocks admin toolchain (committed build/ ships; node_modules does not)
+plugins/docspress-blocks/node_modules/
