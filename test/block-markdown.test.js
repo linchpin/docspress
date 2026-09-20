@@ -500,6 +500,39 @@ ${blocksToMarkdown(rawCustomBlock("docspress/api-request", originalAttrs)).trim(
     expect(block?.attrs.content).toBe("<p>Config content.</p>");
   });
 
+  it("groups a class symbol's relations by kind and links the ones with a URL", () => {
+    const markdown = blocksToMarkdown(rawCustomBlock("docspress/symbol", {
+      kind: "class",
+      name: "Cloudflare",
+      relations: [
+        { relation: "extends", name: "Cache_Provider_Abstract", url: "/api/cache-provider-abstract" },
+        { relation: "implements", name: "Cache_Provider_Interface", url: "" },
+        { relation: "implements", name: "Singleton_Interface", url: "" },
+        { relation: "uses", name: "Custom_Table", url: "" }
+      ]
+    }));
+
+    // One line per kind, not one per entry: three interfaces must not become three lines.
+    expect(markdown).toContain("**Extends** — [`Cache_Provider_Abstract`](/api/cache-provider-abstract)");
+    expect(markdown).toContain("**Implements** — `Cache_Provider_Interface`, `Singleton_Interface`");
+    expect(markdown).toContain("**Uses** — `Custom_Table`");
+
+    // The config survives the round trip, so the relations are still editable.
+    const block = firstNamedBlock(markdownToBlocks(markdown, { fallbackTitle: "Docs" }).blocks);
+    expect(block?.attrs.relations).toHaveLength(4);
+  });
+
+  it("omits the relations line entirely when a symbol declares none", () => {
+    const markdown = blocksToMarkdown(rawCustomBlock("docspress/symbol", {
+      kind: "function",
+      name: "mantle_array_tidy",
+      relations: []
+    }));
+
+    expect(markdown).not.toContain("**Extends**");
+    expect(markdown).not.toContain("**See also**");
+  });
+
   it("applies config edits in the Markdown-to-Gutenberg direction", () => {
     const markdown = blocksToMarkdown(rawCustomBlock("docspress/callout", {
       tone: "warning",
