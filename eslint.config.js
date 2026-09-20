@@ -1,6 +1,15 @@
 export default [
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**"]
+    // The blocks plugin owns its own toolchain: its JSX under src/ is parsed and
+    // linted by wp-scripts (npm run lint:js in plugins/docspress-blocks), and
+    // build/ is compiled output. Espree here cannot parse JSX.
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "plugins/docspress-blocks/build/**",
+      "plugins/docspress-blocks/src/**"
+    ]
   },
   {
     files: ["src/**/*.js", "test/**/*.js", "scripts/**/*.mjs", "bin/**/*.mjs"],
