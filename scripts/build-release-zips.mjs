@@ -9,8 +9,8 @@
  *   node scripts/build-release-zips.mjs --version 0.10.7.1
  *
  * Writes release/<name>.zip and release/<name>-<version>.zip, matching the asset
- * pair on each GitHub release. Nothing here compiles: the theme and plugin are
- * plain PHP, CSS, and hand-authored JavaScript.
+ * pair on each GitHub release. The blocks package compiles its Modern Pages list
+ * admin bundle before staging; the theme remains plain PHP/CSS/JS.
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
@@ -34,12 +34,23 @@ const PACKAGES = {
     installFolder: "docspress-blocks",
     asset: "docspress-blocks",
     versionFile: path.join("plugins", "docspress-blocks", "docspress-blocks.php"),
-    versionPattern: /^\s*\*\s*Version:\s*(.+)$/m
+    versionPattern: /^\s*\*\s*Version:\s*(.+)$/m,
+    compile: true
   }
 };
 
-// Never ship developer noise, even though these are not present today.
-const EXCLUDE = ["node_modules", ".git", ".DS_Store", "*.map"];
+// Never ship developer noise.
+const EXCLUDE = [
+  "node_modules",
+  ".git",
+  ".DS_Store",
+  "*.map",
+  "src",
+  "webpack.config.js",
+  "package.json",
+  "package-lock.json",
+  "includes/Modules/README.md"
+];
 
 function parseArgs(argv) {
   const args = { only: null, version: null };
@@ -77,7 +88,18 @@ async function readVersion(pkg) {
   return match[1].trim();
 }
 
+async function compileBlocksAdmin() {
+  const blocksDir = path.join(rootDir, "plugins", "docspress-blocks");
+  const hasLock = await fs.access(path.join(blocksDir, "package-lock.json")).then(() => true).catch(() => false);
+  await run("npm", [hasLock ? "ci" : "install"], blocksDir);
+  await run("npm", ["run", "build"], blocksDir);
+}
+
 async function build(pkg, overrideVersion) {
+  if (pkg.compile) {
+    await compileBlocksAdmin();
+  }
+
   const version = overrideVersion || await readVersion(pkg);
   const stage = path.join(workDir, pkg.installFolder);
   await fs.rm(stage, { recursive: true, force: true });
