@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/Automattic/docspress/tree/main/plugins/docspress-blocks
  * Description:       Documentation-focused Gutenberg blocks for interactive API examples, schemas, code playgrounds, diagrams, troubleshooting, prompts, flows, and polished documentation layouts.
  * x-release-please-start-version
- * Version:           1.1.0
+ * Version:           1.2.0
  * x-release-please-end
  * Requires at least: 6.6
  * Requires PHP:      7.4
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // x-release-please-start-version
-define( 'DOCSPRESS_BLOCKS_VERSION', '1.1.0' );
+define( 'DOCSPRESS_BLOCKS_VERSION', '1.2.0' );
 // x-release-please-end
 define( 'DOCSPRESS_BLOCKS_FILE', __FILE__ );
 define( 'DOCSPRESS_BLOCKS_PATH', plugin_dir_path( __FILE__ ) );

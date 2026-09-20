@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/linchpin/docspress/compare/v1.1.0...v1.2.0) (2026-09-20)
+
+
+### Features ✨
+
+* **NO-TASK:** Let a symbol state what it extends, implements and uses ([8fc5d5d](https://github.com/linchpin/docspress/commit/8fc5d5d9f8ea6edbd9de113248f98df8e549da81))
+* **NO-TASK:** Let a symbol state what it extends, implements and uses ([8382f4c](https://github.com/linchpin/docspress/commit/8382f4cea85ff31ad7b12919733ac5e9fe9dd8ad))
+
+
+### Miscellaneous Chores 🧹
+
+* **deps:** bump @vitest/mocker and vitest ([fa5c780](https://github.com/linchpin/docspress/commit/fa5c780759edfacd944d50eaec102c7db875cec9))
+
 ## [1.1.0](https://github.com/linchpin/docspress/compare/v1.0.1...v1.1.0) (2026-09-20)
 
 
