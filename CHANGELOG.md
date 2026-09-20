@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.0](https://github.com/linchpin/docspress/compare/v1.0.1...v1.1.0) (2026-09-20)
+
+
+### Features ✨
+
+* **LINCHPIN-5637:** Add an opt-in hierarchical DataViews Pages list module ([314efc2](https://github.com/linchpin/docspress/commit/314efc2e271a7a6baeb3c26b558bd62bc84d8363))
+* **LINCHPIN-5637:** Add an opt-in hierarchical DataViews Pages list module ([7ec3e22](https://github.com/linchpin/docspress/commit/7ec3e220493784736845f843a408e66940b8f2cd))
+
+
+### Bug Fixes 🐛
+
+* **LINCHPIN-5637:** Keep the blocks plugin JSX out of the root eslint run ([189d64e](https://github.com/linchpin/docspress/commit/189d64e658847bc66820bcfc6bd780e3fa0c5654))
+
+
+### Miscellaneous Chores 🧹
+
+* **LINCHPIN-5637:** Compile the blocks admin bundle when building release zips ([ac966e9](https://github.com/linchpin/docspress/commit/ac966e9ce378f386dbd9741d51a7dc9c3c7da533))
+
 ## [1.0.1](https://github.com/linchpin/docspress/compare/v1.0.0...v1.0.1) (2026-09-19)
 
 
