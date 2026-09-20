@@ -18,6 +18,15 @@
 		setAttributes( { parameters } );
 	}
 
+	function updateRelation( attributes, setAttributes, index, patch ) {
+		const relations = ( attributes.relations || [] ).slice();
+		relations[ index ] = { ...relations[ index ], ...patch };
+		setAttributes( { relations } );
+	}
+
+	const relationKinds = [ 'extends', 'implements', 'uses', 'see' ]
+		.map( ( relation ) => ( { label: relation, value: relation } ) );
+
 	registerBlockType( 'docspress/symbol', {
 		apiVersion: 3,
 		title: __( 'DocsPress: Symbol', 'docspress-blocks' ),
@@ -32,6 +41,7 @@
 			language: { type: 'string', default: 'php' },
 			summary: { type: 'string', default: '<p>Register a module with the loader so its settings, capabilities and routes are known.</p>' },
 			parameters: { type: 'array', default: defaults },
+			relations: { type: 'array', default: [] },
 			returns: { type: 'string', default: '<p><code>true</code> when the module was registered, <code>false</code> when the identifier was already taken.</p>' },
 			throws: { type: 'string', default: '' },
 			since: { type: 'string', default: '' },
@@ -163,6 +173,56 @@
 								} )
 							},
 							__( 'Add parameter', 'docspress-blocks' )
+						)
+					),
+					el(
+						PanelBody,
+						{ title: __( 'Relations', 'docspress-blocks' ), initialOpen: false },
+						el( 'p', { className: 'docspress-symbol__editor-help' },
+							__( 'What a class extends, implements or uses, and anything worth linking beside it.', 'docspress-blocks' ) ),
+						( attributes.relations || [] ).map( ( relation, index ) =>
+							el(
+								'div',
+								{ key: index, className: 'docspress-symbol__editor-parameter' },
+								el( SelectControl, {
+									label: __( 'Relation', 'docspress-blocks' ),
+									value: relation.relation || 'see',
+									options: relationKinds,
+									onChange: ( value ) => updateRelation( attributes, setAttributes, index, { relation: value } )
+								} ),
+								el( TextControl, {
+									label: __( 'Name', 'docspress-blocks' ),
+									value: relation.name,
+									onChange: ( name ) => updateRelation( attributes, setAttributes, index, { name } )
+								} ),
+								el( TextControl, {
+									label: __( 'Link', 'docspress-blocks' ),
+									help: __( 'Optional. The page documenting it.', 'docspress-blocks' ),
+									value: relation.url,
+									onChange: ( url ) => updateRelation( attributes, setAttributes, index, { url } )
+								} ),
+								el(
+									Button,
+									{
+										variant: 'tertiary',
+										isDestructive: true,
+										onClick: () => setAttributes( {
+											relations: ( attributes.relations || [] ).filter( ( _item, itemIndex ) => itemIndex !== index )
+										} )
+									},
+									__( 'Remove relation', 'docspress-blocks' )
+								)
+							)
+						),
+						el(
+							Button,
+							{
+								variant: 'secondary',
+								onClick: () => setAttributes( {
+									relations: [ ...( attributes.relations || [] ), { relation: 'see', name: '', url: '' } ]
+								} )
+							},
+							__( 'Add relation', 'docspress-blocks' )
 						)
 					)
 				),

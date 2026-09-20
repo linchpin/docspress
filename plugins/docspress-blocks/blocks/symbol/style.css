@@ -136,6 +136,48 @@
 	margin-block-end: 0;
 }
 
+.docspress-symbol__relations {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 20px;
+	margin: 0;
+	padding: 12px 16px 0;
+	font-size: 0.82rem;
+}
+
+.docspress-symbol__relation {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	min-width: 0;
+}
+
+.docspress-symbol__relation dt {
+	color: var(--db-symbol-muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.docspress-symbol__relation dd {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	margin: 0;
+	min-width: 0;
+}
+
+/* A fully qualified name is long; let it wrap rather than widen the card. */
+.docspress-symbol__relation code {
+	overflow-wrap: anywhere;
+}
+
+.docspress-symbol__relation a {
+	color: var(--db-symbol-accent);
+	text-decoration-color: color-mix(in srgb, var(--db-symbol-accent) 40%, transparent);
+}
+
 .docspress-symbol__signature {
 	padding: 12px 16px 0;
 }

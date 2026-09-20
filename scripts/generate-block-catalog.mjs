@@ -17,13 +17,18 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const blocksRoot = path.join(root, "plugins", "docspress-blocks", "blocks");
-const target = path.join(
-  root,
-  ".agents",
-  "skills",
-  "generate-docs-from-source",
-  "references",
-  "block-catalog.md"
+// The skill is vendored once per agent. Writing only one copy leaves the other
+// claiming a different set of blocks, which is the drift this script exists to
+// end -- so every copy is written, and --check holds all of them to the source.
+const targets = [".agents", ".claude"].map((agent) =>
+  path.join(
+    root,
+    agent,
+    "skills",
+    "generate-docs-from-source",
+    "references",
+    "block-catalog.md"
+  )
 );
 
 // Blocks the reading interface owns. An author puts these in a Site Editor template, not in a
@@ -259,16 +264,27 @@ async function build() {
 const catalog = await build();
 
 if (process.argv.includes("--check")) {
-  const existing = await fs.readFile(target, "utf8").catch(() => "");
-  if (existing !== catalog) {
+  const stale = [];
+
+  for (const target of targets) {
+    const existing = await fs.readFile(target, "utf8").catch(() => "");
+    if (existing !== catalog) {
+      stale.push(path.relative(root, target));
+    }
+  }
+
+  if (stale.length > 0) {
     console.error(
-      "Block catalog is out of date. Run: node scripts/generate-block-catalog.mjs"
+      `Block catalog is out of date (${stale.join(", ")}). Run: node scripts/generate-block-catalog.mjs`
     );
     process.exit(1);
   }
+
   console.log("Block catalog is current.");
 } else {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.writeFile(target, catalog);
-  console.log(`Wrote ${path.relative(root, target)}`);
+  for (const target of targets) {
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, catalog);
+    console.log(`Wrote ${path.relative(root, target)}`);
+  }
 }

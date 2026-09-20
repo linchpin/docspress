@@ -249,6 +249,7 @@ Blocks an author places in a Markdown page.
 | `language` | string | `php` |  |
 | `summary` | string |  |  |
 | `parameters` | array |  |  |
+| `relations` | array |  |  |
 | `returns` | string |  |  |
 | `throws` | string |  |  |
 | `since` | string |  |  |

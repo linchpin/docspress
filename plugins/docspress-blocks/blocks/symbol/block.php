@@ -33,6 +33,51 @@ function docspress_blocks_symbol_kinds() {
 }
 
 /**
+ * Relations a symbol can declare, and the label shown beside them.
+ *
+ * A class entry is not self-describing without these: what it extends, what it
+ * implements and which traits it uses are the first things a reader needs, and
+ * before this the only way to state them was prose the renderer could not link.
+ *
+ * @return array
+ */
+function docspress_blocks_symbol_relations() {
+	return array(
+		'extends'    => __( 'Extends', 'docspress-blocks' ),
+		'implements' => __( 'Implements', 'docspress-blocks' ),
+		'uses'       => __( 'Uses', 'docspress-blocks' ),
+		'see'        => __( 'See also', 'docspress-blocks' ),
+	);
+}
+
+/**
+ * Normalize one relation.
+ *
+ * @param array $relation Raw relation.
+ * @return array|null
+ */
+function docspress_blocks_normalize_symbol_relation( $relation ) {
+	if ( ! is_array( $relation ) ) {
+		return null;
+	}
+
+	$name = isset( $relation['name'] ) ? sanitize_text_field( $relation['name'] ) : '';
+	if ( '' === $name ) {
+		return null;
+	}
+
+	return array(
+		'relation' => docspress_blocks_allowed_value(
+			isset( $relation['relation'] ) ? $relation['relation'] : '',
+			array_keys( docspress_blocks_symbol_relations() ),
+			'see'
+		),
+		'name'     => $name,
+		'url'      => isset( $relation['url'] ) ? esc_url_raw( $relation['url'] ) : '',
+	);
+}
+
+/**
  * Default parameters, used for the editor placeholder.
  *
  * @return array
@@ -111,6 +156,9 @@ function docspress_blocks_render_symbol( $attributes ) {
 	$language    = docspress_blocks_code_language( isset( $attributes['language'] ) ? $attributes['language'] : 'php' );
 	$raw_params  = isset( $attributes['parameters'] ) && is_array( $attributes['parameters'] ) ? array_slice( $attributes['parameters'], 0, 30 ) : array();
 	$parameters  = array_values( array_filter( array_map( 'docspress_blocks_normalize_symbol_parameter', $raw_params ) ) );
+	$raw_rels    = isset( $attributes['relations'] ) && is_array( $attributes['relations'] ) ? array_slice( $attributes['relations'], 0, 30 ) : array();
+	$relations   = array_values( array_filter( array_map( 'docspress_blocks_normalize_symbol_relation', $raw_rels ) ) );
+	$rel_labels  = docspress_blocks_symbol_relations();
 	$reference   = docspress_blocks_source_reference( $attributes );
 	$is_deprecated = '' !== $deprecated;
 
@@ -151,6 +199,37 @@ function docspress_blocks_render_symbol( $attributes ) {
 
 		<?php if ( $summary ) : ?>
 			<div class="docspress-symbol__summary"><?php echo $summary; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<?php endif; ?>
+
+		<?php if ( $relations ) : ?>
+			<dl class="docspress-symbol__relations">
+				<?php foreach ( $rel_labels as $relation_key => $relation_label ) : ?>
+					<?php
+					$matching = array_values(
+						array_filter(
+							$relations,
+							static function ( $relation ) use ( $relation_key ) {
+								return $relation['relation'] === $relation_key;
+							}
+						)
+					);
+					?>
+					<?php if ( $matching ) : ?>
+						<div class="docspress-symbol__relation" data-relation="<?php echo esc_attr( $relation_key ); ?>">
+							<dt><?php echo esc_html( $relation_label ); ?></dt>
+							<dd>
+								<?php foreach ( $matching as $relation ) : ?>
+									<?php if ( $relation['url'] ) : ?>
+										<a href="<?php echo esc_url( $relation['url'] ); ?>"><code><?php echo esc_html( $relation['name'] ); ?></code></a>
+									<?php else : ?>
+										<code><?php echo esc_html( $relation['name'] ); ?></code>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</dd>
+						</div>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</dl>
 		<?php endif; ?>
 
 		<?php if ( '' !== trim( $signature ) ) : ?>
@@ -243,6 +322,7 @@ function docspress_blocks_register_symbol() {
 				'language'        => array( 'type' => 'string', 'default' => 'php' ),
 				'summary'         => array( 'type' => 'string', 'default' => '<p>Register a module with the loader so its settings, capabilities and routes are known.</p>' ),
 				'parameters'      => array( 'type' => 'array', 'default' => $defaults ),
+				'relations'       => array( 'type' => 'array', 'default' => array() ),
 				'returns'         => array( 'type' => 'string', 'default' => '<p><code>true</code> when the module was registered, <code>false</code> when the identifier was already taken.</p>' ),
 				'throws'          => array( 'type' => 'string', 'default' => '' ),
 				'since'           => array( 'type' => 'string', 'default' => '' ),
