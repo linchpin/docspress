@@ -702,6 +702,67 @@ function docspress_render_page_summary( $attributes ) {
 }
 
 /**
+ * Render the line of Page details under the title: when the Page last changed,
+ * and its Markdown source to copy or open.
+ *
+ * The Markdown actions appear only for a Page with a Markdown source, the same
+ * condition its .md route serves under, so neither leads to a 404.
+ *
+ * @param array $attributes Block attributes.
+ * @return string
+ */
+function docspress_render_page_meta( $attributes ) {
+	if ( ! is_singular() ) {
+		return '';
+	}
+
+	$post_id       = get_queried_object_id();
+	$show_updated  = (bool) docspress_component_attribute( $attributes, 'showUpdated', true );
+	$show_markdown = (bool) docspress_component_attribute( $attributes, 'showMarkdown', true );
+	$items         = array();
+
+	if ( $show_updated ) {
+		$updated_label = sanitize_text_field( docspress_component_attribute( $attributes, 'updatedLabel', __( 'Last updated', 'docspress-blocks' ) ) );
+		$items[]       = sprintf(
+			'<span class="docspress-page-meta__item">%1$s<span>%2$s</span><time datetime="%3$s">%4$s</time></span>',
+			docspress_icon( 'history' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_html( $updated_label ),
+			esc_attr( (string) get_post_modified_time( 'c', true, $post_id ) ),
+			esc_html( (string) get_the_modified_date( '', $post_id ) )
+		);
+	}
+
+	$markdown_url = $show_markdown && null !== docspress_get_markdown_source_content( $post_id )
+		? docspress_get_markdown_url( get_post( $post_id ) )
+		: '';
+	if ( $markdown_url ) {
+		$copy_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'copyLabel', __( 'Copy as Markdown', 'docspress-blocks' ) ) );
+		$copied_label = sanitize_text_field( docspress_component_attribute( $attributes, 'copiedLabel', __( 'Copied', 'docspress-blocks' ) ) );
+		$view_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'viewLabel', __( 'View as Markdown', 'docspress-blocks' ) ) );
+		$items[]      = sprintf(
+			'<button class="docspress-page-meta__item docspress-page-meta__action" type="button" data-copy-markdown="%1$s" data-copied-label="%2$s">%3$s<span>%4$s</span></button>',
+			esc_url( $markdown_url ),
+			esc_attr( $copied_label ),
+			docspress_icon( 'copy' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_html( $copy_label )
+		);
+		$items[]      = sprintf(
+			'<a class="docspress-page-meta__item docspress-page-meta__action" href="%1$s">%2$s<span>%3$s</span></a>',
+			esc_url( $markdown_url ),
+			docspress_icon( 'markdown' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_html( $view_label )
+		);
+	}
+
+	if ( ! $items ) {
+		return '';
+	}
+
+	$wrapper = get_block_wrapper_attributes( array( 'class' => 'docspress-page-meta' ) );
+	return sprintf( '<div %1$s>%2$s</div>', $wrapper, implode( '', $items ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+/**
  * Render WordPress and GitHub page actions.
  *
  * @param array $attributes Block attributes.
@@ -993,6 +1054,18 @@ function docspress_register_blocks() {
 			'render_callback' => 'docspress_render_page_summary',
 			'attributes'      => array(
 				'fallbackText' => array( 'type' => 'string', 'default' => '', 'role' => 'content' ),
+			),
+			'supports'        => docspress_component_supports(),
+		),
+		'page-meta' => array(
+			'render_callback' => 'docspress_render_page_meta',
+			'attributes'      => array(
+				'showUpdated'  => array( 'type' => 'boolean', 'default' => true ),
+				'updatedLabel' => array( 'type' => 'string', 'default' => 'Last updated', 'role' => 'content' ),
+				'showMarkdown' => array( 'type' => 'boolean', 'default' => true ),
+				'copyLabel'    => array( 'type' => 'string', 'default' => 'Copy as Markdown', 'role' => 'content' ),
+				'copiedLabel'  => array( 'type' => 'string', 'default' => 'Copied', 'role' => 'content' ),
+				'viewLabel'    => array( 'type' => 'string', 'default' => 'View as Markdown', 'role' => 'content' ),
 			),
 			'supports'        => docspress_component_supports(),
 		),

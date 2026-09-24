@@ -691,6 +691,44 @@
 		});
 	}
 
+	/*
+	 * Copy a Page's Markdown source. The text is fetched on click and handed to
+	 * the clipboard as a pending ClipboardItem, because Safari only allows a
+	 * clipboard write inside the click itself and a fetch resolves after it.
+	 * If copying fails, open the Markdown instead so it can be copied by hand.
+	 */
+	document.querySelectorAll('[data-copy-markdown]').forEach(function (button) {
+		const label = button.querySelector('span');
+		const idleText = label ? label.textContent : '';
+		let resetTimer = 0;
+
+		button.addEventListener('click', async function () {
+			const url = button.dataset.copyMarkdown;
+			const markdown = fetch(url, { credentials: 'same-origin' }).then(function (response) {
+				if (!response.ok) throw new Error('HTTP ' + response.status);
+				return response.text();
+			});
+
+			try {
+				if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+					await navigator.clipboard.write([new ClipboardItem({
+						'text/plain': markdown.then(function (text) { return new Blob([text], { type: 'text/plain' }); })
+					})]);
+				} else {
+					await navigator.clipboard.writeText(await markdown);
+				}
+			} catch (error) {
+				window.location.assign(url);
+				return;
+			}
+
+			if (!label) return;
+			label.textContent = button.dataset.copiedLabel || idleText;
+			window.clearTimeout(resetTimer);
+			resetTimer = window.setTimeout(function () { label.textContent = idleText; }, 1600);
+		});
+	});
+
 	const tocLinks = Array.from(document.querySelectorAll('[data-toc-link]'));
 	if ('IntersectionObserver' in window && tocLinks.length) {
 		const headingMap = new Map(tocLinks.map(function (link) {

@@ -56,6 +56,7 @@ The theme also ships JSON block style variations for Soft panel, Outline card, a
 | `docspress/breadcrumbs` | `showHome`, `homeLabel`, `separator` |
 | `docspress/table-of-contents` | `title`, `width`, `minLevel`, `maxLevel` |
 | `docspress/page-summary` | `fallbackText` |
+| `docspress/page-meta` | `showUpdated`, `updatedLabel`, `showMarkdown`, `copyLabel`, `copiedLabel`, `viewLabel` |
 | `docspress/edit-links` | `showWordPress`, `wordpressLabel`, `showGitHub`, `githubLabel`, `repositoryUrl`, `ref` |
 | `docspress/was-this-helpful` | `enabled`, `question`, `helpfulLabel`, `unhelpfulLabel`, `thanksMessage` |
 | `docspress/adjacent-navigation` | `rootSlug`, `sort`, `showRoot`, `maxDepth`, `previousLabel`, `nextLabel`, `showTitles` |
