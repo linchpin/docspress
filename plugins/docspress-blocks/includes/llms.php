@@ -1,8 +1,8 @@
 <?php
 /**
- * LLM-friendly documentation endpoints.
+ * LLM-friendly documentation endpoints: /llms.txt and a .md twin of every source-backed Page.
  *
- * @package DocsPress
+ * @package DocsPressBlocks
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,17 +32,8 @@ function docspress_llms_query_vars( $query_vars ) {
 add_filter( 'query_vars', 'docspress_llms_query_vars' );
 
 /**
- * Flush the routes once when the theme is activated.
- */
-function docspress_flush_llms_rewrite_rules() {
-	docspress_register_llms_rewrite_rules();
-	flush_rewrite_rules();
-	update_option( 'docspress_llms_rewrite_version', '1', false );
-}
-add_action( 'after_switch_theme', 'docspress_flush_llms_rewrite_rules' );
-
-/**
- * Flush once after upgrading an already-active theme to the endpoint schema.
+ * Flush once when the stored routes predate the endpoint schema. Activating the plugin clears
+ * the marker, so the first request after activation flushes too.
  */
 function docspress_maybe_flush_llms_rewrite_rules() {
 	$rewrite_version = '1';
@@ -143,7 +134,7 @@ function docspress_llms_escape_text( $value ) {
  * @return string
  */
 function docspress_get_markdown_url( $page ) {
-	if ( function_exists( 'docspress_blocks_versions_page_url' ) && get_post_meta( $page->ID, '_docspress_version_id', true ) ) {
+	if ( get_post_meta( $page->ID, '_docspress_version_id', true ) ) {
 		return untrailingslashit( docspress_blocks_versions_page_url( $page->ID ) ) . '.md';
 	}
 

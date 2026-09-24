@@ -272,4 +272,4 @@
 			return null;
 		}
 	} );
-}( window.wp.blocks, window.docspressBlocksEditorShared ) );
+}( window.wp.blocks, window.docspressBlocksEditor ) );

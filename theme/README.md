@@ -22,7 +22,7 @@ The mounted-docs Blueprint performs the import inside WordPress; it does not req
 
 - WordPress 6.6 or newer
 - PHP 7.4 or newer
-- The bundled DocsPress Blocks plugin for the documentation content blocks
+- The bundled DocsPress Blocks plugin, which provides the documentation shell blocks, the `llms.txt` and Markdown endpoints, and the documentation content blocks
 
 The theme follows the WordPress 7.0 Site Editor model and uses `theme.json` version 3, HTML templates, HTML template parts, Global Style variations, block style variations, API v3 dynamic blocks, and native block supports.
 
@@ -64,7 +64,7 @@ Core Navigation adds **Underline** and **Framed**, Button adds **Text with arrow
 
 ## Site Editor components
 
-The theme registers ten dynamic shell blocks. They render live WordPress data on the front end and expose their parameters in Block Settings:
+The theme's templates compose ten dynamic shell blocks registered by DocsPress Blocks. They render live WordPress data on the front end and expose their parameters in Block Settings; the theme supplies their styles in `style.css`. Without the plugin the templates render without them, and the theme shows administrators a notice.
 
 | Block | Component parameters |
 | --- | --- |
@@ -111,11 +111,10 @@ theme/
 │   │   └── jetpack/*.json
 │   └── block/*.json
 ├── assets/js/
-│   ├── block-components.js
-│   └── docs.js
+│   ├── docs.js
+│   ├── site-editor-preview.js
+│   └── template-part-labels.js
 ├── inc/
-│   ├── blocks.php
-│   ├── llms.php
 │   └── performance.php
 ├── functions.php
 ├── style.css

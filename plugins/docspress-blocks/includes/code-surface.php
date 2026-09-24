@@ -118,8 +118,8 @@ function docspress_blocks_decode_source( $value ) {
  * page it writes, so a block only has to name a path and a line range to become a link into
  * the real source. Nothing new is required of the workflow.
  *
- * Prefers the theme's resolver when the DocsPress theme is active, so the
- * `docspress_github_source` filter still applies; otherwise reads the same meta directly.
+ * Reads that metadata through docspress_get_github_source(), so the
+ * `docspress_github_source` filter applies to excerpt links as well as edit links.
  *
  * @param array $attributes Block attributes.
  * @return array{label:string,url:string}
@@ -149,9 +149,7 @@ function docspress_blocks_source_reference( $attributes ) {
 
 	$label = $range ? $path . ':' . $range : $path;
 
-	$source = function_exists( 'docspress_get_github_source' )
-		? docspress_get_github_source()
-		: docspress_blocks_github_source_meta();
+	$source = docspress_get_github_source();
 
 	$repository = isset( $source['repository'] ) ? (string) $source['repository'] : '';
 	$server_url = isset( $source['server_url'] ) ? (string) $source['server_url'] : '';
@@ -168,9 +166,7 @@ function docspress_blocks_source_reference( $attributes ) {
 		);
 	}
 
-	$base = function_exists( 'docspress_normalize_repository_url' )
-		? docspress_normalize_repository_url( $repository, $server_url )
-		: docspress_blocks_repository_url( $repository, $server_url );
+	$base = docspress_normalize_repository_url( $repository, $server_url );
 
 	if ( '' === $base ) {
 		return array(
@@ -190,59 +186,6 @@ function docspress_blocks_source_reference( $attributes ) {
 		'label' => $label,
 		'url'   => $base . '/blob/' . rawurlencode( $ref ) . '/' . $segments . $fragment,
 	);
-}
-
-/**
- * Read the Action-written GitHub metadata when the DocsPress theme is not active.
- *
- * @return array{repository:string,ref:string,server_url:string}
- */
-function docspress_blocks_github_source_meta() {
-	$post_id = get_the_ID();
-	if ( ! $post_id ) {
-		return array(
-			'repository' => '',
-			'ref'        => '',
-			'server_url' => '',
-		);
-	}
-
-	return array(
-		'repository' => (string) get_post_meta( $post_id, '_docspress_github_repository', true ),
-		'ref'        => (string) get_post_meta( $post_id, '_docspress_github_ref', true ),
-		'server_url' => (string) get_post_meta( $post_id, '_docspress_github_server_url', true ),
-	);
-}
-
-/**
- * Build a browsable repository URL from an `owner/name` pair or a full URL.
- *
- * Fallback for when the DocsPress theme is not providing its own.
- *
- * @param string $repository Repository URL or `owner/name` pair.
- * @param string $server_url Server URL used with an `owner/name` pair.
- * @return string
- */
-function docspress_blocks_repository_url( $repository, $server_url = '' ) {
-	$repository = trim( (string) $repository );
-	if ( '' === $repository ) {
-		return '';
-	}
-
-	if ( preg_match( '#^https?://#i', $repository ) ) {
-		return untrailingslashit( esc_url_raw( $repository ) );
-	}
-
-	if ( ! preg_match( '#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository ) ) {
-		return '';
-	}
-
-	$server_url = untrailingslashit( trim( (string) $server_url ) );
-	if ( '' === $server_url ) {
-		$server_url = 'https://github.com';
-	}
-
-	return esc_url_raw( $server_url . '/' . $repository );
 }
 
 /**

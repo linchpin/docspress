@@ -508,7 +508,7 @@ describe("WordPress version administration and routing contracts", () => {
       "redirect_canonical",
       "wp_sitemaps_posts_query_args",
       "docspress_version_markdown",
-      "docspress_blocks_versions_source_markdown",
+      "docspress_get_markdown_source_content( $request['page_id'] )",
       "GitHub path",
       "_docspress_github_path",
       "docspress_github_source_url",

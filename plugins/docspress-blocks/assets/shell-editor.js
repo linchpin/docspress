@@ -114,19 +114,19 @@
 		];
 		const sampleResults = [
 			{
-				path: __( 'Documentation', 'docspress' ),
-				title: __( 'DocsPress documentation', 'docspress' ),
-				excerpt: __( 'Keep documentation beside the code that explains it, then publish that Markdown as native WordPress Pages and blocks.', 'docspress' )
+				path: __( 'Documentation', 'docspress-blocks' ),
+				title: __( 'DocsPress documentation', 'docspress-blocks' ),
+				excerpt: __( 'Keep documentation beside the code that explains it, then publish that Markdown as native WordPress Pages and blocks.', 'docspress-blocks' )
 			},
 			{
-				path: __( 'DocsPress documentation / Publish existing docs', 'docspress' ),
-				title: __( 'Publish existing docs', 'docspress' ),
-				excerpt: __( 'Connect an existing Markdown documentation tree to WordPress through the reviewed DocsPress workflow.', 'docspress' )
+				path: __( 'DocsPress documentation / Publish existing docs', 'docspress-blocks' ),
+				title: __( 'Publish existing docs', 'docspress-blocks' ),
+				excerpt: __( 'Connect an existing Markdown documentation tree to WordPress through the reviewed DocsPress workflow.', 'docspress-blocks' )
 			},
 			{
-				path: __( 'DocsPress documentation / Create docs with AI', 'docspress' ),
-				title: __( 'Create docs with AI', 'docspress' ),
-				excerpt: __( 'Generate verified documentation from repository evidence, review it, and publish it with DocsPress.', 'docspress' )
+				path: __( 'DocsPress documentation / Create docs with AI', 'docspress-blocks' ),
+				title: __( 'Create docs with AI', 'docspress-blocks' ),
+				excerpt: __( 'Generate verified documentation from repository evidence, review it, and publish it with DocsPress.', 'docspress-blocks' )
 			}
 		].slice( 0, Math.min( 3, attributes.resultsLimit ) );
 
@@ -193,8 +193,8 @@
 				el( ToolbarButton, {
 					icon: icons.search,
 					label: isOpen
-						? __( 'Close search dialog preview', 'docspress' )
-						: __( 'Preview search dialog', 'docspress' ),
+						? __( 'Close search dialog preview', 'docspress-blocks' )
+						: __( 'Preview search dialog', 'docspress-blocks' ),
 					isPressed: isOpen,
 					onClick: () => setIsOpen( ! isOpen )
 				} )
@@ -225,7 +225,7 @@
 						{
 							className: 'search-dialog is-editor-preview',
 							role: 'dialog',
-							'aria-label': __( 'Search dialog preview', 'docspress' ),
+							'aria-label': __( 'Search dialog preview', 'docspress-blocks' ),
 							'aria-modal': 'true',
 							onClick: ( event ) => event.stopPropagation()
 						},
@@ -243,14 +243,14 @@
 										type: 'search',
 										placeholder: attributes.placeholder,
 										readOnly: true,
-										'aria-label': __( 'Search documentation preview', 'docspress' )
+										'aria-label': __( 'Search documentation preview', 'docspress-blocks' )
 									} ),
 									el(
 										'button',
 										{
 											className: 'command-search-close',
 											type: 'button',
-											'aria-label': __( 'Close search dialog preview', 'docspress' ),
+											'aria-label': __( 'Close search dialog preview', 'docspress-blocks' ),
 											onClick: closePreview
 										},
 										el( 'span', { 'aria-hidden': 'true' }, '×' )
@@ -287,9 +287,9 @@
 								attributes.showHints && el(
 									'footer',
 									{ className: 'command-search-footer', 'aria-hidden': 'true' },
-									el( 'span', null, el( 'kbd', null, '↑' ), el( 'kbd', null, '↓' ), __( 'to navigate', 'docspress' ) ),
-									el( 'span', null, el( 'kbd', null, '↵' ), __( 'to open', 'docspress' ) ),
-									el( 'span', null, el( 'kbd', null, 'Esc' ), __( 'to close', 'docspress' ) )
+									el( 'span', null, el( 'kbd', null, '↑' ), el( 'kbd', null, '↓' ), __( 'to navigate', 'docspress-blocks' ) ),
+									el( 'span', null, el( 'kbd', null, '↵' ), __( 'to open', 'docspress-blocks' ) ),
+									el( 'span', null, el( 'kbd', null, 'Esc' ), __( 'to close', 'docspress-blocks' ) )
 								)
 							)
 						)
@@ -330,8 +330,8 @@
 				'p',
 				{ className: 'docspress-feedback-editor-note' },
 				attributes.enabled
-					? __( 'Responses are stored with each Page and summarized in Page feedback.', 'docspress' )
-					: __( 'Disabled on published Pages.', 'docspress' )
+					? __( 'Responses are stored with each Page and summarized in Page feedback.', 'docspress-blocks' )
+					: __( 'Disabled on published Pages.', 'docspress-blocks' )
 			)
 		);
 	}
@@ -366,7 +366,7 @@
 			PluginDocumentSettingPanel,
 			{
 				name: 'page-feedback',
-				title: __( 'Page feedback', 'docspress' ),
+				title: __( 'Page feedback', 'docspress-blocks' ),
 				className: 'docspress-feedback-details'
 			},
 			el(
@@ -376,7 +376,7 @@
 					'div',
 					{ className: 'docspress-feedback-setting' },
 					el( ToggleControl, {
-						label: __( 'Show feedback on this Page', 'docspress' ),
+						label: __( 'Show feedback on this Page', 'docspress-blocks' ),
 						checked: feedbackEnabled,
 						onChange: ( value ) => editPost( {
 							meta: {
@@ -384,7 +384,7 @@
 								docspress_feedback_enabled: value
 							}
 						} ),
-						help: __( 'Turning this off hides the prompt without deleting its response totals.', 'docspress' ),
+						help: __( 'Turning this off hides the prompt without deleting its response totals.', 'docspress-blocks' ),
 						__nextHasNoMarginBottom: true
 					} )
 				),
@@ -399,7 +399,7 @@
 					el(
 						'span',
 						{ className: 'docspress-feedback-score-label' },
-						total ? __( 'helpful', 'docspress' ) : __( 'No responses yet', 'docspress' )
+						total ? __( 'helpful', 'docspress-blocks' ) : __( 'No responses yet', 'docspress-blocks' )
 					)
 				),
 				el(
@@ -407,7 +407,7 @@
 					{
 						className: 'docspress-feedback-meter',
 						role: 'progressbar',
-						'aria-label': __( 'Helpful response rate', 'docspress' ),
+						'aria-label': __( 'Helpful response rate', 'docspress-blocks' ),
 						'aria-valuemin': '0',
 						'aria-valuemax': '100',
 						'aria-valuenow': String( helpfulRate )
@@ -417,19 +417,19 @@
 				el(
 					'div',
 					{ className: 'docspress-feedback-counts' },
-					count( __( 'Helpful', 'docspress' ), helpful ),
-					count( __( 'Not helpful', 'docspress' ), unhelpful )
+					count( __( 'Helpful', 'docspress-blocks' ), helpful ),
+					count( __( 'Not helpful', 'docspress-blocks' ), unhelpful )
 				),
 				el(
 					'div',
 					{ className: 'docspress-feedback-total' },
-					el( 'span', null, __( 'Total responses', 'docspress' ) ),
+					el( 'span', null, __( 'Total responses', 'docspress-blocks' ) ),
 					el( 'strong', null, String( total ) )
 				),
 				el(
 					'p',
 					{ className: 'docspress-feedback-detail-note' },
-					__( 'Stored with this Page. Feedback totals are read-only here.', 'docspress' )
+					__( 'Stored with this Page. Feedback totals are read-only here.', 'docspress-blocks' )
 				)
 			)
 		);
@@ -482,10 +482,10 @@
 	}
 
 	registerComponent( 'docs-navigation', {
-		title: __( 'DocsPress: Documentation Navigation', 'docspress' ),
-		description: __( 'A hierarchy-aware Page tree or selected classic menu with filtering.', 'docspress' ),
+		title: __( 'DocsPress: Documentation Navigation', 'docspress-blocks' ),
+		description: __( 'A hierarchy-aware Page tree or selected classic menu with filtering.', 'docspress-blocks' ),
 		icon: icons.navigation,
-		empty: __( 'Documentation navigation preview', 'docspress' ),
+		empty: __( 'Documentation navigation preview', 'docspress-blocks' ),
 		attributes: {
 			title: { type: 'string', default: 'Documentation', role: 'content' },
 			width: { type: 'number', default: 266 },
@@ -505,49 +505,49 @@
 			expandLabel: { type: 'string', default: 'Expand sidebar', role: 'content' }
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Navigation source', 'docspress' ), [
-				range( __( 'Sidebar width', 'docspress' ), 'width', attributes, setAttributes, 220, 360, 1 ),
-				select( __( 'Source', 'docspress' ), 'source', attributes, setAttributes, [
-					{ label: __( 'Automatic Page tree', 'docspress' ), value: 'pages' },
-					{ label: __( 'Classic menu', 'docspress' ), value: 'menu' }
+			panel( __( 'Navigation source', 'docspress-blocks' ), [
+				range( __( 'Sidebar width', 'docspress-blocks' ), 'width', attributes, setAttributes, 220, 360, 1 ),
+				select( __( 'Source', 'docspress-blocks' ), 'source', attributes, setAttributes, [
+					{ label: __( 'Automatic Page tree', 'docspress-blocks' ), value: 'pages' },
+					{ label: __( 'Classic menu', 'docspress-blocks' ), value: 'menu' }
 				] ),
-				text( __( 'Documentation root path', 'docspress' ), 'rootSlug', attributes, setAttributes, __( 'Use a Page path such as docs or developer/docs.', 'docspress' ) ),
-				attributes.source === 'menu' && text( __( 'Menu slug, name, or ID', 'docspress' ), 'menuSlug', attributes, setAttributes ),
-				select( __( 'Automatic Page order', 'docspress' ), 'sort', attributes, setAttributes, [
-					{ label: __( 'Page order, then title', 'docspress' ), value: 'menu_order' },
-					{ label: __( 'Title', 'docspress' ), value: 'title' },
-					{ label: __( 'Newest first', 'docspress' ), value: 'newest' },
-					{ label: __( 'Oldest first', 'docspress' ), value: 'oldest' }
+				text( __( 'Documentation root path', 'docspress-blocks' ), 'rootSlug', attributes, setAttributes, __( 'Use a Page path such as docs or developer/docs.', 'docspress-blocks' ) ),
+				attributes.source === 'menu' && text( __( 'Menu slug, name, or ID', 'docspress-blocks' ), 'menuSlug', attributes, setAttributes ),
+				select( __( 'Automatic Page order', 'docspress-blocks' ), 'sort', attributes, setAttributes, [
+					{ label: __( 'Page order, then title', 'docspress-blocks' ), value: 'menu_order' },
+					{ label: __( 'Title', 'docspress-blocks' ), value: 'title' },
+					{ label: __( 'Newest first', 'docspress-blocks' ), value: 'newest' },
+					{ label: __( 'Oldest first', 'docspress-blocks' ), value: 'oldest' }
 				] ),
-				toggle( __( 'Show root Page', 'docspress' ), 'showRoot', attributes, setAttributes ),
-				range( __( 'Maximum depth', 'docspress' ), 'maxDepth', attributes, setAttributes, 0, 8, 1, __( 'Zero shows every level.', 'docspress' ) )
+				toggle( __( 'Show root Page', 'docspress-blocks' ), 'showRoot', attributes, setAttributes ),
+				range( __( 'Maximum depth', 'docspress-blocks' ), 'maxDepth', attributes, setAttributes, 0, 8, 1, __( 'Zero shows every level.', 'docspress-blocks' ) )
 			] ),
-			panel( __( 'Labels and tools', 'docspress' ), [
-				text( __( 'Heading', 'docspress' ), 'title', attributes, setAttributes ),
-				toggle( __( 'Show Page filter', 'docspress' ), 'showFilter', attributes, setAttributes ),
-				attributes.showFilter && text( __( 'Filter placeholder', 'docspress' ), 'filterPlaceholder', attributes, setAttributes ),
-				text( __( 'Empty state', 'docspress' ), 'emptyMessage', attributes, setAttributes )
+			panel( __( 'Labels and tools', 'docspress-blocks' ), [
+				text( __( 'Heading', 'docspress-blocks' ), 'title', attributes, setAttributes ),
+				toggle( __( 'Show Page filter', 'docspress-blocks' ), 'showFilter', attributes, setAttributes ),
+				attributes.showFilter && text( __( 'Filter placeholder', 'docspress-blocks' ), 'filterPlaceholder', attributes, setAttributes ),
+				text( __( 'Empty state', 'docspress-blocks' ), 'emptyMessage', attributes, setAttributes )
 			], false ),
-			panel( __( 'Sidebar collapse button', 'docspress' ), [
+			panel( __( 'Sidebar collapse button', 'docspress-blocks' ), [
 				toggle(
-					__( 'Show collapse circle', 'docspress' ),
+					__( 'Show collapse circle', 'docspress-blocks' ),
 					'showCollapse',
 					attributes,
 					setAttributes,
-					__( 'Display the circular desktop control on the sidebar divider.', 'docspress' )
+					__( 'Display the circular desktop control on the sidebar divider.', 'docspress-blocks' )
 				),
-				attributes.showCollapse && toggle( __( 'Start collapsed on desktop', 'docspress' ), 'startCollapsed', attributes, setAttributes ),
-				attributes.showCollapse && text( __( 'Collapse label', 'docspress' ), 'collapseLabel', attributes, setAttributes ),
-				attributes.showCollapse && text( __( 'Expand label', 'docspress' ), 'expandLabel', attributes, setAttributes )
+				attributes.showCollapse && toggle( __( 'Start collapsed on desktop', 'docspress-blocks' ), 'startCollapsed', attributes, setAttributes ),
+				attributes.showCollapse && text( __( 'Collapse label', 'docspress-blocks' ), 'collapseLabel', attributes, setAttributes ),
+				attributes.showCollapse && text( __( 'Expand label', 'docspress-blocks' ), 'expandLabel', attributes, setAttributes )
 			] )
 		]
 	} );
 
 	registerComponent( 'command-search', {
-		title: __( 'DocsPress: Command Search', 'docspress' ),
-		description: __( 'A keyboard-accessible documentation search trigger and command dialog.', 'docspress' ),
+		title: __( 'DocsPress: Command Search', 'docspress-blocks' ),
+		description: __( 'A keyboard-accessible documentation search trigger and command dialog.', 'docspress-blocks' ),
 		icon: icons.search,
-		empty: __( 'Search is available on the published site.', 'docspress' ),
+		empty: __( 'Search is available on the published site.', 'docspress-blocks' ),
 		EditorPreview: CommandSearchEditorPreview,
 		controlGroup: 'content',
 		attributes: {
@@ -567,39 +567,39 @@
 			showHints: { type: 'boolean', default: true }
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Search content', 'docspress' ), [
-				text( __( 'Trigger label', 'docspress' ), 'label', attributes, setAttributes ),
-				text( __( 'Field placeholder', 'docspress' ), 'placeholder', attributes, setAttributes ),
-				text( __( 'Suggested results label', 'docspress' ), 'suggestedLabel', attributes, setAttributes ),
-				text( __( 'No-results message', 'docspress' ), 'noResultsLabel', attributes, setAttributes ),
-				text( __( 'Documentation root path', 'docspress' ), 'rootSlug', attributes, setAttributes ),
-				range( __( 'Maximum results', 'docspress' ), 'resultsLimit', attributes, setAttributes, 3, 20 )
+			panel( __( 'Search content', 'docspress-blocks' ), [
+				text( __( 'Trigger label', 'docspress-blocks' ), 'label', attributes, setAttributes ),
+				text( __( 'Field placeholder', 'docspress-blocks' ), 'placeholder', attributes, setAttributes ),
+				text( __( 'Suggested results label', 'docspress-blocks' ), 'suggestedLabel', attributes, setAttributes ),
+				text( __( 'No-results message', 'docspress-blocks' ), 'noResultsLabel', attributes, setAttributes ),
+				text( __( 'Documentation root path', 'docspress-blocks' ), 'rootSlug', attributes, setAttributes ),
+				range( __( 'Maximum results', 'docspress-blocks' ), 'resultsLimit', attributes, setAttributes, 3, 20 )
 			] ),
-			panel( __( 'Dialog', 'docspress' ), [
+			panel( __( 'Dialog', 'docspress-blocks' ), [
 				range(
-					__( 'Width', 'docspress' ),
+					__( 'Width', 'docspress-blocks' ),
 					'width',
 					attributes,
 					setAttributes,
 					420,
 					960,
 					1,
-					__( 'Click the search trigger or use the block toolbar to preview these settings.', 'docspress' )
+					__( 'Click the search trigger or use the block toolbar to preview these settings.', 'docspress-blocks' )
 				),
-				range( __( 'Height', 'docspress' ), 'height', attributes, setAttributes, 320, 820 ),
-				range( __( 'Corner radius', 'docspress' ), 'radius', attributes, setAttributes, 0, 40 ),
-				range( __( 'Backdrop opacity', 'docspress' ), 'overlayOpacity', attributes, setAttributes, 0, 90 ),
-				range( __( 'Backdrop blur', 'docspress' ), 'overlayBlur', attributes, setAttributes, 0, 20 ),
-				toggle( __( 'Show Page paths', 'docspress' ), 'showPaths', attributes, setAttributes ),
-				toggle( __( 'Show excerpts', 'docspress' ), 'showExcerpts', attributes, setAttributes ),
-				toggle( __( 'Show keyboard hints', 'docspress' ), 'showHints', attributes, setAttributes )
+				range( __( 'Height', 'docspress-blocks' ), 'height', attributes, setAttributes, 320, 820 ),
+				range( __( 'Corner radius', 'docspress-blocks' ), 'radius', attributes, setAttributes, 0, 40 ),
+				range( __( 'Backdrop opacity', 'docspress-blocks' ), 'overlayOpacity', attributes, setAttributes, 0, 90 ),
+				range( __( 'Backdrop blur', 'docspress-blocks' ), 'overlayBlur', attributes, setAttributes, 0, 20 ),
+				toggle( __( 'Show Page paths', 'docspress-blocks' ), 'showPaths', attributes, setAttributes ),
+				toggle( __( 'Show excerpts', 'docspress-blocks' ), 'showExcerpts', attributes, setAttributes ),
+				toggle( __( 'Show keyboard hints', 'docspress-blocks' ), 'showHints', attributes, setAttributes )
 			], false )
 		]
 	} );
 
 	registerComponent( 'breadcrumbs', {
-		title: __( 'DocsPress: Breadcrumbs', 'docspress' ),
-		description: __( 'The current Page trail with optional home link and custom separator.', 'docspress' ),
+		title: __( 'DocsPress: Breadcrumbs', 'docspress-blocks' ),
+		description: __( 'The current Page trail with optional home link and custom separator.', 'docspress-blocks' ),
 		icon: icons.trail,
 		attributes: {
 			showHome: { type: 'boolean', default: false },
@@ -615,35 +615,35 @@
 			);
 			return el(
 				'nav',
-				{ className: 'breadcrumbs', 'aria-label': __( 'Breadcrumbs preview', 'docspress' ) },
+				{ className: 'breadcrumbs', 'aria-label': __( 'Breadcrumbs preview', 'docspress-blocks' ) },
 				el(
 					'ol',
 					null,
 					attributes.showHome && item( attributes.homeLabel ),
-					item( __( 'DocsPress documentation', 'docspress' ) ),
-					item( __( 'Parent page', 'docspress' ) ),
-					item( __( 'Current page', 'docspress' ), true )
+					item( __( 'DocsPress documentation', 'docspress-blocks' ) ),
+					item( __( 'Parent page', 'docspress-blocks' ) ),
+					item( __( 'Current page', 'docspress-blocks' ), true )
 				)
 			);
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Breadcrumbs', 'docspress' ), [
-				toggle( __( 'Show home link', 'docspress' ), 'showHome', attributes, setAttributes ),
-				attributes.showHome && text( __( 'Home label', 'docspress' ), 'homeLabel', attributes, setAttributes ),
+			panel( __( 'Breadcrumbs', 'docspress-blocks' ), [
+				toggle( __( 'Show home link', 'docspress-blocks' ), 'showHome', attributes, setAttributes ),
+				attributes.showHome && text( __( 'Home label', 'docspress-blocks' ), 'homeLabel', attributes, setAttributes ),
 				text(
-					__( 'Separator', 'docspress' ),
+					__( 'Separator', 'docspress-blocks' ),
 					'separator',
 					attributes,
 					setAttributes,
-					__( 'Parent and current labels come from Page titles.', 'docspress' )
+					__( 'Parent and current labels come from Page titles.', 'docspress-blocks' )
 				)
 			] )
 		]
 	} );
 
 	registerComponent( 'table-of-contents', {
-		title: __( 'DocsPress: Table of Contents', 'docspress' ),
-		description: __( 'A live list of the current document headings.', 'docspress' ),
+		title: __( 'DocsPress: Table of Contents', 'docspress-blocks' ),
+		description: __( 'A live list of the current document headings.', 'docspress-blocks' ),
 		icon: icons.toc,
 		attributes: {
 			title: { type: 'string', default: 'On this page', role: 'content' },
@@ -657,18 +657,18 @@
 			const nestedLevel = Math.min( maxLevel, minLevel + 1 );
 			const deepLevel = Math.min( maxLevel, minLevel + 2 );
 			const examples = [
-				{ label: __( 'Overview', 'docspress' ), level: minLevel },
-				{ label: __( 'Install DocsPress', 'docspress' ), level: minLevel },
-				{ label: __( 'Configure publishing', 'docspress' ), level: nestedLevel },
-				{ label: __( 'Customize the theme', 'docspress' ), level: deepLevel },
-				{ label: __( 'Next steps', 'docspress' ), level: minLevel }
+				{ label: __( 'Overview', 'docspress-blocks' ), level: minLevel },
+				{ label: __( 'Install DocsPress', 'docspress-blocks' ), level: minLevel },
+				{ label: __( 'Configure publishing', 'docspress-blocks' ), level: nestedLevel },
+				{ label: __( 'Customize the theme', 'docspress-blocks' ), level: deepLevel },
+				{ label: __( 'Next steps', 'docspress-blocks' ), level: minLevel }
 			];
 
 			return el(
 				'aside',
 				{
 					className: 'docs-toc docs-toc-preview',
-					'aria-label': attributes.title || __( 'Table of contents preview', 'docspress' )
+					'aria-label': attributes.title || __( 'Table of contents preview', 'docspress-blocks' )
 				},
 				attributes.title && el( 'p', { className: 'toc-title' }, attributes.title ),
 				el(
@@ -690,18 +690,18 @@
 			);
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Table of contents', 'docspress' ), [
-				text( __( 'Heading', 'docspress' ), 'title', attributes, setAttributes ),
-				range( __( 'Column width', 'docspress' ), 'width', attributes, setAttributes, 180, 320, 1 ),
-				range( __( 'First heading level', 'docspress' ), 'minLevel', attributes, setAttributes, 1, 6 ),
-				range( __( 'Last heading level', 'docspress' ), 'maxLevel', attributes, setAttributes, attributes.minLevel, 6 )
+			panel( __( 'Table of contents', 'docspress-blocks' ), [
+				text( __( 'Heading', 'docspress-blocks' ), 'title', attributes, setAttributes ),
+				range( __( 'Column width', 'docspress-blocks' ), 'width', attributes, setAttributes, 180, 320, 1 ),
+				range( __( 'First heading level', 'docspress-blocks' ), 'minLevel', attributes, setAttributes, 1, 6 ),
+				range( __( 'Last heading level', 'docspress-blocks' ), 'maxLevel', attributes, setAttributes, attributes.minLevel, 6 )
 			] )
 		]
 	} );
 
 	registerComponent( 'page-summary', {
-		title: __( 'DocsPress: Page Summary', 'docspress' ),
-		description: __( 'Show a manually written Page excerpt without generating duplicate content.', 'docspress' ),
+		title: __( 'DocsPress: Page Summary', 'docspress-blocks' ),
+		description: __( 'Show a manually written Page excerpt without generating duplicate content.', 'docspress-blocks' ),
 		icon: icons.summary,
 		attributes: {
 			fallbackText: { type: 'string', default: '', role: 'content' }
@@ -709,24 +709,24 @@
 		preview: ( attributes ) => el(
 			'p',
 			{ className: 'entry-summary' },
-			attributes.fallbackText || __( 'A manually written Page excerpt appears here.', 'docspress' )
+			attributes.fallbackText || __( 'A manually written Page excerpt appears here.', 'docspress-blocks' )
 		),
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Page summary', 'docspress' ), [
+			panel( __( 'Page summary', 'docspress-blocks' ), [
 				text(
-					__( 'Fallback summary', 'docspress' ),
+					__( 'Fallback summary', 'docspress-blocks' ),
 					'fallbackText',
 					attributes,
 					setAttributes,
-					__( 'Used only when the current Page has no manual excerpt.', 'docspress' )
+					__( 'Used only when the current Page has no manual excerpt.', 'docspress-blocks' )
 				)
 			] )
 		]
 	} );
 
 	registerComponent( 'edit-links', {
-		title: __( 'DocsPress: Edit Links', 'docspress' ),
-		description: __( 'WordPress and source-aware GitHub editing actions.', 'docspress' ),
+		title: __( 'DocsPress: Edit Links', 'docspress-blocks' ),
+		description: __( 'WordPress and source-aware GitHub editing actions.', 'docspress-blocks' ),
 		icon: icons.edit,
 		attributes: {
 			showWordPress: { type: 'boolean', default: true },
@@ -759,44 +759,44 @@
 				'nav',
 				{
 					className: 'page-actions page-actions-preview',
-					'aria-label': __( 'Page actions preview', 'docspress' )
+					'aria-label': __( 'Page actions preview', 'docspress-blocks' )
 				},
 				...( actions.length
 					? actions
-					: [ el( 'p', { className: 'docspress-component-placeholder' }, __( 'Enable a WordPress or GitHub action to preview it.', 'docspress' ) ) ] )
+					: [ el( 'p', { className: 'docspress-component-placeholder' }, __( 'Enable a WordPress or GitHub action to preview it.', 'docspress-blocks' ) ) ] )
 			);
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'WordPress action', 'docspress' ), [
-				toggle( __( 'Show WordPress edit link', 'docspress' ), 'showWordPress', attributes, setAttributes ),
-				attributes.showWordPress && text( __( 'WordPress label', 'docspress' ), 'wordpressLabel', attributes, setAttributes )
+			panel( __( 'WordPress action', 'docspress-blocks' ), [
+				toggle( __( 'Show WordPress edit link', 'docspress-blocks' ), 'showWordPress', attributes, setAttributes ),
+				attributes.showWordPress && text( __( 'WordPress label', 'docspress-blocks' ), 'wordpressLabel', attributes, setAttributes )
 			] ),
-			panel( __( 'GitHub action', 'docspress' ), [
-				toggle( __( 'Show GitHub proposal link', 'docspress' ), 'showGitHub', attributes, setAttributes ),
-				attributes.showGitHub && text( __( 'GitHub label', 'docspress' ), 'githubLabel', attributes, setAttributes ),
+			panel( __( 'GitHub action', 'docspress-blocks' ), [
+				toggle( __( 'Show GitHub proposal link', 'docspress-blocks' ), 'showGitHub', attributes, setAttributes ),
+				attributes.showGitHub && text( __( 'GitHub label', 'docspress-blocks' ), 'githubLabel', attributes, setAttributes ),
 				attributes.showGitHub && text(
-					__( 'Repository URL', 'docspress' ),
+					__( 'Repository URL', 'docspress-blocks' ),
 					'repositoryUrl',
 					attributes,
 					setAttributes,
-					__( 'Only used for Pages that do not record their own repository. Synchronized Pages always link to the repository they came from.', 'docspress' )
+					__( 'Only used for Pages that do not record their own repository. Synchronized Pages always link to the repository they came from.', 'docspress-blocks' )
 				),
 				attributes.showGitHub && text(
-					__( 'Branch or tag', 'docspress' ),
+					__( 'Branch or tag', 'docspress-blocks' ),
 					'ref',
 					attributes,
 					setAttributes,
-					__( 'Only used with the fallback repository above.', 'docspress' )
+					__( 'Only used with the fallback repository above.', 'docspress-blocks' )
 				)
 			], false )
 		]
 	} );
 
 	registerComponent( 'adjacent-navigation', {
-		title: __( 'DocsPress: Previous / Next', 'docspress' ),
-		description: __( 'Previous and next documentation Pages in navigation order.', 'docspress' ),
+		title: __( 'DocsPress: Previous / Next', 'docspress-blocks' ),
+		description: __( 'Previous and next documentation Pages in navigation order.', 'docspress-blocks' ),
 		icon: icons.adjacent,
-		empty: __( 'Adjacent links appear inside a documentation Page tree.', 'docspress' ),
+		empty: __( 'Adjacent links appear inside a documentation Page tree.', 'docspress-blocks' ),
 		attributes: {
 			rootSlug: { type: 'string', default: 'docs' },
 			sort: { type: 'string', default: 'menu_order' },
@@ -815,34 +815,34 @@
 			);
 			return el(
 				'nav',
-				{ className: 'docs-pagination docs-pagination-preview', 'aria-label': __( 'Previous and next Page preview', 'docspress' ) },
-				link( 'pagination-previous', attributes.previousLabel, __( 'Configure publishing', 'docspress' ) ),
-				link( 'pagination-next', attributes.nextLabel, __( 'Customize the theme', 'docspress' ) )
+				{ className: 'docs-pagination docs-pagination-preview', 'aria-label': __( 'Previous and next Page preview', 'docspress-blocks' ) },
+				link( 'pagination-previous', attributes.previousLabel, __( 'Configure publishing', 'docspress-blocks' ) ),
+				link( 'pagination-next', attributes.nextLabel, __( 'Customize the theme', 'docspress-blocks' ) )
 			);
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Page order', 'docspress' ), [
-				text( __( 'Documentation root path', 'docspress' ), 'rootSlug', attributes, setAttributes ),
-				select( __( 'Order', 'docspress' ), 'sort', attributes, setAttributes, [
-					{ label: __( 'Page order, then title', 'docspress' ), value: 'menu_order' },
-					{ label: __( 'Title', 'docspress' ), value: 'title' },
-					{ label: __( 'Newest first', 'docspress' ), value: 'newest' },
-					{ label: __( 'Oldest first', 'docspress' ), value: 'oldest' }
+			panel( __( 'Page order', 'docspress-blocks' ), [
+				text( __( 'Documentation root path', 'docspress-blocks' ), 'rootSlug', attributes, setAttributes ),
+				select( __( 'Order', 'docspress-blocks' ), 'sort', attributes, setAttributes, [
+					{ label: __( 'Page order, then title', 'docspress-blocks' ), value: 'menu_order' },
+					{ label: __( 'Title', 'docspress-blocks' ), value: 'title' },
+					{ label: __( 'Newest first', 'docspress-blocks' ), value: 'newest' },
+					{ label: __( 'Oldest first', 'docspress-blocks' ), value: 'oldest' }
 				] ),
-				toggle( __( 'Include root Page', 'docspress' ), 'showRoot', attributes, setAttributes ),
-				range( __( 'Maximum depth', 'docspress' ), 'maxDepth', attributes, setAttributes, 0, 8 )
+				toggle( __( 'Include root Page', 'docspress-blocks' ), 'showRoot', attributes, setAttributes ),
+				range( __( 'Maximum depth', 'docspress-blocks' ), 'maxDepth', attributes, setAttributes, 0, 8 )
 			] ),
-			panel( __( 'Labels', 'docspress' ), [
-				text( __( 'Previous label', 'docspress' ), 'previousLabel', attributes, setAttributes ),
-				text( __( 'Next label', 'docspress' ), 'nextLabel', attributes, setAttributes ),
-				toggle( __( 'Show Page titles', 'docspress' ), 'showTitles', attributes, setAttributes )
+			panel( __( 'Labels', 'docspress-blocks' ), [
+				text( __( 'Previous label', 'docspress-blocks' ), 'previousLabel', attributes, setAttributes ),
+				text( __( 'Next label', 'docspress-blocks' ), 'nextLabel', attributes, setAttributes ),
+				toggle( __( 'Show Page titles', 'docspress-blocks' ), 'showTitles', attributes, setAttributes )
 			], false )
 		]
 	} );
 
 	registerComponent( 'was-this-helpful', {
-		title: __( 'DocsPress: Was This Helpful?', 'docspress' ),
-		description: __( 'Collect helpful or not-helpful responses and store the totals with each Page.', 'docspress' ),
+		title: __( 'DocsPress: Was This Helpful?', 'docspress-blocks' ),
+		description: __( 'Collect helpful or not-helpful responses and store the totals with each Page.', 'docspress-blocks' ),
 		icon: icons.feedback,
 		EditorPreview: FeedbackEditorPreview,
 		attributes: {
@@ -853,113 +853,59 @@
 			thanksMessage: { type: 'string', default: 'Thanks for your feedback.', role: 'content' }
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Page feedback', 'docspress' ), [
+			panel( __( 'Page feedback', 'docspress-blocks' ), [
 				toggle(
-					__( 'Enabled', 'docspress' ),
+					__( 'Enabled', 'docspress-blocks' ),
 					'enabled',
 					attributes,
 					setAttributes,
-					__( 'Show the prompt and collect responses on published Pages using this template.', 'docspress' )
+					__( 'Show the prompt and collect responses on published Pages using this template.', 'docspress-blocks' )
 				),
-				text( __( 'Question', 'docspress' ), 'question', attributes, setAttributes ),
-				text( __( 'Helpful label', 'docspress' ), 'helpfulLabel', attributes, setAttributes ),
-				text( __( 'Not helpful label', 'docspress' ), 'unhelpfulLabel', attributes, setAttributes ),
-				text( __( 'Thank-you message', 'docspress' ), 'thanksMessage', attributes, setAttributes )
+				text( __( 'Question', 'docspress-blocks' ), 'question', attributes, setAttributes ),
+				text( __( 'Helpful label', 'docspress-blocks' ), 'helpfulLabel', attributes, setAttributes ),
+				text( __( 'Not helpful label', 'docspress-blocks' ), 'unhelpfulLabel', attributes, setAttributes ),
+				text( __( 'Thank-you message', 'docspress-blocks' ), 'thanksMessage', attributes, setAttributes )
 			] )
 		]
 	} );
 
 	registerComponent( 'color-mode-toggle', {
-		title: __( 'DocsPress: Color Mode Toggle', 'docspress' ),
-		description: __( 'Let visitors switch between the active style and its dark palette.', 'docspress' ),
+		title: __( 'DocsPress: Color Mode Toggle', 'docspress-blocks' ),
+		description: __( 'Let visitors switch between the active style and its dark palette.', 'docspress-blocks' ),
 		icon: icons.mode,
-		empty: __( 'Color mode toggle', 'docspress' ),
+		empty: __( 'Color mode toggle', 'docspress-blocks' ),
 		attributes: {
 			label: { type: 'string', default: 'Switch color theme', role: 'content' },
 			showLabel: { type: 'boolean', default: false },
 			defaultMode: { type: 'string', default: 'light' }
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Color mode toggle', 'docspress' ), [
-				text( __( 'Accessible label', 'docspress' ), 'label', attributes, setAttributes ),
-				toggle( __( 'Show visible label', 'docspress' ), 'showLabel', attributes, setAttributes ),
-				select( __( 'Default mode', 'docspress' ), 'defaultMode', attributes, setAttributes, [
-					{ label: __( 'Light', 'docspress' ), value: 'light' },
-					{ label: __( 'Dark', 'docspress' ), value: 'dark' },
-					{ label: __( 'Follow device', 'docspress' ), value: 'system' }
+			panel( __( 'Color mode toggle', 'docspress-blocks' ), [
+				text( __( 'Accessible label', 'docspress-blocks' ), 'label', attributes, setAttributes ),
+				toggle( __( 'Show visible label', 'docspress-blocks' ), 'showLabel', attributes, setAttributes ),
+				select( __( 'Default mode', 'docspress-blocks' ), 'defaultMode', attributes, setAttributes, [
+					{ label: __( 'Light', 'docspress-blocks' ), value: 'light' },
+					{ label: __( 'Dark', 'docspress-blocks' ), value: 'dark' },
+					{ label: __( 'Follow device', 'docspress-blocks' ), value: 'system' }
 				] )
 			] )
 		]
 	} );
 
 	registerComponent( 'docs-menu-toggle', {
-		title: __( 'DocsPress: Mobile Docs Menu', 'docspress' ),
-		description: __( 'Open the documentation sidebar as a mobile drawer.', 'docspress' ),
+		title: __( 'DocsPress: Mobile Docs Menu', 'docspress-blocks' ),
+		description: __( 'Open the documentation sidebar as a mobile drawer.', 'docspress-blocks' ),
 		icon: icons.menu,
-		empty: __( 'Mobile documentation menu toggle', 'docspress' ),
+		empty: __( 'Mobile documentation menu toggle', 'docspress-blocks' ),
 		attributes: {
 			label: { type: 'string', default: 'Open documentation menu', role: 'content' }
 		},
 		controls: ( attributes, setAttributes ) => [
-			panel( __( 'Mobile menu', 'docspress' ), [
-				text( __( 'Accessible label', 'docspress' ), 'label', attributes, setAttributes )
+			panel( __( 'Mobile menu', 'docspress-blocks' ), [
+				text( __( 'Accessible label', 'docspress-blocks' ), 'label', attributes, setAttributes )
 			] )
 		]
 	} );
-
-	/*
-	 * WordPress's content-only template navigator currently renders the base
-	 * "Template Part" block title for every instance, even though the Header,
-	 * Comments, and Footer entities have titles in theme.json. Keep the native
-	 * blocks and replace only those generic quick-navigation labels.
-	 */
-	function templatePartBlocks( blockList ) {
-		return blockList.reduce( ( found, block ) => {
-			if ( block.name === 'core/template-part' ) {
-				found.push( block );
-			}
-			return found.concat( templatePartBlocks( block.innerBlocks || [] ) );
-		}, [] );
-	}
-
-	function templatePartLabel( slug ) {
-		const labels = {
-			header: __( 'Header', 'docspress' ),
-			comments: __( 'Comments', 'docspress' ),
-			footer: __( 'Footer', 'docspress' )
-		};
-		if ( labels[ slug ] ) {
-			return labels[ slug ];
-		}
-		return String( slug || __( 'Template part', 'docspress' ) )
-			.replace( /[-_]+/g, ' ' )
-			.replace( /\b\w/g, ( character ) => character.toUpperCase() );
-	}
-
-	function updateTemplatePartNavigatorLabels() {
-		const data = window.wp.data;
-		const editor = data && data.select( 'core/block-editor' );
-		if ( ! editor || ! editor.getBlocks ) {
-			return;
-		}
-
-		const parts = templatePartBlocks( editor.getBlocks() );
-		const buttons = Array.from(
-			document.querySelectorAll( '.block-editor-block-quick-navigation__item' )
-		).filter( ( button ) => button.querySelector( '.components-truncate' )?.textContent === 'Template Part' );
-		if ( ! parts.length || buttons.length !== parts.length ) {
-			return;
-		}
-
-		buttons.forEach( ( button, index ) => {
-			const label = templatePartLabel( parts[ index ].attributes.slug );
-			const text = button.querySelector( '.components-truncate' );
-			if ( text && text.textContent !== label ) {
-				text.textContent = label;
-				button.setAttribute( 'aria-label', label );
-			}
-		} );
-	}
 
 	function createQuickNavigationChevron() {
 		const namespace = 'http://www.w3.org/2000/svg';
@@ -990,7 +936,7 @@
 	 * that destination with the same affordance used by nested core blocks.
 	 */
 	function updateComponentNavigatorOptions() {
-		const title = __( 'DocsPress: Command Search', 'docspress' );
+		const title = __( 'DocsPress: Command Search', 'docspress-blocks' );
 		const buttons = Array.from(
 			document.querySelectorAll( '.block-editor-block-quick-navigation__item' )
 		).filter( ( button ) => button.querySelector( '.components-truncate' )?.textContent.trim() === title );
@@ -1010,7 +956,6 @@
 		}
 		editorNavigatorFrame = window.requestAnimationFrame( () => {
 			editorNavigatorFrame = 0;
-			updateTemplatePartNavigatorLabels();
 			updateComponentNavigatorOptions();
 		} );
 	}
