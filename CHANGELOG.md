@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0](https://github.com/linchpin/docspress/compare/v1.2.0...v1.3.0) (2026-09-24)
+
+
+### Features ✨
+
+* **NO-TASK:** Add a Page Details block with the last update and Markdown actions ([7384cc5](https://github.com/linchpin/docspress/commit/7384cc5bd6651c361a43c787d866d27a0d1b4604))
+* **NO-TASK:** Add a Page Details block with the last update and Markdown actions ([7ce50e5](https://github.com/linchpin/docspress/commit/7ce50e57865e7e3c69552cf3e9a8f8ec8d9455a1))
+
+
+### Bug Fixes 🐛
+
+* **NO-TASK:** Keep password-protected Pages out of versioned Markdown routes ([48773c4](https://github.com/linchpin/docspress/commit/48773c435671cf3d64270e3b56471de035f8a191))
+* **NO-TASK:** Register the Symbol block in the editor ([a49eab6](https://github.com/linchpin/docspress/commit/a49eab67acc84b09cab628b997d14bf6bb6f57e9))
+
+
+### Changes to Existing Features 💅
+
+* **NO-TASK:** Drop fallbacks the move to DocsPress Blocks made unreachable ([332b098](https://github.com/linchpin/docspress/commit/332b0988c120c95d6b9696030012917fc837b08f))
+* **NO-TASK:** Move the documentation shell from the theme into DocsPress Blocks ([deea101](https://github.com/linchpin/docspress/commit/deea1019cd6a15d9fe1880ba98f452f9a3c767b7))
+* **NO-TASK:** Move the documentation shell from the theme into DocsPress Blocks ([dbdd8b2](https://github.com/linchpin/docspress/commit/dbdd8b273e9aa39bbe2c88233323a24767ae19e3))
+
 ## [1.2.0](https://github.com/linchpin/docspress/compare/v1.1.0...v1.2.0) (2026-09-20)
 
 

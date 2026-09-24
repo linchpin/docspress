@@ -67,7 +67,7 @@ The first two examples include the complete DocsPress presentation layer. The st
 ## Releases and versioning
 
 <!-- x-release-please-start-version -->
-Current release: `1.2.0`
+Current release: `1.3.0`
 <!-- x-release-please-end -->
 
 This fork is its own product line. Upstream versions the theme and plugin in a `0.x` series; ours starts at `1.0.0`, so an upstream release can never sort above what we publish. Before that break both claimed `0.10.7` and nothing — not Composer, not the WordPress admin, not SatisPress — could tell them apart.
