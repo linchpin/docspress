@@ -605,18 +605,16 @@ function docspress_render_breadcrumbs( $attributes ) {
 	$home_label = sanitize_text_field( docspress_component_attribute( $attributes, 'homeLabel', __( 'Home', 'docspress-blocks' ) ) );
 	$separator = sanitize_text_field( docspress_component_attribute( $attributes, 'separator', '›' ) );
 	$ancestors = array_reverse( get_post_ancestors( get_queried_object_id() ) );
-	if ( function_exists( 'docspress_blocks_versions_page_context' ) ) {
-		$context = docspress_blocks_versions_page_context();
-		if ( $context ) {
-			$ancestors = array_values(
-				array_filter(
-					$ancestors,
-					static function ( $ancestor_id ) use ( $context ) {
-						return $context['version'] === sanitize_key( (string) get_post_meta( $ancestor_id, '_docspress_version_id', true ) );
-					}
-				)
-			);
-		}
+	$context   = docspress_blocks_versions_page_context();
+	if ( $context ) {
+		$ancestors = array_values(
+			array_filter(
+				$ancestors,
+				static function ( $ancestor_id ) use ( $context ) {
+					return $context['version'] === sanitize_key( (string) get_post_meta( $ancestor_id, '_docspress_version_id', true ) );
+				}
+			)
+		);
 	}
 	if ( ! $show_home && ! $ancestors ) {
 		return '';

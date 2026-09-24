@@ -43,18 +43,14 @@ function docspress_icon( $name ) {
  */
 function docspress_get_docs_root_id( $root_slug = 'docs' ) {
 	$root_slug = trim( sanitize_text_field( (string) $root_slug ), '/' );
-	if ( function_exists( 'docspress_blocks_versions_find_page' ) ) {
-		$context = function_exists( 'docspress_blocks_versions_page_context' )
-			? docspress_blocks_versions_page_context()
-			: null;
-		$version = $context && ! empty( $context['version'] )
-			? $context['version']
-			: docspress_blocks_versions_effective_slug();
-		$root = $context && ! empty( $context['root'] ) ? $context['root'] : $root_slug;
-		$page = $version ? docspress_blocks_versions_find_page( $version, '', $root ) : null;
-		if ( $page instanceof WP_Post ) {
-			return (int) $page->ID;
-		}
+	$context   = docspress_blocks_versions_page_context();
+	$version   = $context && ! empty( $context['version'] )
+		? $context['version']
+		: docspress_blocks_versions_effective_slug();
+	$root      = $context && ! empty( $context['root'] ) ? $context['root'] : $root_slug;
+	$page      = $version ? docspress_blocks_versions_find_page( $version, '', $root ) : null;
+	if ( $page instanceof WP_Post ) {
+		return (int) $page->ID;
 	}
 
 	if ( $root_slug ) {
@@ -104,21 +100,19 @@ function docspress_get_docs_pages( $root_slug = 'docs', $sort = 'menu_order' ) {
 		)
 	);
 
-	if ( function_exists( 'docspress_blocks_versions_page_context' ) ) {
-		$context = docspress_blocks_versions_page_context();
-		$version = $context && ! empty( $context['version'] )
-			? $context['version']
-			: docspress_blocks_versions_effective_slug();
-		if ( $version ) {
-			$pages = array_values(
-				array_filter(
-					$pages,
-					static function ( $page ) use ( $version ) {
-						return $version === sanitize_key( (string) get_post_meta( $page->ID, '_docspress_version_id', true ) );
-					}
-				)
-			);
-		}
+	$context = docspress_blocks_versions_page_context();
+	$version = $context && ! empty( $context['version'] )
+		? $context['version']
+		: docspress_blocks_versions_effective_slug();
+	if ( $version ) {
+		$pages = array_values(
+			array_filter(
+				$pages,
+				static function ( $page ) use ( $version ) {
+					return $version === sanitize_key( (string) get_post_meta( $page->ID, '_docspress_version_id', true ) );
+				}
+			)
+		);
 	}
 
 	if ( ! $root_id ) {
@@ -200,7 +194,7 @@ function docspress_get_managed_metadata( $post_id = 0 ) {
  * Return synchronization-owned sidebar metadata for a Page.
  *
  * Registered post meta is the fast path. The sentinel fallback keeps Pages
- * published before the matching theme metadata registration usable.
+ * published before the sidebar metadata was registered usable.
  *
  * @param int $post_id Page ID.
  * @return array{id:string,root:bool}
@@ -447,27 +441,15 @@ function docspress_post_content_anchors( $block_content ) {
 add_filter( 'render_block_core/post-content', 'docspress_post_content_anchors' );
 
 /**
- * Return version taxonomy terms when the site registers them.
+ * Return the documentation version terms and the current Page's version.
  *
  * @return array{terms:WP_Term[],current:int}
  */
 function docspress_get_versions() {
-	if ( function_exists( 'docspress_blocks_versions_terms' ) ) {
-		$terms = docspress_blocks_versions_terms();
-		$context = function_exists( 'docspress_blocks_versions_page_context' ) ? docspress_blocks_versions_page_context() : null;
-		$current = $context && ! empty( $context['term'] ) ? (int) $context['term']->term_id : 0;
-		return array( 'terms' => $terms, 'current' => $current );
-	}
-
-	if ( ! taxonomy_exists( 'docspress_version' ) ) {
-		return array( 'terms' => array(), 'current' => 0 );
-	}
-
-	$terms = get_terms( array( 'taxonomy' => 'docspress_version', 'hide_empty' => true ) );
-	$terms = is_wp_error( $terms ) ? array() : $terms;
-	$current_terms = is_page() ? wp_get_post_terms( get_queried_object_id(), 'docspress_version' ) : array();
-	$current_id = ( $current_terms && ! is_wp_error( $current_terms ) ) ? (int) $current_terms[0]->term_id : 0;
-	return array( 'terms' => $terms, 'current' => $current_id );
+	$terms   = docspress_blocks_versions_terms();
+	$context = docspress_blocks_versions_page_context();
+	$current = $context && ! empty( $context['term'] ) ? (int) $context['term']->term_id : 0;
+	return array( 'terms' => $terms, 'current' => $current );
 }
 
 /**
