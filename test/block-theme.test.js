@@ -423,6 +423,42 @@ describe("DocsPress block theme constraints", () => {
     }
   });
 
+  it("hands every block editor the shared helpers it destructures", async () => {
+    const shared = await fs.readFile(path.join(root, "plugins", "docspress-blocks", "assets", "editor-shared.js"), "utf8");
+    const exported = (shared.match(/window\.docspressBlocksEditor = \{([\s\S]*?)\};/)?.[1] ?? "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const folders = (await fs.readdir(blocksRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+    const sharedEditors = [];
+
+    expect(exported.length).toBeGreaterThan(0);
+    for (const name of folders) {
+      const editor = await fs.readFile(path.join(blocksRoot, name, "editor.js"), "utf8");
+      if (!editor.startsWith("( function ( blocks, shared ) {")) {
+        continue;
+      }
+      sharedEditors.push(name);
+
+      // Any global other than the one editor-shared.js defines is undefined at runtime, and the
+      // block then fails to register in the editor without failing anything else.
+      const global = editor.match(/\(\s*window\.wp\.blocks,\s*(window\.[\w.]+)\s*\)\s*\)?;\s*$/)?.[1];
+      expect(global, `${name}/editor.js`).toBe("window.docspressBlocksEditor");
+
+      const names = (editor.match(/const \{([^}]*)\} = shared;/)?.[1] ?? "")
+        .split(",")
+        .map((helper) => helper.trim())
+        .filter(Boolean);
+      expect(names.length, `${name}/editor.js`).toBeGreaterThan(0);
+      for (const helper of names) {
+        expect(exported, `${name}/editor.js destructures ${helper}`).toContain(helper);
+      }
+    }
+    expect(sharedEditors).toContain("symbol");
+  });
+
   it("teaches every companion block with a focused guide and three rendered examples", async () => {
     const guideRoot = path.join(root, "docs", "reference", "gutenberg-blocks");
     const index = await fs.readFile(path.join(guideRoot, "index.md"), "utf8");
