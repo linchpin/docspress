@@ -1841,6 +1841,10 @@ describe("DocsPress block theme constraints", () => {
   it("keeps password-protected documentation out of public Markdown and search responses", async () => {
     const llms = await fs.readFile(shellFiles.llms, "utf8");
     const blocks = await fs.readFile(shellFiles.blocks, "utf8");
+    const versioning = await fs.readFile(
+      path.join(pluginRoot, "includes", "versioning.php"),
+      "utf8"
+    );
     const markdownSourceFunction = llms.slice(
       llms.indexOf("function docspress_get_markdown_source_content"),
       llms.indexOf("function docspress_get_llms_pages")
@@ -1858,6 +1862,12 @@ describe("DocsPress block theme constraints", () => {
     expect(searchIndexFunction.indexOf("post_password_required( $page )")).toBeLessThan(
       searchIndexFunction.indexOf("docspress_searchable_text( $page->post_content )")
     );
+    // Versioned .md routes must refuse the same Pages. Decoding the sentinel directly once
+    // served password-protected Markdown whenever the shared check returned null.
+    expect(versioning).toContain(
+      "$markdown = docspress_get_markdown_source_content( $request['page_id'] );"
+    );
+    expect(versioning).not.toContain("sourceContentBase64");
   });
 
   it("previews global styles against the complete documentation template", async () => {

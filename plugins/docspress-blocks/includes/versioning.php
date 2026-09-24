@@ -526,12 +526,7 @@ function docspress_blocks_versions_template_redirect() {
 	}
 
 	if ( ! empty( $request['markdown'] ) ) {
-		$markdown = function_exists( 'docspress_get_markdown_source_content' )
-			? docspress_get_markdown_source_content( $request['page_id'] )
-			: null;
-		if ( null === $markdown ) {
-			$markdown = docspress_blocks_versions_source_markdown( $request['page_id'] );
-		}
+		$markdown = docspress_get_markdown_source_content( $request['page_id'] );
 		if ( null === $markdown ) {
 			status_header( 404 );
 			$markdown = "Not found.\n";
@@ -544,25 +539,6 @@ function docspress_blocks_versions_template_redirect() {
 
 }
 add_action( 'template_redirect', 'docspress_blocks_versions_template_redirect', -5 );
-
-/**
- * Decode source Markdown from a Page sentinel when the DocsPress theme is absent.
- *
- * @param int $post_id Page ID.
- * @return string|null
- */
-function docspress_blocks_versions_source_markdown( $post_id ) {
-	$content = (string) get_post_field( 'post_content', $post_id );
-	if ( ! preg_match( '/<!--\s*docspress:(.*?)\s*-->/s', $content, $match ) ) {
-		return null;
-	}
-	$metadata = json_decode( $match[1], true );
-	if ( ! is_array( $metadata ) || ! isset( $metadata['sourceContentBase64'] ) ) {
-		return null;
-	}
-	$markdown = base64_decode( (string) $metadata['sourceContentBase64'], true );
-	return false === $markdown ? null : wp_check_invalid_utf8( $markdown, true );
-}
 
 /**
  * Flush routes after activation or a docs-root change.
