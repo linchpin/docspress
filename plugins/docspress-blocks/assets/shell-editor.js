@@ -54,6 +54,7 @@
 		trail: el( 'svg', { viewBox: '0 0 24 24' }, el( 'path', { d: 'M4 6h6v2H6v8h4v2H4V6Zm8 5h8v2h-8v-2Zm4-4 5 5-5 5-1.4-1.4 3.6-3.6-3.6-3.6L16 7Z' } ) ),
 		toc: el( 'svg', { viewBox: '0 0 24 24' }, el( 'path', { d: 'M4 5h3v3H4V5Zm5 0h11v2H9V5ZM4 11h3v3H4v-3Zm5 0h11v2H9v-2ZM4 17h3v3H4v-3Zm5 0h11v2H9v-2Z' } ) ),
 		summary: el( 'svg', { viewBox: '0 0 24 24' }, el( 'path', { d: 'M4 5h16v2H4V5Zm0 5h16v2H4v-2Zm0 5h11v2H4v-2Zm0 4h8v2H4v-2Z' } ) ),
+		details: el( 'svg', { viewBox: '0 0 24 24' }, el( 'path', { d: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm1 2v3.6l2.6 1.5-1 1.7L11 12.8V8h2Z' } ) ),
 		edit: el( 'svg', { viewBox: '0 0 24 24' }, el( 'path', { d: 'm5 17.2-.8 3.6 3.6-.8L19 8.8 15.2 5 5 17.2Zm12.3-14 3.5 3.5-1.4 1.4-3.5-3.5 1.4-1.4Z' } ) ),
 		pencil: el( 'svg', { viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': 'true' }, el( 'path', { d: 'm14.7 5.3 4 4M5 19l2.1-5.1L16.6 4.4a1.4 1.4 0 0 1 2 0l1 1a1.4 1.4 0 0 1 0 2L10.1 17 5 19Z', stroke: 'currentColor', strokeWidth: '1.7', strokeLinecap: 'round', strokeLinejoin: 'round' } ) ),
 		github: el( 'svg', { viewBox: '0 0 24 24', fill: 'currentColor', 'aria-hidden': 'true' }, el( 'path', { d: 'M12 2C6.48 2 2 6.58 2 12.23c0 4.51 2.87 8.34 6.84 9.69.5.1.68-.22.68-.49 0-.24-.01-1.05-.01-1.9-2.78.62-3.37-1.2-3.37-1.2-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.85.09-.66.35-1.12.64-1.37-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.04 1.03-2.76-.1-.26-.45-1.3.1-2.72 0 0 .84-.28 2.75 1.05A9.36 9.36 0 0 1 12 6.92c.85 0 1.69.12 2.49.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.46.1 2.72.64.72 1.03 1.64 1.03 2.76 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.8 0 .27.18.59.69.49A10.25 10.25 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z' } ) ),
@@ -721,6 +722,66 @@
 					__( 'Used only when the current Page has no manual excerpt.', 'docspress-blocks' )
 				)
 			] )
+		]
+	} );
+
+	registerComponent( 'page-meta', {
+		title: __( 'DocsPress: Page Details', 'docspress-blocks' ),
+		description: __( 'When the Page last changed, and its Markdown source to copy or open.', 'docspress-blocks' ),
+		icon: icons.details,
+		attributes: {
+			showUpdated: { type: 'boolean', default: true },
+			updatedLabel: { type: 'string', default: 'Last updated', role: 'content' },
+			showMarkdown: { type: 'boolean', default: true },
+			copyLabel: { type: 'string', default: 'Copy as Markdown', role: 'content' },
+			copiedLabel: { type: 'string', default: 'Copied', role: 'content' },
+			viewLabel: { type: 'string', default: 'View as Markdown', role: 'content' }
+		},
+		preview: ( attributes ) => {
+			const items = [];
+			if ( attributes.showUpdated ) {
+				items.push( el(
+					'span',
+					{ className: 'docspress-page-meta__item' },
+					el( 'span', null, attributes.updatedLabel ),
+					el( 'time', null, new Date().toLocaleDateString( undefined, { year: 'numeric', month: 'long', day: 'numeric' } ) )
+				) );
+			}
+			if ( attributes.showMarkdown ) {
+				items.push( el( 'span', { className: 'docspress-page-meta__item docspress-page-meta__action' }, el( 'span', null, attributes.copyLabel ) ) );
+				items.push( el( 'span', { className: 'docspress-page-meta__item docspress-page-meta__action' }, el( 'span', null, attributes.viewLabel ) ) );
+			}
+
+			return el(
+				'div',
+				{ className: 'docspress-page-meta' },
+				...( items.length
+					? items
+					: [ el( 'p', { className: 'docspress-component-placeholder' }, __( 'Enable the date or the Markdown actions to preview them.', 'docspress-blocks' ) ) ] )
+			);
+		},
+		controls: ( attributes, setAttributes ) => [
+			panel( __( 'Last updated', 'docspress-blocks' ), [
+				toggle( __( 'Show when the Page last changed', 'docspress-blocks' ), 'showUpdated', attributes, setAttributes ),
+				attributes.showUpdated && text( __( 'Label', 'docspress-blocks' ), 'updatedLabel', attributes, setAttributes )
+			] ),
+			panel( __( 'Markdown', 'docspress-blocks' ), [
+				toggle(
+					__( 'Show Markdown actions', 'docspress-blocks' ),
+					'showMarkdown',
+					attributes,
+					setAttributes
+				),
+				attributes.showMarkdown && text( __( 'Copy label', 'docspress-blocks' ), 'copyLabel', attributes, setAttributes ),
+				attributes.showMarkdown && text( __( 'Copied label', 'docspress-blocks' ), 'copiedLabel', attributes, setAttributes ),
+				attributes.showMarkdown && text(
+					__( 'View label', 'docspress-blocks' ),
+					'viewLabel',
+					attributes,
+					setAttributes,
+					__( 'Both actions appear only on Pages synchronized from Markdown, which have a .md version.', 'docspress-blocks' )
+				)
+			], false )
 		]
 	} );
 
