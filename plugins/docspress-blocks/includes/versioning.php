@@ -426,8 +426,8 @@ function docspress_blocks_versions_rewrite_rules() {
 		add_rewrite_rule( $regex, $query, 'top' );
 	}
 
-	// Keep version-specific Markdown routes ahead of the theme's generic
-	// `*.md` endpoint even when terms are first created after `init`.
+	// Keep version-specific Markdown routes ahead of the generic `*.md`
+	// endpoint in llms.php even when terms are first created after `init`.
 	global $wp_rewrite;
 	if ( $wp_rewrite instanceof WP_Rewrite ) {
 		$wp_rewrite->extra_rules_top = array_merge(

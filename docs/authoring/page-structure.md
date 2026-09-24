@@ -70,7 +70,7 @@ Use `create-h1: false` because the theme already renders the WordPress Page titl
 
 ## Sidebar position and initial state
 
-The DocsPress theme reads two optional Docusaurus-style frontmatter fields:
+DocsPress reads two optional Docusaurus-style frontmatter fields:
 
 ```markdown
 ---

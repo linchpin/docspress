@@ -1,6 +1,6 @@
 # DocsPress Blocks
 
-Documentation-focused Gutenberg blocks for the DocsPress theme. The plugin has no build step and uses WordPress's bundled block-editor packages.
+Documentation-focused Gutenberg blocks for the DocsPress theme, plus the documentation shell its templates compose. The plugin has no build step and uses WordPress's bundled block-editor packages.
 
 ## Blocks
 
@@ -64,15 +64,31 @@ docspress-blocks/
 │   ├── editor-shared.js
 │   ├── code.css
 │   ├── code-editor.css
-│   └── view.js
+│   ├── view.js
+│   ├── shell-editor.js
+│   ├── shell-editor.css
+│   └── shell-view.js
 ├── includes/
 │   ├── code-surface.php
+│   ├── documentation.php
+│   ├── llms.php
 │   ├── patterns.php
+│   ├── shell-blocks.php
 │   └── versioning.php
 └── docspress-blocks.php
 ```
 
 `assets/` contains only behavior and presentation genuinely shared by multiple blocks. `includes/code-surface.php` is the common server renderer for code surfaces, while `includes/patterns.php` keeps inserter patterns separate from block registration. The root plugin file is only the bootstrap and shared-asset registry.
+
+## Documentation shell
+
+The ten shell blocks the DocsPress theme's templates compose — Docs Navigation, Command Search, Breadcrumbs, Table of Contents, Page Summary, Edit Links, Adjacent Navigation, Was This Helpful, Color Mode Toggle, and Mobile Docs Menu — are the exception to one folder per block. They coordinate on the page (the menu toggle opens the navigation drawer, and the search shortcut falls back to the navigation filter), so they share one editor script, `assets/shell-editor.js`, and one front-end runtime, `assets/shell-view.js`, which WordPress loads only on pages that render a shell block. The theme supplies their styles.
+
+- `includes/documentation.php` resolves the synchronized Page tree, its managed metadata, and GitHub source links.
+- `includes/shell-blocks.php` registers the shell blocks, the sidebar and feedback Page metadata, and the `docspress/v1/feedback` endpoint.
+- `includes/llms.php` serves `/llms.txt` and the `.md` twin of every source-backed Page.
+
+These functions keep the `docspress_` names they had in the theme, along with the `docspress_github_source`, `docspress_github_edit_url`, `docspress_markdown_source_path`, `docspress_search_index`, `docspress_llms_txt`, and `docspress_page_feedback_recorded` hooks. The plugin loads them on `after_setup_theme`, and skips them while a DocsPress theme released before the move is active, because that theme still declares the same functions.
 
 ## Gutenberg serialization
 

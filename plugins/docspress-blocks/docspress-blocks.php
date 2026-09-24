@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       DocsPress Blocks
  * Plugin URI:        https://github.com/Automattic/docspress/tree/main/plugins/docspress-blocks
- * Description:       Documentation-focused Gutenberg blocks for interactive API examples, schemas, code playgrounds, diagrams, troubleshooting, prompts, flows, and polished documentation layouts.
+ * Description:       Documentation-focused Gutenberg blocks for interactive API examples, schemas, code playgrounds, diagrams, troubleshooting, prompts, flows, and polished documentation layouts, plus the documentation shell: navigation, search, breadcrumbs, table of contents, Page feedback, and llms.txt.
  * x-release-please-start-version
  * Version:           1.2.0
  * x-release-please-end
@@ -106,6 +106,39 @@ require_once DOCSPRESS_BLOCKS_PATH . 'blocks/code-playground/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/diagram/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'blocks/troubleshooter/block.php';
 require_once DOCSPRESS_BLOCKS_PATH . 'includes/patterns.php';
+
+/**
+ * Load the documentation shell: the Page-tree and source-link helpers, the shell blocks the
+ * DocsPress theme's templates compose, and the llms.txt and Markdown endpoints.
+ *
+ * The shell moved here from the DocsPress theme with its function names unchanged, so themes
+ * and companion plugins that call those functions keep working. A theme released before the
+ * move still declares them, and redeclaring a function is fatal, so the shell stands aside while
+ * such a theme is active. after_setup_theme runs once the theme's functions.php has loaded and
+ * before init, so every hook the shell adds is still in time.
+ */
+function docspress_blocks_load_documentation_shell() {
+	if ( function_exists( 'docspress_get_docs_pages' ) ) {
+		return;
+	}
+
+	require_once DOCSPRESS_BLOCKS_PATH . 'includes/documentation.php';
+	require_once DOCSPRESS_BLOCKS_PATH . 'includes/shell-blocks.php';
+	require_once DOCSPRESS_BLOCKS_PATH . 'includes/llms.php';
+}
+add_action( 'after_setup_theme', 'docspress_blocks_load_documentation_shell', 0 );
+
+/**
+ * Flush the llms.txt and Markdown routes on the first request after activation.
+ *
+ * An activation request includes this file after after_setup_theme has run, so the shell has not
+ * registered its routes yet and a flush here would drop them. Clearing the marker lets
+ * docspress_maybe_flush_llms_rewrite_rules() flush on the next request, once they exist.
+ */
+function docspress_blocks_schedule_llms_rewrite_flush() {
+	delete_option( 'docspress_llms_rewrite_version' );
+}
+register_activation_hook( DOCSPRESS_BLOCKS_FILE, 'docspress_blocks_schedule_llms_rewrite_flush' );
 
 /**
  * Register the small shared layer used by multiple block folders.

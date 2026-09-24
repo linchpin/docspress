@@ -4,7 +4,16 @@ import { describe, expect, it } from "vitest";
 import { collectDesiredPages } from "../src/docs.js";
 
 const root = process.cwd();
-const blocksRoot = path.join(root, "plugins", "docspress-blocks", "blocks");
+const pluginRoot = path.join(root, "plugins", "docspress-blocks");
+const blocksRoot = path.join(pluginRoot, "blocks");
+const shellFiles = {
+  documentation: path.join(pluginRoot, "includes", "documentation.php"),
+  blocks: path.join(pluginRoot, "includes", "shell-blocks.php"),
+  llms: path.join(pluginRoot, "includes", "llms.php"),
+  editor: path.join(pluginRoot, "assets", "shell-editor.js"),
+  editorStyles: path.join(pluginRoot, "assets", "shell-editor.css"),
+  runtime: path.join(pluginRoot, "assets", "shell-view.js"),
+};
 const completeTypographyKeys = [
   "fontFamily",
   "fontSize",
@@ -424,7 +433,7 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("hands every block editor the shared helpers it destructures", async () => {
-    const shared = await fs.readFile(path.join(root, "plugins", "docspress-blocks", "assets", "editor-shared.js"), "utf8");
+    const shared = await fs.readFile(path.join(pluginRoot, "assets", "editor-shared.js"), "utf8");
     const exported = (shared.match(/window\.docspressBlocksEditor = \{([\s\S]*?)\};/)?.[1] ?? "")
       .split(",")
       .map((name) => name.trim())
@@ -898,10 +907,7 @@ describe("DocsPress block theme constraints", () => {
     const theme = JSON.parse(await fs.readFile(path.join(root, "theme", "theme.json"), "utf8"));
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
     const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
-    const runtime = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "docs.js"),
-      "utf8"
-    );
+    const runtime = await fs.readFile(shellFiles.runtime, "utf8");
     const header = await fs.readFile(path.join(root, "theme", "parts", "header.html"), "utf8");
     const defaultLogo = await fs.readFile(
       path.join(root, "theme", "assets", "images", "docspress-hybrid-logo.png")
@@ -1192,12 +1198,13 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("exposes every documentation shell component in the block editor", async () => {
-    const editor = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "block-components.js"),
+    const editor = await fs.readFile(shellFiles.editor, "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
+    const templatePartLabels = await fs.readFile(
+      path.join(root, "theme", "assets", "js", "template-part-labels.js"),
       "utf8"
     );
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
-    const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
     const components = [
       "docs-navigation",
       "command-search",
@@ -1245,11 +1252,11 @@ describe("DocsPress block theme constraints", () => {
     expect(editor).toContain("Default mode");
     expect(editor).toContain("Sidebar width");
     expect(editor).toContain("Column width");
-    expect(editor).toContain("updateTemplatePartNavigatorLabels");
-    expect(editor).toContain("block-editor-block-quick-navigation__item");
-    expect(editor).toContain("Header");
-    expect(editor).toContain("Comments");
-    expect(editor).toContain("Footer");
+    expect(templatePartLabels).toContain("updateTemplatePartNavigatorLabels");
+    expect(templatePartLabels).toContain("block-editor-block-quick-navigation__item");
+    expect(templatePartLabels).toContain("Header");
+    expect(templatePartLabels).toContain("Comments");
+    expect(templatePartLabels).toContain("Footer");
     expect(php).toContain("docspress_render_page_summary");
     expect(php).toContain("'defaultMode'");
     expect(php).toContain("'width'             => array( 'type' => 'number', 'default' => 266 )");
@@ -1257,11 +1264,63 @@ describe("DocsPress block theme constraints", () => {
     expect(php).toContain("docspress_component_supports()");
   });
 
-  it("links source actions at the repository each Page was published from", async () => {
+  it("loads the documentation shell from DocsPress Blocks without colliding with older themes", async () => {
+    const plugin = await fs.readFile(path.join(pluginRoot, "docspress-blocks.php"), "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const llms = await fs.readFile(shellFiles.llms, "utf8");
     const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
-    const editor = await fs.readFile(
+    const loader = plugin.slice(
+      plugin.indexOf("function docspress_blocks_load_documentation_shell"),
+      plugin.indexOf("add_action( 'after_setup_theme', 'docspress_blocks_load_documentation_shell', 0 )")
+    );
+
+    // A theme from before the move still declares the shell functions; loading after it, and
+    // only when it has not, avoids a fatal redeclaration.
+    expect(plugin).toContain(
+      "add_action( 'after_setup_theme', 'docspress_blocks_load_documentation_shell', 0 )"
+    );
+    expect(loader).toContain("if ( function_exists( 'docspress_get_docs_pages' ) ) {");
+    for (const file of ["documentation.php", "shell-blocks.php", "llms.php"]) {
+      expect(loader).toContain(`'includes/${file}'`);
+    }
+    expect(plugin).toContain("delete_option( 'docspress_llms_rewrite_version' )");
+    expect(plugin).toContain(
+      "register_activation_hook( DOCSPRESS_BLOCKS_FILE, 'docspress_blocks_schedule_llms_rewrite_flush' )"
+    );
+
+    // Companion plugins guard the Markdown endpoint just ahead of priority 0 and filter the
+    // search index, so these names and priorities are a public contract.
+    expect(llms).toContain("add_action( 'template_redirect', 'docspress_render_llms_endpoint', 0 )");
+    expect(llms).toContain("$query_vars[] = 'docspress_llms';");
+    expect(llms).toContain("$query_vars[] = 'docspress_markdown_path';");
+    expect(llms).toContain("apply_filters( 'docspress_llms_txt'");
+    expect(php).toContain("apply_filters( 'docspress_search_index', $index )");
+    expect(php).toContain("do_action( 'docspress_page_feedback_recorded'");
+    expect(php).toContain("'editor_script' => 'docspress-shell-editor'");
+    expect(php).toContain("'view_script'   => 'docspress-shell-view'");
+    expect(php).not.toContain("get_theme_file");
+
+    for (const moved of [
+      path.join(root, "theme", "inc", "blocks.php"),
+      path.join(root, "theme", "inc", "llms.php"),
       path.join(root, "theme", "assets", "js", "block-components.js"),
+      path.join(root, "theme", "assets", "css", "block-editor.css"),
+    ]) {
+      await expect(fs.access(moved)).rejects.toThrow();
+    }
+    for (const code of ["register_block_type(", "register_rest_route(", "add_rewrite_rule(", "register_post_meta("]) {
+      expect(functions).not.toContain(code);
+    }
+    expect(functions).toContain("register_block_style( 'core/navigation'");
+    expect(functions).toContain("add_action( 'admin_notices', 'docspress_missing_shell_notice' )");
+  });
+
+  it("links source actions at the repository each Page was published from", async () => {
+    const functions = await fs.readFile(shellFiles.documentation, "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const editor = await fs.readFile(shellFiles.editor, "utf8");
+    const versioning = await fs.readFile(
+      path.join(pluginRoot, "includes", "versioning.php"),
       "utf8"
     );
 
@@ -1275,7 +1334,10 @@ describe("DocsPress block theme constraints", () => {
     );
     expect(functions).toContain("apply_filters( 'docspress_github_source', $source, $post_id )");
     expect(functions).toContain("apply_filters( 'docspress_github_edit_url', $url, $path, $post_id )");
-    expect(php).toContain("registered_meta_key_exists( 'post', $key, 'page' )");
+    // Without these registrations the Action cannot write the repository a Page came from.
+    for (const key of ["_docspress_github_repository", "_docspress_github_ref", "_docspress_github_server_url"]) {
+      expect(versioning).toContain(`'${key}'`);
+    }
     expect(php).toContain("'repositoryUrl'  => array( 'type' => 'string', 'default' => '' )");
     expect(php).toContain("'ref'            => array( 'type' => 'string', 'default' => '' )");
     expect(editor).toContain("repositoryUrl: { type: 'string', default: '' }");
@@ -1289,21 +1351,11 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("collects Page feedback above adjacent documentation navigation", async () => {
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
-    const editor = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "block-components.js"),
-      "utf8"
-    );
-    const runtime = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "docs.js"),
-      "utf8"
-    );
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const editor = await fs.readFile(shellFiles.editor, "utf8");
+    const runtime = await fs.readFile(shellFiles.runtime, "utf8");
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
-    const editorStyles = await fs.readFile(
-      path.join(root, "theme", "assets", "css", "block-editor.css"),
-      "utf8"
-    );
-    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
+    const editorStyles = await fs.readFile(shellFiles.editorStyles, "utf8");
     const pageTemplate = await fs.readFile(
       path.join(root, "theme", "templates", "page.html"),
       "utf8"
@@ -1339,19 +1391,16 @@ describe("DocsPress block theme constraints", () => {
     expect(styles).toContain(".docspress-feedback:not(.has-text-color) {");
     expect(editorStyles).toContain(".docspress-feedback-summary {");
     expect(editorStyles).toContain(".docspress-feedback-meter {");
-    expect(functions).toContain("function docspress_block_editor_ui_assets()");
-    expect(functions).toContain("'assets/css/block-editor.css'");
+    expect(php).toContain("function docspress_block_editor_ui_assets()");
+    expect(php).toContain("'assets/shell-editor.css'");
   });
 
   it("lets Global Styles win for headings and content call-to-action buttons", async () => {
     const theme = JSON.parse(await fs.readFile(path.join(root, "theme", "theme.json"), "utf8"));
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
-    const components = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "block-components.js"),
-      "utf8"
-    );
+    const components = await fs.readFile(shellFiles.editor, "utf8");
     const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
     const heroEditor = await fs.readFile(
       path.join(blocksRoot, "hero", "editor.js"),
       "utf8"
@@ -1716,12 +1765,9 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("makes the documentation sidebar collapsible from block settings", async () => {
-    const editor = await fs.readFile(
-      path.join(root, "theme", "assets", "js", "block-components.js"),
-      "utf8"
-    );
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
-    const runtime = await fs.readFile(path.join(root, "theme", "assets", "js", "docs.js"), "utf8");
+    const editor = await fs.readFile(shellFiles.editor, "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const runtime = await fs.readFile(shellFiles.runtime, "utf8");
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
 
     for (const attribute of ["showCollapse", "startCollapsed", "collapseLabel", "expandLabel"]) {
@@ -1746,21 +1792,24 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("keeps header and documentation navigation state in sync with the URL", async () => {
-    const runtime = await fs.readFile(path.join(root, "theme", "assets", "js", "docs.js"), "utf8");
+    const themeRuntime = await fs.readFile(path.join(root, "theme", "assets", "js", "docs.js"), "utf8");
+    const shellRuntime = await fs.readFile(shellFiles.runtime, "utf8");
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
 
-    expect(runtime).toContain("function enhanceCurrentNavigation(navigation)");
-    expect(runtime).toContain("link.classList.toggle('is-current-page', exact)");
-    expect(runtime).toContain("link.classList.toggle('is-current-ancestor', ancestor)");
-    expect(runtime).toContain("link.setAttribute('aria-current', 'page')");
-    expect(runtime).toContain("enhanceCurrentNavigation(document.querySelector('.primary-navigation'))");
-    expect(runtime).toContain("enhanceCurrentNavigation(docsNav)");
+    for (const runtime of [themeRuntime, shellRuntime]) {
+      expect(runtime).toContain("function enhanceCurrentNavigation(navigation)");
+      expect(runtime).toContain("link.classList.toggle('is-current-page', exact)");
+      expect(runtime).toContain("link.classList.toggle('is-current-ancestor', ancestor)");
+      expect(runtime).toContain("link.setAttribute('aria-current', 'page')");
+    }
+    expect(themeRuntime).toContain("enhanceCurrentNavigation(document.querySelector('.primary-navigation'))");
+    expect(shellRuntime).toContain("enhanceCurrentNavigation(docsNav)");
     expect(styles).toContain('.docs-nav a[aria-current="page"]');
   });
 
   it("scopes automatic navigation and adjacent links to opt-in contextual sidebars", async () => {
-    const functions = await fs.readFile(path.join(root, "theme", "functions.php"), "utf8");
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const functions = await fs.readFile(shellFiles.documentation, "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
     const plugin = await fs.readFile(
       path.join(root, "plugins", "docspress-blocks", "includes", "versioning.php"),
       "utf8"
@@ -1779,8 +1828,8 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("keeps command-search data and controls available in rendered block templates", async () => {
-    const php = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
-    const runtime = await fs.readFile(path.join(root, "theme", "assets", "js", "docs.js"), "utf8");
+    const php = await fs.readFile(shellFiles.blocks, "utf8");
+    const runtime = await fs.readFile(shellFiles.runtime, "utf8");
     const styles = await fs.readFile(path.join(root, "theme", "style.css"), "utf8");
 
     expect(php).toContain('type="application/json" data-docspress-search-data');
@@ -1790,8 +1839,8 @@ describe("DocsPress block theme constraints", () => {
   });
 
   it("keeps password-protected documentation out of public Markdown and search responses", async () => {
-    const llms = await fs.readFile(path.join(root, "theme", "inc", "llms.php"), "utf8");
-    const blocks = await fs.readFile(path.join(root, "theme", "inc", "blocks.php"), "utf8");
+    const llms = await fs.readFile(shellFiles.llms, "utf8");
+    const blocks = await fs.readFile(shellFiles.blocks, "utf8");
     const markdownSourceFunction = llms.slice(
       llms.indexOf("function docspress_get_markdown_source_content"),
       llms.indexOf("function docspress_get_llms_pages")

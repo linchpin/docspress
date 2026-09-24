@@ -8,7 +8,7 @@ AI-friendliness here means making published documentation discoverable, structur
 
 ## Discover the documentation
 
-The DocsPress theme serves an `llms.txt` index at the site root:
+The DocsPress Blocks plugin serves an `llms.txt` index at the site root:
 
 ```text
 https://docs.example.com/llms.txt
@@ -44,9 +44,9 @@ Because the response is the reviewed source rather than Markdown reconstructed f
 
 ## Keep both representations aligned
 
-During synchronization, DocsPress stores the original Markdown in the managed Page metadata alongside its source path. The theme reads that source-owned metadata for both `llms.txt` and `.md` responses.
+During synchronization, DocsPress stores the original Markdown in the managed Page metadata alongside its source path. DocsPress Blocks reads that source-owned metadata for both `llms.txt` and `.md` responses.
 
-Run DocsPress once after installing a theme version that supports these endpoints. That run refreshes existing managed Pages even when their visible content has not changed. Future synchronizations update the WordPress Page and its Markdown representation together.
+Run DocsPress once after first enabling these endpoints. That run refreshes existing managed Pages even when their visible content has not changed. Future synchronizations update the WordPress Page and its Markdown representation together.
 
 Only published Pages with a real Markdown source appear in `llms.txt`. Generated placeholder Pages and hand-authored WordPress Pages without source metadata are omitted, and their `.md` routes return `404`.
 

@@ -106,14 +106,15 @@ theme/
 │   ├── theme/*.json
 │   ├── color/*/*.json
 │   └── block/*.json
-├── assets/js/block-components.js
 ├── assets/js/docs.js
-├── inc/blocks.php
-├── inc/llms.php
+├── assets/js/site-editor-preview.js
+├── assets/js/template-part-labels.js
 ├── inc/performance.php
 ├── functions.php
 ├── style.css
 └── theme.json
 ```
+
+The shell blocks, their Page metadata and feedback endpoint, and the `llms.txt` and Markdown endpoints live in the DocsPress Blocks plugin under `includes/documentation.php`, `includes/shell-blocks.php`, and `includes/llms.php`. The theme provides their templates and styles.
 
 Use [Customize the theme in the Site Editor](../guides/customize-theme.md) for the editing workflow and [Gutenberg blocks](gutenberg-blocks/index.md) for content-block attributes.

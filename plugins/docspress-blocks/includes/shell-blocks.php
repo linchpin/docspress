@@ -1,8 +1,15 @@
 <?php
 /**
- * Site Editor components for the DocsPress block theme.
+ * Documentation shell blocks.
  *
- * @package DocsPress
+ * The ten dynamic blocks the DocsPress theme's templates compose — navigation, command search,
+ * breadcrumbs, table of contents, Page summary, edit links, adjacent navigation, Was This
+ * Helpful, and the color-mode and menu toggles — plus the Page metadata and feedback endpoint
+ * they depend on. They share one editor script and one front-end runtime because they
+ * coordinate: the menu toggle opens the navigation drawer, and the search shortcut falls back
+ * to the navigation filter when a template has no Command Search.
+ *
+ * @package DocsPressBlocks
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,7 +29,7 @@ function docspress_register_sidebar_meta() {
 		'_docspress_sidebar_id',
 		array(
 			'type'              => 'string',
-			'description'       => __( 'Source-owned contextual documentation sidebar ID.', 'docspress' ),
+			'description'       => __( 'Source-owned contextual documentation sidebar ID.', 'docspress-blocks' ),
 			'single'            => true,
 			'default'           => '',
 			'sanitize_callback' => 'sanitize_key',
@@ -35,7 +42,7 @@ function docspress_register_sidebar_meta() {
 		'_docspress_sidebar_root',
 		array(
 			'type'              => 'boolean',
-			'description'       => __( 'Whether this Page is the root of its contextual documentation sidebar.', 'docspress' ),
+			'description'       => __( 'Whether this Page is the root of its contextual documentation sidebar.', 'docspress-blocks' ),
 			'single'            => true,
 			'default'           => false,
 			'sanitize_callback' => 'rest_sanitize_boolean',
@@ -59,7 +66,7 @@ function docspress_register_feedback_meta() {
 		'docspress_helpful_votes',
 		array(
 			'type'              => 'integer',
-			'description'       => __( 'Helpful responses collected by the DocsPress feedback block.', 'docspress' ),
+			'description'       => __( 'Helpful responses collected by the DocsPress feedback block.', 'docspress-blocks' ),
 			'single'            => true,
 			'default'           => 0,
 			'sanitize_callback' => 'absint',
@@ -72,7 +79,7 @@ function docspress_register_feedback_meta() {
 		'docspress_unhelpful_votes',
 		array(
 			'type'              => 'integer',
-			'description'       => __( 'Unhelpful responses collected by the DocsPress feedback block.', 'docspress' ),
+			'description'       => __( 'Unhelpful responses collected by the DocsPress feedback block.', 'docspress-blocks' ),
 			'single'            => true,
 			'default'           => 0,
 			'sanitize_callback' => 'absint',
@@ -85,7 +92,7 @@ function docspress_register_feedback_meta() {
 		'docspress_feedback_enabled',
 		array(
 			'type'              => 'boolean',
-			'description'       => __( 'Whether the DocsPress feedback prompt is shown on this Page.', 'docspress' ),
+			'description'       => __( 'Whether the DocsPress feedback prompt is shown on this Page.', 'docspress-blocks' ),
 			'single'            => true,
 			'default'           => true,
 			'sanitize_callback' => 'rest_sanitize_boolean',
@@ -95,43 +102,6 @@ function docspress_register_feedback_meta() {
 	);
 }
 add_action( 'init', 'docspress_register_feedback_meta', 9 );
-
-/**
- * Register the synchronization-owned source metadata the theme reads.
- *
- * DocsPress Blocks registers the same keys when it is active, so each key is only
- * registered when it is still missing. Without the registration the Action cannot
- * write the repository a Page came from, and source links have nothing to point at.
- */
-function docspress_register_source_meta() {
-	$keys = array(
-		'_docspress_source_path',
-		'_docspress_github_path',
-		'_docspress_github_repository',
-		'_docspress_github_ref',
-		'_docspress_github_server_url',
-	);
-	foreach ( $keys as $key ) {
-		if ( registered_meta_key_exists( 'post', $key, 'page' ) ) {
-			continue;
-		}
-		register_post_meta(
-			'page',
-			$key,
-			array(
-				'type'              => 'string',
-				'single'            => true,
-				'default'           => '',
-				'sanitize_callback' => 'sanitize_text_field',
-				'auth_callback'     => static function ( $allowed, $meta_key, $post_id ) {
-					return current_user_can( 'edit_post', (int) $post_id );
-				},
-				'show_in_rest'      => true,
-			)
-		);
-	}
-}
-add_action( 'init', 'docspress_register_source_meta', 9 );
 
 /**
  * Return the aggregate feedback counts for a Page.
@@ -161,14 +131,14 @@ function docspress_can_submit_page_feedback( $request ) {
 	if ( ! $post instanceof WP_Post || 'page' !== $post->post_type || 'publish' !== $post->post_status ) {
 		return new WP_Error(
 			'docspress_feedback_page_not_found',
-			__( 'That documentation Page is not available.', 'docspress' ),
+			__( 'That documentation Page is not available.', 'docspress-blocks' ),
 			array( 'status' => 404 )
 		);
 	}
 	if ( post_password_required( $post ) ) {
 		return new WP_Error(
 			'docspress_feedback_page_protected',
-			__( 'Feedback is unavailable for this protected Page.', 'docspress' ),
+			__( 'Feedback is unavailable for this protected Page.', 'docspress-blocks' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -188,7 +158,7 @@ function docspress_submit_page_feedback( $request ) {
 	if ( ! in_array( $vote, array( 'helpful', 'unhelpful' ), true ) ) {
 		return new WP_Error(
 			'docspress_feedback_invalid_vote',
-			__( 'Choose helpful or not helpful.', 'docspress' ),
+			__( 'Choose helpful or not helpful.', 'docspress-blocks' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -200,7 +170,7 @@ function docspress_submit_page_feedback( $request ) {
 	if ( false === $updated ) {
 		return new WP_Error(
 			'docspress_feedback_not_saved',
-			__( 'The feedback response could not be saved.', 'docspress' ),
+			__( 'The feedback response could not be saved.', 'docspress-blocks' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -367,7 +337,7 @@ function docspress_get_menu_pages( $menu_slug, $max_depth = 0 ) {
  * @return string
  */
 function docspress_render_docs_navigation( $attributes ) {
-	$title       = sanitize_text_field( docspress_component_attribute( $attributes, 'title', __( 'Documentation', 'docspress' ) ) );
+	$title       = sanitize_text_field( docspress_component_attribute( $attributes, 'title', __( 'Documentation', 'docspress-blocks' ) ) );
 	$width       = min( 360, max( 220, absint( docspress_component_attribute( $attributes, 'width', 266 ) ) ) );
 	$root_slug   = sanitize_text_field( docspress_component_attribute( $attributes, 'rootSlug', 'docs' ) );
 	$source      = docspress_component_attribute( $attributes, 'source', 'pages' );
@@ -378,12 +348,12 @@ function docspress_render_docs_navigation( $attributes ) {
 	$show_root   = (bool) docspress_component_attribute( $attributes, 'showRoot', true );
 	$max_depth   = min( 8, absint( docspress_component_attribute( $attributes, 'maxDepth', 0 ) ) );
 	$show_filter = (bool) docspress_component_attribute( $attributes, 'showFilter', true );
-	$placeholder = sanitize_text_field( docspress_component_attribute( $attributes, 'filterPlaceholder', __( 'Filter pages…', 'docspress' ) ) );
-	$empty       = sanitize_text_field( docspress_component_attribute( $attributes, 'emptyMessage', __( 'Publish Pages to populate this navigation.', 'docspress' ) ) );
+	$placeholder = sanitize_text_field( docspress_component_attribute( $attributes, 'filterPlaceholder', __( 'Filter pages…', 'docspress-blocks' ) ) );
+	$empty       = sanitize_text_field( docspress_component_attribute( $attributes, 'emptyMessage', __( 'Publish Pages to populate this navigation.', 'docspress-blocks' ) ) );
 	$show_collapse = (bool) docspress_component_attribute( $attributes, 'showCollapse', true );
 	$start_collapsed = $show_collapse && (bool) docspress_component_attribute( $attributes, 'startCollapsed', false );
-	$collapse_label = sanitize_text_field( docspress_component_attribute( $attributes, 'collapseLabel', __( 'Collapse sidebar', 'docspress' ) ) );
-	$expand_label = sanitize_text_field( docspress_component_attribute( $attributes, 'expandLabel', __( 'Expand sidebar', 'docspress' ) ) );
+	$collapse_label = sanitize_text_field( docspress_component_attribute( $attributes, 'collapseLabel', __( 'Collapse sidebar', 'docspress-blocks' ) ) );
+	$expand_label = sanitize_text_field( docspress_component_attribute( $attributes, 'expandLabel', __( 'Expand sidebar', 'docspress-blocks' ) ) );
 	$content_id  = wp_unique_id( 'docspress-sidebar-content-' );
 	$root_id     = docspress_get_docs_root_id( $root_slug );
 	$pages       = 'menu' === $source ? docspress_get_menu_pages( $menu_slug, $max_depth ) : docspress_get_docs_pages( $root_slug, $sort );
@@ -397,7 +367,7 @@ function docspress_render_docs_navigation( $attributes ) {
 			'class'      => 'docs-sidebar' . ( $start_collapsed ? ' is-sidebar-collapsed' : '' ),
 			'id'         => 'docs-sidebar',
 			'style'      => '--dp-component-width:' . $width . 'px',
-			'aria-label' => __( 'Documentation navigation', 'docspress' ),
+			'aria-label' => __( 'Documentation navigation', 'docspress-blocks' ),
 			'data-sidebar-start-collapsed' => $start_collapsed ? 'true' : 'false',
 		)
 	);
@@ -428,9 +398,9 @@ function docspress_render_docs_navigation( $attributes ) {
 			<?php if ( $show_filter ) : ?>
 				<div class="sidebar-search">
 					<?php echo docspress_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<label class="screen-reader-text" for="docspress-filter"><?php esc_html_e( 'Filter documentation pages', 'docspress' ); ?></label>
+					<label class="screen-reader-text" for="docspress-filter"><?php esc_html_e( 'Filter documentation pages', 'docspress-blocks' ); ?></label>
 					<input id="docspress-filter" type="search" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off" data-docs-filter>
-					<button class="sidebar-search-clear" type="button" data-search-clear aria-label="<?php esc_attr_e( 'Clear filter', 'docspress' ); ?>">×</button>
+					<button class="sidebar-search-clear" type="button" data-search-clear aria-label="<?php esc_attr_e( 'Clear filter', 'docspress-blocks' ); ?>">×</button>
 				</div>
 			<?php endif; ?>
 
@@ -457,10 +427,10 @@ function docspress_render_docs_navigation( $attributes ) {
 					<p class="docs-nav-empty"><?php echo esc_html( $empty ); ?></p>
 				<?php endif; ?>
 			</nav>
-			<?php if ( $show_filter ) : ?><p class="sidebar-no-results" data-no-results><?php esc_html_e( 'No pages match that filter.', 'docspress' ); ?></p><?php endif; ?>
+			<?php if ( $show_filter ) : ?><p class="sidebar-no-results" data-no-results><?php esc_html_e( 'No pages match that filter.', 'docspress-blocks' ); ?></p><?php endif; ?>
 		</div>
 	</aside>
-	<button class="drawer-scrim" type="button" data-drawer-close aria-label="<?php esc_attr_e( 'Close documentation menu', 'docspress' ); ?>"></button>
+	<button class="drawer-scrim" type="button" data-drawer-close aria-label="<?php esc_attr_e( 'Close documentation menu', 'docspress-blocks' ); ?>"></button>
 	<?php
 	return ob_get_clean();
 }
@@ -535,10 +505,10 @@ function docspress_search_index( $pages ) {
  * @return string
  */
 function docspress_render_command_search( $attributes ) {
-	$label       = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Search docs', 'docspress' ) ) );
-	$placeholder = sanitize_text_field( docspress_component_attribute( $attributes, 'placeholder', __( 'Search documentation…', 'docspress' ) ) );
-	$suggested   = sanitize_text_field( docspress_component_attribute( $attributes, 'suggestedLabel', __( 'Suggested pages', 'docspress' ) ) );
-	$no_results  = sanitize_text_field( docspress_component_attribute( $attributes, 'noResultsLabel', __( 'No documentation matched that search.', 'docspress' ) ) );
+	$label       = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Search docs', 'docspress-blocks' ) ) );
+	$placeholder = sanitize_text_field( docspress_component_attribute( $attributes, 'placeholder', __( 'Search documentation…', 'docspress-blocks' ) ) );
+	$suggested   = sanitize_text_field( docspress_component_attribute( $attributes, 'suggestedLabel', __( 'Suggested pages', 'docspress-blocks' ) ) );
+	$no_results  = sanitize_text_field( docspress_component_attribute( $attributes, 'noResultsLabel', __( 'No documentation matched that search.', 'docspress-blocks' ) ) );
 	$limit       = min( 20, max( 3, absint( docspress_component_attribute( $attributes, 'resultsLimit', 8 ) ) ) );
 	$root_slug   = sanitize_text_field( docspress_component_attribute( $attributes, 'rootSlug', 'docs' ) );
 	$width       = min( 960, max( 420, absint( docspress_component_attribute( $attributes, 'width', 680 ) ) ) );
@@ -572,10 +542,10 @@ function docspress_render_command_search( $attributes ) {
 		'index'          => docspress_search_index( docspress_get_docs_pages( $root_slug ) ),
 		'limit'          => $limit,
 		'suggestedLabel' => $suggested,
-		'resultsLabel'   => __( 'Search results', 'docspress' ),
+		'resultsLabel'   => __( 'Search results', 'docspress-blocks' ),
 		'noResultsLabel' => $no_results,
-		'resultSingular' => __( '1 result', 'docspress' ),
-		'resultPlural'   => __( '%d results', 'docspress' ),
+		'resultSingular' => __( '1 result', 'docspress-blocks' ),
+		'resultPlural'   => __( '%d results', 'docspress-blocks' ),
 	);
 
 	ob_start();
@@ -591,10 +561,10 @@ function docspress_render_command_search( $attributes ) {
 				<form class="command-search" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>" data-command-search-form>
 					<div class="command-search-field">
 						<?php echo docspress_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<label class="screen-reader-text" id="<?php echo esc_attr( $field_id . '-label' ); ?>" for="<?php echo esc_attr( $field_id ); ?>"><?php esc_html_e( 'Search documentation', 'docspress' ); ?></label>
+						<label class="screen-reader-text" id="<?php echo esc_attr( $field_id . '-label' ); ?>" for="<?php echo esc_attr( $field_id ); ?>"><?php esc_html_e( 'Search documentation', 'docspress-blocks' ); ?></label>
 						<input id="<?php echo esc_attr( $field_id ); ?>" name="s" type="search" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="<?php echo esc_attr( $results_id ); ?>" data-docs-command-input>
 						<input type="hidden" name="post_type" value="page">
-						<button class="command-search-close" type="button" data-docs-search-close aria-label="<?php esc_attr_e( 'Close search', 'docspress' ); ?>"><span aria-hidden="true">×</span></button>
+						<button class="command-search-close" type="button" data-docs-search-close aria-label="<?php esc_attr_e( 'Close search', 'docspress-blocks' ); ?>"><span aria-hidden="true">×</span></button>
 					</div>
 					<div class="command-search-body">
 						<div class="command-search-status" aria-live="polite" aria-atomic="true" data-command-search-status></div>
@@ -602,14 +572,14 @@ function docspress_render_command_search( $attributes ) {
 						<div class="command-search-empty" data-command-search-empty hidden>
 							<span class="command-search-empty-icon" aria-hidden="true"><?php echo docspress_icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 							<strong><?php echo esc_html( $no_results ); ?></strong>
-							<span><?php esc_html_e( 'Try another term or press Enter for the full WordPress search.', 'docspress' ); ?></span>
+							<span><?php esc_html_e( 'Try another term or press Enter for the full WordPress search.', 'docspress-blocks' ); ?></span>
 						</div>
 					</div>
 					<?php if ( $show_hints ) : ?>
 						<footer class="command-search-footer" aria-hidden="true">
-							<span><kbd>↑</kbd><kbd>↓</kbd> <?php esc_html_e( 'to navigate', 'docspress' ); ?></span>
-							<span><kbd>↵</kbd> <?php esc_html_e( 'to open', 'docspress' ); ?></span>
-							<span><kbd>Esc</kbd> <?php esc_html_e( 'to close', 'docspress' ); ?></span>
+							<span><kbd>↑</kbd><kbd>↓</kbd> <?php esc_html_e( 'to navigate', 'docspress-blocks' ); ?></span>
+							<span><kbd>↵</kbd> <?php esc_html_e( 'to open', 'docspress-blocks' ); ?></span>
+							<span><kbd>Esc</kbd> <?php esc_html_e( 'to close', 'docspress-blocks' ); ?></span>
 						</footer>
 					<?php endif; ?>
 				</form>
@@ -632,7 +602,7 @@ function docspress_render_breadcrumbs( $attributes ) {
 	}
 
 	$show_home = (bool) docspress_component_attribute( $attributes, 'showHome', false );
-	$home_label = sanitize_text_field( docspress_component_attribute( $attributes, 'homeLabel', __( 'Home', 'docspress' ) ) );
+	$home_label = sanitize_text_field( docspress_component_attribute( $attributes, 'homeLabel', __( 'Home', 'docspress-blocks' ) ) );
 	$separator = sanitize_text_field( docspress_component_attribute( $attributes, 'separator', '›' ) );
 	$ancestors = array_reverse( get_post_ancestors( get_queried_object_id() ) );
 	if ( function_exists( 'docspress_blocks_versions_page_context' ) ) {
@@ -652,7 +622,7 @@ function docspress_render_breadcrumbs( $attributes ) {
 		return '';
 	}
 
-	$wrapper = get_block_wrapper_attributes( array( 'class' => 'breadcrumbs', 'aria-label' => __( 'Breadcrumbs', 'docspress' ) ) );
+	$wrapper = get_block_wrapper_attributes( array( 'class' => 'breadcrumbs', 'aria-label' => __( 'Breadcrumbs', 'docspress-blocks' ) ) );
 	ob_start();
 	?>
 	<nav <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><ol>
@@ -677,7 +647,7 @@ function docspress_render_toc( $attributes ) {
 		return '';
 	}
 
-	$title = sanitize_text_field( docspress_component_attribute( $attributes, 'title', __( 'On this page', 'docspress' ) ) );
+	$title = sanitize_text_field( docspress_component_attribute( $attributes, 'title', __( 'On this page', 'docspress-blocks' ) ) );
 	$width = min( 320, max( 180, absint( docspress_component_attribute( $attributes, 'width', 226 ) ) ) );
 	$min_level = min( 6, max( 1, absint( docspress_component_attribute( $attributes, 'minLevel', 2 ) ) ) );
 	$max_level = min( 6, max( $min_level, absint( docspress_component_attribute( $attributes, 'maxLevel', 3 ) ) ) );
@@ -746,8 +716,8 @@ function docspress_render_edit_links( $attributes ) {
 
 	$show_wordpress = (bool) docspress_component_attribute( $attributes, 'showWordPress', true );
 	$show_github    = (bool) docspress_component_attribute( $attributes, 'showGitHub', true );
-	$wp_label       = sanitize_text_field( docspress_component_attribute( $attributes, 'wordpressLabel', __( 'Edit this page in WordPress', 'docspress' ) ) );
-	$github_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'githubLabel', __( 'Propose changes on GitHub', 'docspress' ) ) );
+	$wp_label       = sanitize_text_field( docspress_component_attribute( $attributes, 'wordpressLabel', __( 'Edit this page in WordPress', 'docspress-blocks' ) ) );
+	$github_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'githubLabel', __( 'Propose changes on GitHub', 'docspress-blocks' ) ) );
 	$repository     = sanitize_text_field( docspress_component_attribute( $attributes, 'repositoryUrl', '' ) );
 	$ref            = sanitize_text_field( docspress_component_attribute( $attributes, 'ref', '' ) );
 	$post_id        = get_queried_object_id();
@@ -758,7 +728,7 @@ function docspress_render_edit_links( $attributes ) {
 		return '';
 	}
 
-	$wrapper = get_block_wrapper_attributes( array( 'class' => 'page-actions', 'aria-label' => __( 'Page actions', 'docspress' ) ) );
+	$wrapper = get_block_wrapper_attributes( array( 'class' => 'page-actions', 'aria-label' => __( 'Page actions', 'docspress-blocks' ) ) );
 	ob_start();
 	?>
 	<nav <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
@@ -821,15 +791,15 @@ function docspress_render_adjacent_navigation( $attributes ) {
 	$sort = in_array( $sort, array( 'menu_order', 'title', 'newest', 'oldest' ), true ) ? $sort : 'menu_order';
 	$show_root = (bool) docspress_component_attribute( $attributes, 'showRoot', true );
 	$max_depth = min( 8, absint( docspress_component_attribute( $attributes, 'maxDepth', 0 ) ) );
-	$previous_label = sanitize_text_field( docspress_component_attribute( $attributes, 'previousLabel', __( '← Previous', 'docspress' ) ) );
-	$next_label = sanitize_text_field( docspress_component_attribute( $attributes, 'nextLabel', __( 'Next →', 'docspress' ) ) );
+	$previous_label = sanitize_text_field( docspress_component_attribute( $attributes, 'previousLabel', __( '← Previous', 'docspress-blocks' ) ) );
+	$next_label = sanitize_text_field( docspress_component_attribute( $attributes, 'nextLabel', __( 'Next →', 'docspress-blocks' ) ) );
 	$show_titles = (bool) docspress_component_attribute( $attributes, 'showTitles', true );
 	$adjacent = docspress_get_adjacent_pages( get_queried_object_id(), $root_slug, $sort, $show_root, $max_depth );
 	if ( ! $adjacent['previous'] && ! $adjacent['next'] ) {
 		return '';
 	}
 
-	$wrapper = get_block_wrapper_attributes( array( 'class' => 'docs-pagination', 'aria-label' => __( 'Documentation pages', 'docspress' ) ) );
+	$wrapper = get_block_wrapper_attributes( array( 'class' => 'docs-pagination', 'aria-label' => __( 'Documentation pages', 'docspress-blocks' ) ) );
 	ob_start();
 	?>
 	<nav <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
@@ -861,10 +831,10 @@ function docspress_render_was_this_helpful( $attributes ) {
 		return '';
 	}
 
-	$question        = sanitize_text_field( docspress_component_attribute( $attributes, 'question', __( 'Was this helpful?', 'docspress' ) ) );
-	$helpful_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'helpfulLabel', __( 'Yes', 'docspress' ) ) );
-	$unhelpful_label = sanitize_text_field( docspress_component_attribute( $attributes, 'unhelpfulLabel', __( 'No', 'docspress' ) ) );
-	$thanks_message  = sanitize_text_field( docspress_component_attribute( $attributes, 'thanksMessage', __( 'Thanks for your feedback.', 'docspress' ) ) );
+	$question        = sanitize_text_field( docspress_component_attribute( $attributes, 'question', __( 'Was this helpful?', 'docspress-blocks' ) ) );
+	$helpful_label   = sanitize_text_field( docspress_component_attribute( $attributes, 'helpfulLabel', __( 'Yes', 'docspress-blocks' ) ) );
+	$unhelpful_label = sanitize_text_field( docspress_component_attribute( $attributes, 'unhelpfulLabel', __( 'No', 'docspress-blocks' ) ) );
+	$thanks_message  = sanitize_text_field( docspress_component_attribute( $attributes, 'thanksMessage', __( 'Thanks for your feedback.', 'docspress-blocks' ) ) );
 	$question_id     = wp_unique_id( 'docspress-feedback-question-' );
 	$wrapper         = get_block_wrapper_attributes(
 		array(
@@ -873,8 +843,8 @@ function docspress_render_was_this_helpful( $attributes ) {
 			'data-feedback-page-id'        => (string) $post_id,
 			'data-feedback-endpoint'       => esc_url_raw( rest_url( 'docspress/v1/feedback/' . $post_id ) ),
 			'data-feedback-thanks-message' => $thanks_message,
-			'data-feedback-saving-message' => __( 'Saving your response…', 'docspress' ),
-			'data-feedback-error-message'  => __( 'We could not save that response. Please try again.', 'docspress' ),
+			'data-feedback-saving-message' => __( 'Saving your response…', 'docspress-blocks' ),
+			'data-feedback-error-message'  => __( 'We could not save that response. Please try again.', 'docspress-blocks' ),
 		)
 	);
 
@@ -905,7 +875,7 @@ function docspress_render_was_this_helpful( $attributes ) {
  * @return string
  */
 function docspress_render_color_toggle( $attributes ) {
-	$label = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Switch color theme', 'docspress' ) ) );
+	$label = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Switch color theme', 'docspress-blocks' ) ) );
 	$show_label = (bool) docspress_component_attribute( $attributes, 'showLabel', false );
 	$default_mode = sanitize_key( docspress_component_attribute( $attributes, 'defaultMode', 'light' ) );
 	$default_mode = in_array( $default_mode, array( 'light', 'dark', 'system' ), true ) ? $default_mode : 'light';
@@ -927,7 +897,7 @@ function docspress_render_color_toggle( $attributes ) {
  * @return string
  */
 function docspress_render_menu_toggle( $attributes ) {
-	$label = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Open documentation menu', 'docspress' ) ) );
+	$label = sanitize_text_field( docspress_component_attribute( $attributes, 'label', __( 'Open documentation menu', 'docspress-blocks' ) ) );
 	$wrapper = get_block_wrapper_attributes( array( 'class' => 'docspress-menu-toggle' ) );
 	return sprintf(
 		'<div %1$s><button class="menu-toggle" type="button" data-drawer-toggle aria-expanded="false" aria-controls="docs-sidebar" aria-label="%2$s">%3$s</button></div>',
@@ -938,18 +908,25 @@ function docspress_render_menu_toggle( $attributes ) {
 }
 
 /**
- * Register shell components and component-level block styles.
+ * Register the shell components and their shared editor and front-end scripts.
  */
 function docspress_register_blocks() {
-	$theme = wp_get_theme();
-	$editor_script_path = get_theme_file_path( 'assets/js/block-components.js' );
-	$editor_script_version = is_readable( $editor_script_path ) ? (string) filemtime( $editor_script_path ) : $theme->get( 'Version' );
 	wp_register_script(
-		'docspress-theme-blocks-editor',
-		get_theme_file_uri( 'assets/js/block-components.js' ),
+		'docspress-shell-editor',
+		DOCSPRESS_BLOCKS_URL . 'assets/shell-editor.js',
 		array( 'wp-block-editor', 'wp-blocks', 'wp-components', 'wp-data', 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins', 'wp-server-side-render' ),
-		$editor_script_version,
+		DOCSPRESS_BLOCKS_VERSION,
 		true
+	);
+	wp_register_script(
+		'docspress-shell-view',
+		DOCSPRESS_BLOCKS_URL . 'assets/shell-view.js',
+		array(),
+		DOCSPRESS_BLOCKS_VERSION,
+		array(
+			'in_footer' => true,
+			'strategy'  => 'defer',
+		)
 	);
 
 	$blocks = array(
@@ -1081,19 +1058,28 @@ function docspress_register_blocks() {
 			array_merge(
 				array(
 					'api_version'   => 3,
-					'editor_script' => 'docspress-theme-blocks-editor',
+					'editor_script' => 'docspress-shell-editor',
+					'view_script'   => 'docspress-shell-view',
 				),
 				$args
 			)
 		);
 	}
-
-	register_block_style( 'core/navigation', array( 'name' => 'underline', 'label' => __( 'Underline', 'docspress' ) ) );
-	register_block_style( 'core/navigation', array( 'name' => 'framed', 'label' => __( 'Framed', 'docspress' ) ) );
-	register_block_style( 'core/button', array( 'name' => 'text-arrow', 'label' => __( 'Text with arrow', 'docspress' ) ) );
-	register_block_style( 'core/post-template', array( 'name' => 'doc-cards', 'label' => __( 'Documentation cards', 'docspress' ) ) );
 }
 add_action( 'init', 'docspress_register_blocks' );
+
+/**
+ * Load styles for DocsPress controls rendered in the editor interface.
+ */
+function docspress_block_editor_ui_assets() {
+	wp_enqueue_style(
+		'docspress-shell-editor',
+		DOCSPRESS_BLOCKS_URL . 'assets/shell-editor.css',
+		array(),
+		DOCSPRESS_BLOCKS_VERSION
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'docspress_block_editor_ui_assets' );
 
 /**
  * Find the Color Mode Toggle default inside a parsed template-part tree.
