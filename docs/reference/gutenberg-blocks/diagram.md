@@ -17,6 +17,8 @@ Write one relationship per line:
 Source -> Target: optional label
 ```
 
+A lone colon starts the label, so a double colon stays part of an actor name: `mantle_init -> Bootstrap::run: instantiate` links `mantle_init` to `Bootstrap::run`.
+
 Lines beginning with `#` are comments. The parser considers the first 30 source lines and renders at most eight actors and 24 relationships. Extra relationships are discarded, so keep the model deliberately small.
 
 DocsPress generates the Mermaid syntax; keep authoring the compact relationship format above. A `flow` diagram becomes a `flowchart LR`, and a `sequence` diagram becomes a `sequenceDiagram`.

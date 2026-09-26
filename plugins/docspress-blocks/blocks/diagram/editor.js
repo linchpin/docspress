@@ -13,7 +13,7 @@
 
 	function relationships( source ) {
 		return String( source || '' ).split( /\r?\n/ ).map( ( line ) => {
-			const match = line.match( /^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*:\s*(.+))?$/ );
+			const match = line.match( /^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*(?<!:):(?!:)\s*(.+))?$/u );
 			return match ? { from: match[ 1 ].trim(), to: match[ 2 ].trim(), label: ( match[ 3 ] || '' ).trim() } : null;
 		} ).filter( Boolean ).slice( 0, 8 );
 	}
