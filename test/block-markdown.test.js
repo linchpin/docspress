@@ -462,6 +462,22 @@ ${blocksToMarkdown(rawCustomBlock("docspress/api-request", originalAttrs)).trim(
     expect(preview).not.toContain("Outside first 30");
   });
 
+  it("keeps a double colon inside an actor name instead of starting the label there", () => {
+    const markdown = blocksToMarkdown(rawCustomBlock("docspress/diagram", {
+      type: "flow",
+      source: "mantle_init -> Bootstrap::run: instantiate\nBootstrap::run -> Core\\Modules"
+    }));
+
+    expect(markdown).toContain([
+      "flowchart LR",
+      '  n1["mantle_init"]',
+      '  n2["Bootstrap::run"]',
+      '  n3["Core#92;Modules"]',
+      '  n1 -->|"instantiate"| n2',
+      "  n2 --> n3"
+    ].join("\n"));
+  });
+
   it("keeps invalid diagram source readable instead of emitting broken Mermaid", () => {
     const markdown = blocksToMarkdown(rawCustomBlock("docspress/diagram", {
       type: "flow",

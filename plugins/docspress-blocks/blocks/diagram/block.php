@@ -12,7 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Parse the compact diagram source.
  *
- * One relationship per line: Source -> Target: optional label.
+ * One relationship per line: Source -> Target: optional label. The label
+ * separator is a lone colon, so a `Class::method` target stays one actor.
  *
  * @param string $source Diagram source.
  * @return array
@@ -28,7 +29,7 @@ function docspress_blocks_parse_diagram( $source ) {
 		if ( '' === $line || 0 === strpos( $line, '#' ) ) {
 			continue;
 		}
-		if ( ! preg_match( '/^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*:\s*(.+))?$/u', $line, $matches ) ) {
+		if ( ! preg_match( '/^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*(?<!:):(?!:)\s*(.+))?$/u', $line, $matches ) ) {
 			continue;
 		}
 		$from  = sanitize_text_field( trim( $matches[1] ) );
