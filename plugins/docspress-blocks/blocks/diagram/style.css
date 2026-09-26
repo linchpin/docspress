@@ -66,11 +66,16 @@
 	background: var(--db-diagram-canvas);
 }
 
+/*
+ * Drawn at its own size and never enlarged, so text reads the same in every
+ * diagram. The renderer sets a minimum width inline; below it the canvas
+ * scrolls rather than shrinking the text past legibility.
+ */
 .docspress-diagram__svg {
 	display: block;
-	width: 100%;
-	min-width: 520px;
+	max-width: 100%;
 	height: auto;
+	margin-inline: auto;
 }
 
 .docspress-diagram__svg marker path {
@@ -81,7 +86,7 @@
 .docspress-diagram__messages line {
 	fill: none;
 	stroke: var(--db-diagram-accent);
-	stroke-width: 2;
+	stroke-width: 1.5;
 }
 
 .docspress-diagram__lanes > line {
@@ -103,9 +108,18 @@
 	font: 680 12px/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
 }
 
-.docspress-diagram__edges text,
 .docspress-diagram__messages text {
 	fill: var(--db-diagram-muted);
+	font: 590 10px/1 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+}
+
+/* A flow label masks the line beneath it, so it reads as part of that line. */
+.docspress-diagram__labels rect {
+	fill: var(--db-diagram-canvas);
+}
+
+.docspress-diagram__labels text {
+	fill: var(--db-diagram-copy);
 	font: 590 10px/1 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
 }
 
