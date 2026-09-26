@@ -91671,7 +91671,8 @@ function parseDiagramSource(source) {
     if (!line || line.startsWith("#")) {
       continue;
     }
-    const match = line.match(/^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*:\s*(.+))?$/u);
+    // A lone colon starts the label, so a `Class::method` target stays one actor.
+    const match = line.match(/^(.+?)\s*(?:-->|->)\s*(.+?)(?:\s*(?<!:):(?!:)\s*(.+))?$/u);
     if (!match) {
       continue;
     }
