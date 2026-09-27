@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.1](https://github.com/linchpin/docspress/compare/v1.3.0...v1.3.1) (2026-09-26)
+
+
+### Bug Fixes 🐛
+
+* **LINCHPIN-5713:** Keep a double colon inside a diagram actor name ([98ea9fb](https://github.com/linchpin/docspress/commit/98ea9fb2db37741b16d5175f7498dbb60756991e))
+* **LINCHPIN-5713:** Lay out flow diagrams in columns and keep double colons in actor names ([c134b85](https://github.com/linchpin/docspress/commit/c134b8541f50f046e589fd940119ce438dc5b9ba))
+* **LINCHPIN-5713:** Lay out flow diagrams in columns so lines no longer overlap ([5174df7](https://github.com/linchpin/docspress/commit/5174df75002685e5891dc1007ccc7c91e74f1082))
+
 ## [1.3.0](https://github.com/linchpin/docspress/compare/v1.2.0...v1.3.0) (2026-09-24)
 
 
