@@ -1,18 +1,18 @@
 .wp-block-docspress-fields {
-	--db-fields-accent: var(--dp-blue, #3858e9);
-	--db-fields-paper: var(--dp-paper, #fff);
-	--db-fields-canvas: var(--dp-canvas, #f6f7f9);
-	--db-fields-border: var(--dp-line-strong, #cfd4dc);
-	--db-fields-ink: var(--dp-ink, #171a22);
-	--db-fields-copy: var(--dp-copy, #2c3338);
-	--db-fields-muted: var(--dp-muted, #6f7685);
+	--db-fields-accent: var(--lp-docs-accent);
+	--db-fields-paper: var(--lp-docs-surface);
+	--db-fields-canvas: var(--lp-docs-canvas);
+	--db-fields-border: var(--lp-docs-line-strong);
+	--db-fields-ink: var(--lp-docs-ink);
+	--db-fields-copy: var(--lp-docs-copy);
+	--db-fields-muted: var(--lp-docs-muted);
 	box-sizing: border-box;
 	width: 100%;
 	min-width: 0;
 	margin-block: clamp(1.25rem, 2.5vw, 1.75rem);
 	overflow: hidden;
 	border: 1px solid var(--db-fields-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-fields-paper);
 	color: var(--db-fields-copy);
 	container-type: inline-size;
@@ -46,7 +46,7 @@
 .docspress-fields__title {
 	margin: 0;
 	color: var(--db-fields-ink);
-	font: 800 clamp(1rem, 1.8vw, 1.14rem)/1.2 var(--dp-font-heading, var(--dp-font-ui, sans-serif));
+	font: 800 clamp(1rem, 1.8vw, 1.14rem)/1.2 var(--lp-docs-font-heading);
 	letter-spacing: -0.025em;
 }
 
@@ -55,14 +55,14 @@
 	max-width: 52rem;
 	margin: 4px 0 0;
 	color: var(--db-fields-muted);
-	font: 500 0.77rem/1.42 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 500 0.77rem/1.42 var(--lp-docs-font-ui);
 }
 
 .docspress-fields__count {
 	flex: none;
 	padding: 3px 0;
 	color: var(--db-fields-muted);
-	font: 680 0.6rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.6rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 }
@@ -99,7 +99,7 @@
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-fields-ink);
-	font: 520 0.76rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 520 0.76rem/1.2 var(--lp-docs-font-ui);
 }
 
 .docspress-fields__list {
@@ -147,7 +147,7 @@
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-fields-ink);
-	font: 720 0.8rem/1.35 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	font: 720 0.8rem/1.35 var(--lp-docs-font-mono);
 	overflow-wrap: anywhere;
 }
 
@@ -158,7 +158,7 @@
 	border-left: 1px solid var(--db-fields-border);
 	border-radius: 0;
 	background: transparent;
-	font: 700 0.56rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 700 0.56rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.035em;
 	text-transform: uppercase;
 }
@@ -188,7 +188,7 @@
 .docspress-fields__copy p {
 	margin: 0;
 	color: var(--db-fields-copy);
-	font: 500 0.82rem/1.45 var(--dp-font-copy, var(--dp-font-ui, sans-serif));
+	font: 500 0.82rem/1.45 var(--lp-docs-font-copy);
 }
 
 .docspress-fields__metadata {
@@ -215,7 +215,7 @@
 
 .docspress-fields__metadata b {
 	color: var(--db-fields-muted);
-	font: 720 0.55rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 720 0.55rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.055em;
 	text-transform: uppercase;
 }
@@ -227,7 +227,7 @@
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-fields-ink);
-	font: 580 0.67rem/1.35 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	font: 580 0.67rem/1.35 var(--lp-docs-font-mono);
 	overflow-wrap: anywhere;
 }
 
@@ -235,7 +235,7 @@
 	margin: 0;
 	padding: 18px;
 	color: var(--db-fields-muted);
-	font: 550 0.76rem/1.4 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 550 0.76rem/1.4 var(--lp-docs-font-ui);
 	text-align: center;
 }
 

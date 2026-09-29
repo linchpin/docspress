@@ -1,9 +1,9 @@
 .wp-block-docspress-api-request {
-	--db-api-accent: var(--dp-blue, #3858e9);
-	--db-api-surface: color-mix(in srgb, var(--db-api-accent) 2%, var(--dp-paper, #fff));
-	--db-api-panel: color-mix(in srgb, var(--dp-canvas, #f6f7f9) 78%, var(--dp-paper, #fff));
-	--db-api-border: var(--dp-line-strong, #cfd4dc);
-	--db-api-muted: var(--dp-muted, #6f7685);
+	--db-api-accent: var(--lp-docs-accent);
+	--db-api-surface: color-mix(in srgb, var(--db-api-accent) 2%, var(--lp-docs-surface));
+	--db-api-panel: color-mix(in srgb, var(--lp-docs-canvas) 78%, var(--lp-docs-surface));
+	--db-api-border: var(--lp-docs-line-strong);
+	--db-api-muted: var(--lp-docs-muted);
 	--db-api-string: #19733f;
 	--db-api-number: #bd5400;
 	--db-api-literal: #8a3ffc;
@@ -13,10 +13,10 @@
 	margin-block: clamp(1.5rem, 3vw, 2.25rem);
 	overflow: hidden;
 	border: 1px solid var(--db-api-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-api-surface);
 	box-shadow: none;
-	color: var(--dp-ink, #171a22);
+	color: var(--lp-docs-ink);
 }
 
 .docspress-preset-docspress .wp-block-docspress-api-request,
@@ -39,7 +39,7 @@
 	box-sizing: border-box;
 	padding: 8px 10px 8px 14px;
 	border-bottom: 1px solid var(--db-api-border);
-	background: color-mix(in srgb, var(--db-api-accent) 4%, var(--dp-paper, #fff));
+	background: color-mix(in srgb, var(--db-api-accent) 4%, var(--lp-docs-surface));
 }
 
 .docspress-api__response-line {
@@ -50,7 +50,7 @@
 .docspress-api__eyebrow,
 .docspress-api__payload-label {
 	color: var(--db-api-muted);
-	font: 680 0.68rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.68rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
 }
@@ -62,11 +62,11 @@
 	align-items: center;
 	justify-content: center;
 	padding: 0 8px;
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	background: color-mix(in srgb, var(--db-api-accent) 11%, transparent);
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--db-api-accent) 22%, transparent);
-	color: color-mix(in srgb, var(--db-api-accent) 80%, var(--dp-ink, #171a22));
-	font: 760 0.7rem/1 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: color-mix(in srgb, var(--db-api-accent) 80%, var(--lp-docs-ink));
+	font: 760 0.7rem/1 var(--lp-docs-font-mono);
 }
 
 .docspress-api__status {
@@ -76,7 +76,7 @@
 .docspress-api__response-meta {
 	justify-self: end;
 	color: var(--db-api-muted);
-	font: 580 0.68rem/1.2 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	font: 580 0.68rem/1.2 var(--lp-docs-font-mono);
 }
 
 .docspress-api__endpoint,
@@ -89,8 +89,8 @@
 	border-radius: 0;
 	background: transparent;
 	box-shadow: none;
-	color: var(--dp-ink, #171a22);
-	font: 590 0.82rem/1.35 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: var(--lp-docs-ink);
+	font: 590 0.82rem/1.35 var(--lp-docs-font-mono);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
@@ -103,11 +103,11 @@
 	margin: 0;
 	padding: 3px 8px;
 	border: 1px solid var(--db-api-border);
-	border-radius: var(--dp-radius, 10px);
-	background: var(--dp-paper, #fff);
-	color: var(--dp-ink, #171a22);
+	border-radius: var(--lp-docs-radius);
+	background: var(--lp-docs-surface);
+	color: var(--lp-docs-ink);
 	cursor: pointer;
-	font: 650 0.68rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 650 0.68rem/1 var(--lp-docs-font-ui);
 }
 
 .docspress-api__copy svg {
@@ -148,8 +148,8 @@
 	align-items: center;
 	padding: 0 6px;
 	border: 1px solid color-mix(in srgb, var(--db-api-accent) 18%, var(--db-api-border));
-	border-radius: var(--dp-radius, 10px);
-	background: color-mix(in srgb, var(--db-api-accent) 5%, var(--dp-paper, #fff));
+	border-radius: var(--lp-docs-radius);
+	background: color-mix(in srgb, var(--db-api-accent) 5%, var(--lp-docs-surface));
 	color: color-mix(in srgb, var(--db-api-accent) 70%, var(--db-api-muted));
 	font-size: 0.6rem;
 	font-weight: 720;
@@ -167,8 +167,8 @@
 	border-radius: 0;
 	background: transparent;
 	box-shadow: none;
-	color: var(--dp-copy, #2c3338);
-	font: 500 0.82rem/1.65 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: var(--lp-docs-copy);
+	font: 500 0.82rem/1.65 var(--lp-docs-font-mono);
 	white-space: pre;
 }
 
@@ -208,7 +208,7 @@
 }
 
 .docspress-api__header-name {
-	color: color-mix(in srgb, var(--db-api-accent) 84%, var(--dp-ink, #171a22));
+	color: color-mix(in srgb, var(--db-api-accent) 84%, var(--lp-docs-ink));
 	font-weight: 760;
 }
 
@@ -218,7 +218,7 @@
 }
 
 .docspress-api__token--property {
-	color: color-mix(in srgb, var(--db-api-accent) 84%, var(--dp-ink, #171a22));
+	color: color-mix(in srgb, var(--db-api-accent) 84%, var(--lp-docs-ink));
 	font-weight: 680;
 }
 
@@ -238,7 +238,7 @@
 .docspress-api__runner {
 	padding: clamp(14px, 2.4vw, 20px);
 	border-top: 1px solid var(--db-api-border);
-	background: var(--dp-paper, #fff);
+	background: var(--lp-docs-surface);
 }
 
 .docspress-api__runner-heading {
@@ -255,17 +255,17 @@
 }
 
 .docspress-api__runner-heading strong {
-	color: var(--dp-ink, #171a22);
-	font: 760 0.94rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	color: var(--lp-docs-ink);
+	font: 760 0.94rem/1.2 var(--lp-docs-font-ui);
 }
 
 .docspress-api__runner-policy {
 	padding: 4px 7px;
 	border: 1px solid color-mix(in srgb, var(--db-api-accent) 28%, var(--db-api-border));
-	border-radius: var(--dp-radius, 10px);
-	background: color-mix(in srgb, var(--db-api-accent) 6%, var(--dp-paper, #fff));
+	border-radius: var(--lp-docs-radius);
+	background: color-mix(in srgb, var(--db-api-accent) 6%, var(--lp-docs-surface));
 	color: var(--db-api-muted);
-	font: 650 0.64rem/1.2 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	font: 650 0.64rem/1.2 var(--lp-docs-font-mono);
 	white-space: nowrap;
 }
 
@@ -287,7 +287,7 @@
 
 .docspress-api__field > span {
 	color: var(--db-api-muted);
-	font: 680 0.66rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.66rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
@@ -300,12 +300,12 @@
 	padding: 9px 10px;
 	resize: vertical;
 	border: 1px solid var(--db-api-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	outline: 0;
 	background: var(--db-api-panel);
 	box-shadow: none;
-	color: var(--dp-copy, #2c3338);
-	font: 500 0.76rem/1.55 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: var(--lp-docs-copy);
+	font: 500 0.76rem/1.55 var(--lp-docs-font-mono);
 }
 
 .docspress-api__field input:focus,
@@ -337,24 +337,24 @@
 	margin: 0;
 	padding: 5px 11px;
 	border: 1px solid var(--db-api-border);
-	border-radius: var(--dp-radius, 10px);
-	background: var(--dp-paper, #fff);
+	border-radius: var(--lp-docs-radius);
+	background: var(--lp-docs-surface);
 	box-shadow: none;
-	color: var(--dp-ink, #171a22);
+	color: var(--lp-docs-ink);
 	cursor: pointer;
-	font: 680 0.72rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.72rem/1 var(--lp-docs-font-ui);
 	transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
 .docspress-api__run {
 	border-color: var(--db-api-accent);
 	background: var(--db-api-accent);
-	color: var(--dp-paper, #fff);
+	color: var(--lp-docs-surface);
 }
 
 .docspress-api__run:hover,
 .docspress-api__run:focus-visible {
-	background: color-mix(in srgb, var(--db-api-accent) 86%, var(--dp-ink, #171a22));
+	background: color-mix(in srgb, var(--db-api-accent) 86%, var(--lp-docs-ink));
 }
 
 .docspress-api__runner-button:hover,
@@ -384,20 +384,20 @@
 	min-width: 0;
 	margin-left: auto;
 	color: var(--db-api-muted);
-	font: 580 0.68rem/1.35 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 580 0.68rem/1.35 var(--lp-docs-font-ui);
 	text-align: right;
 }
 
 .docspress-api__runner-status[data-state="success"] {
-	color: color-mix(in srgb, #16883d 80%, var(--dp-ink, #171a22));
+	color: color-mix(in srgb, #16883d 80%, var(--lp-docs-ink));
 }
 
 .docspress-api__runner-status[data-state="warning"] {
-	color: color-mix(in srgb, #b35c00 82%, var(--dp-ink, #171a22));
+	color: color-mix(in srgb, #b35c00 82%, var(--lp-docs-ink));
 }
 
 .docspress-api__runner-status[data-state="error"] {
-	color: color-mix(in srgb, #c9352b 82%, var(--dp-ink, #171a22));
+	color: color-mix(in srgb, #c9352b 82%, var(--lp-docs-ink));
 }
 
 .docspress-api__runner--preview .docspress-api__run {
@@ -412,7 +412,7 @@
 }
 
 html[data-theme="dark"] .wp-block-docspress-api-request {
-	--db-api-panel: color-mix(in srgb, var(--dp-canvas, #11141b) 82%, #000);
+	--db-api-panel: color-mix(in srgb, var(--lp-docs-canvas) 82%, #000);
 	--db-api-string: #a7e48d;
 	--db-api-number: #ffd078;
 	--db-api-literal: #c7a8ff;

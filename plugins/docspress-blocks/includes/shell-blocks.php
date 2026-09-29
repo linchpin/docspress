@@ -366,7 +366,7 @@ function docspress_render_docs_navigation( $attributes ) {
 		array(
 			'class'      => 'docs-sidebar' . ( $start_collapsed ? ' is-sidebar-collapsed' : '' ),
 			'id'         => 'docs-sidebar',
-			'style'      => '--dp-component-width:' . $width . 'px',
+			'style'      => '--lp-docs-component-width:' . $width . 'px',
 			'aria-label' => __( 'Documentation navigation', 'docspress-blocks' ),
 			'data-sidebar-start-collapsed' => $start_collapsed ? 'true' : 'false',
 		)
@@ -535,7 +535,7 @@ function docspress_render_command_search( $attributes ) {
 	$wrapper = get_block_wrapper_attributes(
 		array(
 			'class' => implode( ' ', $classes ),
-			'style' => '--dp-search-width:' . $width . 'px;--dp-search-height:' . $height . 'px;--dp-search-radius:' . $radius . 'px;--dp-search-overlay-opacity:' . $opacity . '%;--dp-search-overlay-blur:' . $blur . 'px',
+			'style' => '--lp-docs-search-width:' . $width . 'px;--lp-docs-search-height:' . $height . 'px;--lp-docs-search-radius:' . $radius . 'px;--lp-docs-search-overlay-opacity:' . $opacity . '%;--lp-docs-search-overlay-blur:' . $blur . 'px',
 		)
 	);
 	$search_data = array(
@@ -658,7 +658,7 @@ function docspress_render_toc( $attributes ) {
 	$wrapper = get_block_wrapper_attributes(
 		array(
 			'class'      => 'docs-toc',
-			'style'      => '--dp-component-width:' . $width . 'px',
+			'style'      => '--lp-docs-component-width:' . $width . 'px',
 			'aria-label' => $title,
 		)
 	);

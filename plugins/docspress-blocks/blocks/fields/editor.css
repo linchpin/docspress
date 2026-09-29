@@ -1,9 +1,9 @@
 .docspress-fields__field-editor {
 	margin-block: 12px;
 	padding: 12px;
-	border: 1px solid var(--dp-line, #d8e5ee);
-	border-radius: var(--dp-radius, 10px);
-	background: var(--dp-canvas, #f5faff);
+	border: 1px solid var(--lp-docs-line);
+	border-radius: var(--lp-docs-radius);
+	background: var(--lp-docs-canvas);
 }
 
 .docspress-fields__field-actions {

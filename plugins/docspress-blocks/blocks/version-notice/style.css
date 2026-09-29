@@ -1,7 +1,7 @@
 .wp-block-docspress-version-notice {
-	--docspress-notice-accent: var(--dp-blue, var(--wp--preset--color--accent, #3858e9));
-	--docspress-notice-surface: var(--dp-paper, var(--wp--preset--color--surface, var(--wp--preset--color--base, #fff)));
-	--docspress-notice-border: var(--dp-line, var(--wp--preset--color--border, color-mix(in srgb, currentColor 18%, transparent)));
+	--docspress-notice-accent: var(--lp-docs-accent);
+	--docspress-notice-surface: var(--lp-docs-surface);
+	--docspress-notice-border: var(--lp-docs-line);
 	align-items: flex-start;
 	background: var(--docspress-notice-surface);
 	border: 1px solid var(--docspress-notice-border);

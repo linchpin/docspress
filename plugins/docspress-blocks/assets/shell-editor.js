@@ -178,11 +178,11 @@
 			el( 'path', { d: 'm16.8 15.4 4.4 4.4-1.4 1.4-4.4-4.4a7.5 7.5 0 1 1 1.4-1.4ZM10.5 16a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z' } )
 		);
 		const previewStyle = {
-			'--dp-search-width': `${ attributes.width }px`,
-			'--dp-search-height': `${ attributes.height }px`,
-			'--dp-search-radius': `${ attributes.radius }px`,
-			'--dp-search-overlay-opacity': `${ attributes.overlayOpacity }%`,
-			'--dp-search-overlay-blur': `${ attributes.overlayBlur }px`
+			'--lp-docs-search-width': `${ attributes.width }px`,
+			'--lp-docs-search-height': `${ attributes.height }px`,
+			'--lp-docs-search-radius': `${ attributes.radius }px`,
+			'--lp-docs-search-overlay-opacity': `${ attributes.overlayOpacity }%`,
+			'--lp-docs-search-overlay-blur': `${ attributes.overlayBlur }px`
 		};
 
 		return el(

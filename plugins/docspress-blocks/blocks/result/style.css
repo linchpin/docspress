@@ -1,7 +1,7 @@
 .wp-block-docspress-result {
 	--db-result-accent: #087a3e;
-	--db-result-surface: color-mix(in srgb, var(--db-result-accent) 5%, var(--dp-paper, #fff));
-	--db-result-border: color-mix(in srgb, var(--db-result-accent) 23%, var(--dp-line, #dcdcde));
+	--db-result-surface: color-mix(in srgb, var(--db-result-accent) 5%, var(--lp-docs-surface));
+	--db-result-border: color-mix(in srgb, var(--db-result-accent) 23%, var(--lp-docs-line));
 	display: grid;
 	box-sizing: border-box;
 	width: 100%;
@@ -12,13 +12,13 @@
 	margin-block: clamp(1.25rem, 2.5vw, 2rem);
 	padding: 14px 15px;
 	border: 1px solid var(--db-result-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-result-surface);
 	box-shadow: none;
 }
 
 .docspress-result--neutral {
-	--db-result-accent: var(--dp-blue, #3858e9);
+	--db-result-accent: var(--lp-docs-accent);
 }
 
 .docspress-result--warning {
@@ -50,7 +50,7 @@ html[data-theme="dark"] .docspress-result--error {
 	background: color-mix(in srgb, var(--db-result-accent) 12%, transparent);
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--db-result-accent) 24%, transparent);
 	color: var(--db-result-accent);
-	font: 760 0.8rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 760 0.8rem/1 var(--lp-docs-font-ui);
 }
 
 .docspress-result__icon svg {
@@ -61,14 +61,14 @@ html[data-theme="dark"] .docspress-result--error {
 .docspress-result__kicker {
 	margin: 0 0 3px;
 	color: var(--db-result-accent);
-	font: 730 0.66rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 730 0.66rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
 }
 
 .docspress-result__title {
-	color: var(--dp-ink, #171a22);
-	font: 720 0.91rem/1.35 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	color: var(--lp-docs-ink);
+	font: 720 0.91rem/1.35 var(--lp-docs-font-ui);
 	letter-spacing: -0.01em;
 }
 
@@ -89,7 +89,7 @@ html[data-theme="dark"] .docspress-result--error {
 	grid-column: 2;
 	grid-row: 2;
 	min-width: 0;
-	color: var(--dp-muted, #6f7685);
-	font: 600 0.69rem/1.35 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: var(--lp-docs-muted);
+	font: 600 0.69rem/1.35 var(--lp-docs-font-mono);
 	overflow-wrap: anywhere;
 }

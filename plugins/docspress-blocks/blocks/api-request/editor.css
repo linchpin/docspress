@@ -21,8 +21,8 @@
 	border: 0;
 	outline: 0;
 	background: transparent;
-	color: var(--dp-copy, #2c3338);
-	font: 500 0.82rem/1.65 var(--dp-font-mono, "SFMono-Regular", Consolas, monospace);
+	color: var(--lp-docs-copy);
+	font: 500 0.82rem/1.65 var(--lp-docs-font-mono);
 }
 
 .docspress-api--editor .docspress-api__payload--request textarea {

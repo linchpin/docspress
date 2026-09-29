@@ -1,7 +1,7 @@
 .wp-block-docspress-flow {
-	--db-flow-accent: var(--dp-blue, #3858e9);
-	--db-flow-border: color-mix(in srgb, var(--db-flow-accent) 28%, var(--dp-line-strong, #cfd4dc));
-	--db-flow-marker: color-mix(in srgb, var(--db-flow-accent) 8%, var(--dp-paper, #fff));
+	--db-flow-accent: var(--lp-docs-accent);
+	--db-flow-border: color-mix(in srgb, var(--db-flow-accent) 28%, var(--lp-docs-line-strong));
+	--db-flow-marker: color-mix(in srgb, var(--db-flow-accent) 8%, var(--lp-docs-surface));
 	box-sizing: border-box;
 	width: 100%;
 	margin-block: clamp(1.5rem, 3vw, 2.5rem);
@@ -68,10 +68,10 @@
 	place-items: center;
 	box-sizing: border-box;
 	border: 1px solid var(--db-flow-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-flow-marker);
-	color: var(--dp-ink, #171a22);
-	font: 720 0.82rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	color: var(--lp-docs-ink);
+	font: 720 0.82rem/1 var(--lp-docs-font-ui);
 	font-variant-numeric: tabular-nums;
 }
 
@@ -82,7 +82,7 @@
 
 .wp-block-docspress-flow .docspress-flow__title {
 	margin: 0;
-	color: var(--dp-ink, #171a22);
+	color: var(--lp-docs-ink);
 	font-family: inherit;
 	font-size: clamp(1rem, 0.95rem + 0.15vw, 1.12rem);
 	font-weight: 720;
@@ -91,7 +91,7 @@
 
 .docspress-flow__body {
 	margin-top: 0.42rem;
-	color: var(--dp-copy, #2c3338);
+	color: var(--lp-docs-copy);
 	font-family: inherit;
 	font-size: inherit;
 	line-height: inherit;
@@ -108,15 +108,15 @@
 .docspress-flow__body code,
 .entry-content .docspress-flow__body code {
 	padding: 0.12em 0.32em;
-	border: 1px solid color-mix(in srgb, var(--db-flow-accent) 20%, var(--dp-line, #dcdcde));
-	border-radius: var(--dp-radius, 10px);
-	background: color-mix(in srgb, var(--db-flow-accent) 5%, var(--dp-paper, #fff));
+	border: 1px solid color-mix(in srgb, var(--db-flow-accent) 20%, var(--lp-docs-line));
+	border-radius: var(--lp-docs-radius);
+	background: color-mix(in srgb, var(--db-flow-accent) 5%, var(--lp-docs-surface));
 	color: inherit;
 	font-size: 0.88em;
 }
 
 html[data-theme="dark"] .wp-block-docspress-flow {
-	--db-flow-marker: color-mix(in srgb, var(--db-flow-accent) 14%, var(--dp-canvas, #11141b));
+	--db-flow-marker: color-mix(in srgb, var(--db-flow-accent) 14%, var(--lp-docs-canvas));
 }
 
 @media (max-width: 560px) {
