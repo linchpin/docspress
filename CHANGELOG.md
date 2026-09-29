@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/linchpin/docspress/compare/v1.3.1...v2.0.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NO-TASK:** a theme that sets --dp-* for the blocks has to set --lp-docs-* instead. The theme and the blocks need to be updated together.
+
+### Features ✨
+
+* **NO-TASK:** Name every DocsPress token lp-docs and read them without fallbacks ([e3b2add](https://github.com/linchpin/docspress/commit/e3b2addf47109f42ccdb67f5b9a91eec2732b857))
+* **NO-TASK:** Read the Linchpin docs roles ahead of the DocsPress tokens in every block ([e19fddf](https://github.com/linchpin/docspress/commit/e19fddfd153eb48fcb3de5115132fb156a8a8996))
+
 ## [1.3.1](https://github.com/linchpin/docspress/compare/v1.3.0...v1.3.1) (2026-09-26)
 
 
