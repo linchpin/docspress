@@ -7,6 +7,6 @@
 }
 
 .docspress-file-tree--editor .docspress-file-tree__caption:empty::before {
-	color: var(--dp-muted, #6f7685);
+	color: var(--lp-docs-muted, var(--dp-muted, #6f7685));
 	content: attr(data-rich-text-placeholder);
 }

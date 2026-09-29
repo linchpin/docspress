@@ -373,7 +373,51 @@ describe("DocsPress block theme constraints", () => {
     const styles = (await Promise.all(stylePaths.map((file) => fs.readFile(file, "utf8")))).join("\n");
 
     expect(styles).not.toMatch(/border-radius:\s*(?:max\(|calc\(|999px)/);
-    expect(styles).toContain("border-radius: var(--dp-radius, 10px);");
+    expect(styles).toContain("border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));");
+  });
+
+  it("reads each theme token through its Linchpin docs role first", async () => {
+    const roles = {
+      blue: "accent",
+      "blue-dark": "accent-strong",
+      "blue-soft": "accent-soft",
+      ink: "ink",
+      copy: "copy",
+      muted: "muted",
+      line: "line",
+      "line-strong": "line-strong",
+      paper: "surface",
+      canvas: "canvas",
+      radius: "radius",
+      "font-ui": "font-ui",
+      "font-copy": "font-copy",
+      "font-heading": "font-heading",
+      "font-mono": "font-mono",
+      "heading-weight": "heading-weight"
+    };
+    const stylePaths = [
+      ...["code.css", "code-editor.css", "shell-editor.css"].map((file) =>
+        path.join(pluginRoot, "assets", file)
+      ),
+      ...blockNames.flatMap((name) => [
+        path.join(blocksRoot, name, "style.css"),
+        path.join(blocksRoot, name, "editor.css")
+      ])
+    ];
+
+    for (const file of stylePaths) {
+      const styles = await fs.readFile(file, "utf8").catch(() => "");
+      for (const match of styles.matchAll(/var\(--dp-([a-z-]+?)(?=[,)\s])/g)) {
+        const role = roles[match[1]];
+        if (!role) {
+          continue;
+        }
+        const before = styles.slice(Math.max(0, match.index - 40), match.index);
+        expect(before, `${path.relative(root, file)}: --dp-${match[1]}`).toMatch(
+          new RegExp(`var\\(--lp-docs-${role}, $`)
+        );
+      }
+    }
   });
 
   it("uses compact schema rows and no default gradient backgrounds in companion blocks", async () => {

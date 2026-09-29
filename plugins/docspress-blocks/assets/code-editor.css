@@ -18,7 +18,7 @@
 	background: var(--db-code-bg);
 	box-shadow: none;
 	color: var(--db-code-text);
-	font: 500 0.875rem/1.72 var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
+	font: 500 0.875rem/1.72 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace));
 	tab-size: 2;
 }
 
@@ -35,9 +35,9 @@
 .docspress-code__annotation-editor {
 	margin-block: 12px;
 	padding: 12px;
-	border: 1px solid var(--dp-line, #d8e5ee);
-	border-radius: var(--dp-radius, 10px);
-	background: var(--dp-canvas, #f5faff);
+	border: 1px solid var(--lp-docs-line, var(--dp-line, #d8e5ee));
+	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	background: var(--lp-docs-canvas, var(--dp-canvas, #f5faff));
 }
 
 .docspress-code__annotations--editor {

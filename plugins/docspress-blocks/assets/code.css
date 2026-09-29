@@ -1,18 +1,18 @@
 /* Shared code-surface tokens and primitives used by Colorful Code and Code Tabs. */
 .wp-block-docspress-colorful-code,
 .wp-block-docspress-code-tabs {
-	--db-code-bg: color-mix(in srgb, var(--dp-canvas, #f8f9fb) 82%, var(--dp-paper, #fff));
-	--db-code-panel: var(--dp-paper, #fff);
-	--db-code-panel-strong: var(--dp-blue-soft, #eef1ff);
-	--db-code-border: var(--dp-line-strong, #cfd4dc);
-	--db-code-text: var(--dp-ink, #171a22);
-	--db-code-muted: var(--dp-muted, #6f7685);
-	--db-code-accent: var(--db-preset-code-accent, var(--dp-blue, #3858e9));
-	--db-code-accent-2: var(--db-preset-code-accent-2, var(--dp-blue-dark, #2145d8));
-	--db-code-keyword: var(--db-preset-code-keyword, var(--dp-blue-dark, #2145d8));
+	--db-code-bg: color-mix(in srgb, var(--lp-docs-canvas, var(--dp-canvas, #f8f9fb)) 82%, var(--lp-docs-surface, var(--dp-paper, #fff)));
+	--db-code-panel: var(--lp-docs-surface, var(--dp-paper, #fff));
+	--db-code-panel-strong: var(--lp-docs-accent-soft, var(--dp-blue-soft, #eef1ff));
+	--db-code-border: var(--lp-docs-line-strong, var(--dp-line-strong, #cfd4dc));
+	--db-code-text: var(--lp-docs-ink, var(--dp-ink, #171a22));
+	--db-code-muted: var(--lp-docs-muted, var(--dp-muted, #6f7685));
+	--db-code-accent: var(--db-preset-code-accent, var(--lp-docs-accent, var(--dp-blue, #3858e9)));
+	--db-code-accent-2: var(--db-preset-code-accent-2, var(--lp-docs-accent-strong, var(--dp-blue-dark, #2145d8)));
+	--db-code-keyword: var(--db-preset-code-keyword, var(--lp-docs-accent-strong, var(--dp-blue-dark, #2145d8)));
 	--db-code-string: var(--db-preset-code-string, #137c44);
 	--db-code-number: var(--db-preset-code-number, #a84f00);
-	--db-code-comment: var(--dp-muted, #6f7685);
+	--db-code-comment: var(--lp-docs-muted, var(--dp-muted, #6f7685));
 	--db-code-shadow: none;
 	box-sizing: border-box;
 	width: 100%;
@@ -23,12 +23,12 @@
 
 html[data-theme="dark"] .wp-block-docspress-colorful-code,
 html[data-theme="dark"] .wp-block-docspress-code-tabs {
-	--db-code-bg: color-mix(in srgb, var(--dp-canvas, #11141b) 78%, #000);
-	--db-code-panel: var(--dp-paper, #171b23);
-	--db-code-panel-strong: var(--dp-blue-soft, #20294c);
-	--db-code-border: var(--dp-line-strong, #434c5b);
-	--db-code-text: var(--dp-ink, #f3f5f8);
-	--db-code-muted: var(--dp-muted, #929aab);
+	--db-code-bg: color-mix(in srgb, var(--lp-docs-canvas, var(--dp-canvas, #11141b)) 78%, #000);
+	--db-code-panel: var(--lp-docs-surface, var(--dp-paper, #171b23));
+	--db-code-panel-strong: var(--lp-docs-accent-soft, var(--dp-blue-soft, #20294c));
+	--db-code-border: var(--lp-docs-line-strong, var(--dp-line-strong, #434c5b));
+	--db-code-text: var(--lp-docs-ink, var(--dp-ink, #f3f5f8));
+	--db-code-muted: var(--lp-docs-muted, var(--dp-muted, #929aab));
 	--db-code-shadow: none;
 }
 
@@ -91,7 +91,7 @@ html[data-theme="dark"] .docspress-preset-jetpack {
 	position: relative;
 	overflow: hidden;
 	border: 1px solid var(--db-code-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
 	background: var(--db-code-bg);
 	box-shadow: var(--db-code-shadow);
 	color: var(--db-code-text);
@@ -120,7 +120,7 @@ html[data-theme="dark"] .docspress-preset-jetpack {
 	max-width: 14rem;
 	overflow: hidden;
 	color: var(--db-code-muted);
-	font: 600 0.68rem/1.2 var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
+	font: 600 0.68rem/1.2 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace));
 	letter-spacing: -0.01em;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -151,11 +151,11 @@ a.docspress-code__source:focus-visible {
 	min-height: 30px;
 	align-items: center;
 	padding: 0 10px;
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
 	background: color-mix(in srgb, var(--db-code-accent) 11%, var(--db-code-panel));
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--db-code-accent) 24%, transparent);
 	color: var(--db-code-text);
-	font: 680 0.72rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.72rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
 }
@@ -168,12 +168,12 @@ a.docspress-code__source:focus-visible {
 	margin: 0;
 	padding: 3px 7px;
 	border: 1px solid var(--db-code-border);
-	border-radius: var(--dp-radius, 10px);
+	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
 	background: color-mix(in srgb, var(--db-code-panel) 76%, transparent);
 	box-shadow: none;
 	color: var(--db-code-text);
 	cursor: pointer;
-	font: 650 0.68rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 650 0.68rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 	transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
@@ -198,7 +198,7 @@ a.docspress-code__source:focus-visible {
 	overflow: auto;
 	background: transparent;
 	color: var(--db-code-text);
-	font: 500 0.875rem/1.72 var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
+	font: 500 0.875rem/1.72 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace));
 	tab-size: 2;
 	-webkit-overflow-scrolling: touch;
 }
@@ -211,7 +211,7 @@ a.docspress-code__source:focus-visible {
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-code-text);
-	font: 500 0.875rem/1.72 var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
+	font: 500 0.875rem/1.72 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace));
 }
 
 .entry-content .wp-block-docspress-colorful-code,
@@ -289,7 +289,7 @@ a.docspress-code__source:focus-visible {
 	box-shadow: none;
 	color: var(--db-code-accent);
 	cursor: pointer;
-	font: 760 0.62rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 760 0.62rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 }
 
 .docspress-code__annotation-marker:hover,
@@ -331,14 +331,14 @@ a.docspress-code__source:focus-visible {
 	border-radius: 50%;
 	background: var(--db-code-accent);
 	color: var(--db-code-panel);
-	font: 760 0.65rem/1 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 760 0.65rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 }
 
 .docspress-code__annotation strong {
 	display: block;
 	margin-bottom: 3px;
 	color: var(--db-code-muted);
-	font: 680 0.64rem/1.2 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 680 0.64rem/1.2 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
@@ -348,7 +348,7 @@ a.docspress-code__source:focus-visible {
 .docspress-code__annotation p {
 	margin: 0;
 	color: var(--db-code-text);
-	font: 500 0.8rem/1.55 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font: 500 0.8rem/1.55 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 	white-space: normal;
 }
 
@@ -378,8 +378,8 @@ a.docspress-code__source:focus-visible {
 
 .docspress-code__caption {
 	margin: 9px 3px 0;
-	color: var(--dp-muted, #646970);
-	font: 500 0.78rem/1.45 var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	color: var(--lp-docs-muted, var(--dp-muted, #646970));
+	font: 500 0.78rem/1.45 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
 	text-align: center;
 }
 

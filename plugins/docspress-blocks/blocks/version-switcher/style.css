@@ -1,7 +1,7 @@
 .wp-block-docspress-version-switcher {
-	--docspress-version-surface: var(--dp-paper, var(--wp--preset--color--surface, var(--wp--preset--color--base, #fff)));
-	--docspress-version-text: var(--dp-ink, var(--wp--preset--color--foreground, var(--wp--preset--color--contrast, #1e1e1e)));
-	--docspress-version-border: var(--dp-line, var(--wp--preset--color--border, color-mix(in srgb, currentColor 20%, transparent)));
+	--docspress-version-surface: var(--lp-docs-surface, var(--dp-paper, var(--wp--preset--color--surface, var(--wp--preset--color--base, #fff))));
+	--docspress-version-text: var(--lp-docs-ink, var(--dp-ink, var(--wp--preset--color--foreground, var(--wp--preset--color--contrast, #1e1e1e))));
+	--docspress-version-border: var(--lp-docs-line, var(--dp-line, var(--wp--preset--color--border, color-mix(in srgb, currentColor 20%, transparent))));
 	align-items: center;
 	color: var(--docspress-version-text);
 	display: flex;
@@ -67,8 +67,8 @@
 }
 
 .docspress-version-switcher__links a[aria-current="page"] {
-	background: var(--dp-ink, var(--wp--preset--color--foreground, var(--wp--preset--color--contrast, #1e1e1e)));
-	color: var(--dp-paper, var(--wp--preset--color--background, var(--wp--preset--color--base, #fff)));
+	background: var(--lp-docs-ink, var(--dp-ink, var(--wp--preset--color--foreground, var(--wp--preset--color--contrast, #1e1e1e))));
+	color: var(--lp-docs-surface, var(--dp-paper, var(--wp--preset--color--background, var(--wp--preset--color--base, #fff))));
 }
 
 .docspress-version-switcher__badge {
@@ -84,7 +84,7 @@
 }
 
 .docspress-version-switcher :is(a, select):focus-visible {
-	outline: 3px solid var(--dp-blue, var(--wp--preset--color--accent, #3858e9));
+	outline: 3px solid var(--lp-docs-accent, var(--dp-blue, var(--wp--preset--color--accent, #3858e9)));
 	outline-offset: 2px;
 }
 
