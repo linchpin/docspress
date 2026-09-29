@@ -1,7 +1,7 @@
 .docspress-callout {
-	--db-callout-accent: var(--lp-docs-accent, var(--dp-blue, #3858e9));
-	--db-callout-surface: color-mix(in srgb, var(--db-callout-accent) 5%, var(--lp-docs-surface, var(--dp-paper, #fff)));
-	--db-callout-border: color-mix(in srgb, var(--db-callout-accent) 24%, var(--lp-docs-line, var(--dp-line, #dcdcde)));
+	--db-callout-accent: var(--lp-docs-accent);
+	--db-callout-surface: color-mix(in srgb, var(--db-callout-accent) 5%, var(--lp-docs-surface));
+	--db-callout-border: color-mix(in srgb, var(--db-callout-accent) 24%, var(--lp-docs-line));
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
 	gap: 11px;
@@ -12,7 +12,7 @@
 	margin-block: clamp(1.25rem, 2.5vw, 2rem);
 	padding: 15px 17px 15px 14px;
 	border: 1px solid var(--db-callout-border);
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-callout-surface);
 	box-shadow: none;
 }
@@ -54,7 +54,7 @@ html[data-theme="dark"] .docspress-callout--success {
 	width: 26px;
 	height: 26px;
 	place-items: center;
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	border: 1px solid color-mix(in srgb, var(--db-callout-accent) 22%, transparent);
 	background: color-mix(in srgb, var(--db-callout-accent) 11%, transparent);
 	color: var(--db-callout-accent);
@@ -67,8 +67,8 @@ html[data-theme="dark"] .docspress-callout--success {
 
 .docspress-callout__title {
 	margin: 1px 0 4px;
-	color: color-mix(in srgb, var(--db-callout-accent) 76%, var(--lp-docs-ink, var(--dp-ink, #1d2327)));
-	font: 740 0.88rem/1.3 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	color: color-mix(in srgb, var(--db-callout-accent) 76%, var(--lp-docs-ink));
+	font: 740 0.88rem/1.3 var(--lp-docs-font-ui);
 	letter-spacing: -0.01em;
 }
 
@@ -111,7 +111,7 @@ details.docspress-callout > summary::marker {
 }
 
 details.docspress-callout > summary:focus-visible {
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	outline: 2px solid color-mix(in srgb, var(--db-callout-accent) 58%, transparent);
 	outline-offset: -2px;
 }

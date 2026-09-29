@@ -14,7 +14,7 @@
 	border-top: 1px solid var(--db-play-border);
 	background: var(--db-play-paper);
 	color: var(--db-play-muted);
-	font: 500 0.78rem/1.45 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 500 0.78rem/1.45 var(--lp-docs-font-ui);
 }
 
 .docspress-playground__editor-notice strong {

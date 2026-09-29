@@ -19,7 +19,7 @@
 	outline: 0;
 	background: transparent;
 	color: var(--db-terminal-text);
-	font: 500 0.87rem/1.65 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 500 0.87rem/1.65 var(--lp-docs-font-mono);
 }
 
 .docspress-terminal--editor textarea.docspress-terminal__output {

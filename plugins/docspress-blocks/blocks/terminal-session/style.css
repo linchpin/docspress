@@ -1,7 +1,7 @@
 .wp-block-docspress-terminal-session {
-	--db-terminal-accent: var(--lp-docs-accent, var(--dp-blue, #6f8cff));
-	--db-terminal-bg: color-mix(in srgb, var(--lp-docs-ink, var(--dp-ink, #171a22)) 94%, #000);
-	--db-terminal-panel: color-mix(in srgb, var(--lp-docs-ink, var(--dp-ink, #171a22)) 84%, #000);
+	--db-terminal-accent: var(--lp-docs-accent);
+	--db-terminal-bg: color-mix(in srgb, var(--lp-docs-ink) 94%, #000);
+	--db-terminal-panel: color-mix(in srgb, var(--lp-docs-ink) 84%, #000);
 	--db-terminal-line: rgba(255, 255, 255, 0.15);
 	--db-terminal-text: #f5f7fa;
 	--db-terminal-muted: #aeb6c6;
@@ -10,8 +10,8 @@
 	min-width: 0;
 	margin-block: clamp(1.5rem, 3vw, 2.25rem);
 	overflow: hidden;
-	border: 1px solid color-mix(in srgb, var(--lp-docs-ink, var(--dp-ink, #171a22)) 30%, var(--lp-docs-line-strong, var(--dp-line-strong, #cfd4dc)));
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border: 1px solid color-mix(in srgb, var(--lp-docs-ink) 30%, var(--lp-docs-line-strong));
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-terminal-bg);
 	box-shadow: none;
 	color: var(--db-terminal-text);
@@ -48,20 +48,20 @@
 
 .docspress-terminal__icon {
 	color: var(--db-terminal-accent);
-	font: 760 0.8rem/1 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 760 0.8rem/1 var(--lp-docs-font-mono);
 }
 
 .docspress-terminal__title {
 	overflow: hidden;
 	color: var(--db-terminal-text);
-	font: 650 0.75rem/1.2 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 650 0.75rem/1.2 var(--lp-docs-font-ui);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
 .docspress-terminal__shell {
 	color: var(--db-terminal-muted);
-	font: 600 0.68rem/1 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 600 0.68rem/1 var(--lp-docs-font-mono);
 }
 
 .docspress-terminal__copy {
@@ -72,11 +72,11 @@
 	margin: 0;
 	padding: 3px 7px;
 	border: 1px solid var(--db-terminal-line);
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	background: rgba(255, 255, 255, 0.04);
 	color: var(--db-terminal-text);
 	cursor: pointer;
-	font: 650 0.68rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 650 0.68rem/1 var(--lp-docs-font-ui);
 }
 
 .docspress-terminal__copy svg {
@@ -108,7 +108,7 @@
 
 .docspress-terminal__prompt {
 	color: var(--db-terminal-accent);
-	font: 700 0.87rem/1.65 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 700 0.87rem/1.65 var(--lp-docs-font-mono);
 }
 
 .docspress-terminal__command pre,
@@ -124,7 +124,7 @@
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-terminal-text);
-	font: 500 0.87rem/1.65 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 500 0.87rem/1.65 var(--lp-docs-font-mono);
 	white-space: pre;
 }
 
@@ -144,8 +144,8 @@
 }
 
 html[data-theme="dark"] .wp-block-docspress-terminal-session {
-	--db-terminal-bg: color-mix(in srgb, var(--lp-docs-canvas, var(--dp-canvas, #11141b)) 74%, #000);
-	--db-terminal-panel: color-mix(in srgb, var(--lp-docs-surface, var(--dp-paper, #171b23)) 70%, #000);
+	--db-terminal-bg: color-mix(in srgb, var(--lp-docs-canvas) 74%, #000);
+	--db-terminal-panel: color-mix(in srgb, var(--lp-docs-surface) 70%, #000);
 	box-shadow: none;
 }
 

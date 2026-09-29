@@ -1,8 +1,8 @@
 .docspress-hero {
-	--db-hero-accent: var(--lp-docs-accent, var(--dp-blue, #3858e9));
-	--db-hero-copy: var(--lp-docs-copy, var(--dp-copy, #4f5666));
-	--db-hero-heading: var(--lp-docs-ink, var(--dp-ink, #171a22));
-	--db-hero-panel: var(--lp-docs-surface, var(--dp-paper, #fff));
+	--db-hero-accent: var(--lp-docs-accent);
+	--db-hero-copy: var(--lp-docs-copy);
+	--db-hero-heading: var(--lp-docs-ink);
+	--db-hero-panel: var(--lp-docs-surface);
 	--db-hero-visual: transparent;
 	--db-hero-media-width: 44%;
 	--db-hero-image-scale: 100%;
@@ -14,8 +14,8 @@
 	min-height: 460px;
 	margin-block: clamp(1.5rem, 4vw, 3rem);
 	overflow: hidden;
-	border: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border: 1px solid var(--lp-docs-line);
+	border-radius: var(--lp-docs-radius);
 	box-shadow: none;
 }
 
@@ -26,10 +26,10 @@
 }
 
 .docspress-hero--brand {
-	--db-hero-copy: color-mix(in srgb, #fff 82%, var(--lp-docs-accent, var(--dp-blue, #3858e9)));
+	--db-hero-copy: color-mix(in srgb, #fff 82%, var(--lp-docs-accent));
 	--db-hero-heading: #fff;
-	--db-hero-panel: var(--lp-docs-accent, var(--dp-blue, #3858e9));
-	--db-hero-visual: color-mix(in srgb, var(--lp-docs-accent, var(--dp-blue, #3858e9)) 86%, #000);
+	--db-hero-panel: var(--lp-docs-accent);
+	--db-hero-visual: color-mix(in srgb, var(--lp-docs-accent) 86%, #000);
 }
 
 .docspress-hero--paper:not(.has-background),
@@ -92,7 +92,7 @@
 	max-width: 680px;
 	margin: 0;
 	font-size: clamp(40px, 5vw, 62px);
-	font-weight: var(--lp-docs-heading-weight, var(--dp-heading-weight, 750));
+	font-weight: var(--lp-docs-heading-weight);
 	letter-spacing: -0.045em;
 	line-height: 1;
 	text-wrap: balance;
@@ -154,7 +154,7 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 	min-width: 0;
 	padding: clamp(36px, 4vw, 52px);
 	overflow: hidden;
-	border-left: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+	border-left: 1px solid var(--lp-docs-line);
 }
 
 .docspress-hero--brand .docspress-hero__visual,
@@ -201,12 +201,12 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 	box-sizing: border-box;
 	width: min(100%, 420px);
 	padding: 18px;
-	border: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+	border: 1px solid var(--lp-docs-line);
 	border-radius: 16px;
-	background: var(--lp-docs-surface, var(--dp-paper, #fff));
+	background: var(--lp-docs-surface);
 	box-shadow: 0 16px 42px color-mix(in srgb, var(--db-hero-heading) 9%, transparent);
 	color: var(--db-hero-heading);
-	font-family: var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font-family: var(--lp-docs-font-ui);
 }
 
 .docspress-hero-diagram__pipeline {
@@ -218,9 +218,9 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 .docspress-hero-diagram__source,
 .docspress-hero-diagram__surface {
 	box-sizing: border-box;
-	border: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+	border: 1px solid var(--lp-docs-line);
 	border-radius: 11px;
-	background: var(--lp-docs-canvas, var(--dp-canvas, #f6f7f7));
+	background: var(--lp-docs-canvas);
 }
 
 .docspress-hero-diagram__source {
@@ -243,15 +243,15 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 	min-height: 30px;
 	padding: 0 10px;
 	background: var(--db-hero-heading);
-	color: var(--lp-docs-surface, var(--dp-paper, #fff));
-	font: 720 9px/1 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	color: var(--lp-docs-surface);
+	font: 720 9px/1 var(--lp-docs-font-mono);
 }
 
 .docspress-hero-diagram__dot {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: var(--dp-highlight, #ffb900);
+	background: var(--lp-docs-highlight);
 }
 
 .docspress-hero-diagram__folder,
@@ -259,20 +259,20 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 	display: block;
 	padding: 5px 7px;
 	border-radius: 5px;
-	font: 650 9px/1.2 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 650 9px/1.2 var(--lp-docs-font-mono);
 }
 
 .docspress-hero-diagram__folder {
 	grid-column: 1 / -1;
-	border: 1px solid color-mix(in srgb, var(--db-hero-accent) 28%, var(--lp-docs-line, var(--dp-line, #dcdcde)));
-	background: color-mix(in srgb, var(--db-hero-accent) 8%, var(--lp-docs-surface, var(--dp-paper, #fff)));
+	border: 1px solid color-mix(in srgb, var(--db-hero-accent) 28%, var(--lp-docs-line));
+	background: color-mix(in srgb, var(--db-hero-accent) 8%, var(--lp-docs-surface));
 	color: var(--db-hero-accent);
 }
 
 .docspress-hero-diagram__file {
 	position: relative;
 	padding-left: 17px;
-	background: var(--lp-docs-surface, var(--dp-paper, #fff));
+	background: var(--lp-docs-surface);
 	color: var(--db-hero-copy);
 }
 
@@ -303,7 +303,7 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 .docspress-hero-diagram__hub::after {
 	position: absolute;
 	left: 50%;
-	color: var(--lp-docs-line-strong, var(--dp-line-strong, #c3c4c7));
+	color: var(--lp-docs-line-strong);
 	content: "↓";
 	font-size: 16px;
 	font-weight: 700;
@@ -396,14 +396,14 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 	align-items: center;
 	margin-top: 15px;
 	padding-top: 13px;
-	border-top: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+	border-top: 1px solid var(--lp-docs-line);
 	color: var(--db-hero-copy);
 	font-size: 9px;
 	line-height: 1.3;
 }
 
 .docspress-hero-diagram__return > span:first-child {
-	color: var(--dp-highlight-dark, #b26200);
+	color: var(--lp-docs-highlight-dark);
 	font-size: 16px;
 	line-height: 1;
 }
@@ -419,7 +419,7 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 
 .docspress-hero--media-left .docspress-hero__visual {
 	order: -1;
-	border-right: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+	border-right: 1px solid var(--lp-docs-line);
 	border-left: 0;
 }
 
@@ -669,7 +669,7 @@ a.docspress-hero__button--secondary.wp-element-button:hover {
 		order: 0;
 		min-height: 380px;
 		padding: 44px;
-		border-top: 1px solid var(--lp-docs-line, var(--dp-line, #dcdcde));
+		border-top: 1px solid var(--lp-docs-line);
 		border-right: 0;
 		border-left: 0;
 	}

@@ -1,18 +1,18 @@
 .wp-block-docspress-code-playground {
-	--db-play-accent: var(--lp-docs-accent, var(--dp-blue, #3858e9));
-	--db-play-paper: var(--lp-docs-surface, var(--dp-paper, #fff));
-	--db-play-canvas: var(--lp-docs-canvas, var(--dp-canvas, #f6f7f9));
-	--db-play-border: var(--lp-docs-line-strong, var(--dp-line-strong, #cfd4dc));
-	--db-play-ink: var(--lp-docs-ink, var(--dp-ink, #171a22));
-	--db-play-copy: var(--lp-docs-copy, var(--dp-copy, #2c3338));
-	--db-play-muted: var(--lp-docs-muted, var(--dp-muted, #6f7685));
+	--db-play-accent: var(--lp-docs-accent);
+	--db-play-paper: var(--lp-docs-surface);
+	--db-play-canvas: var(--lp-docs-canvas);
+	--db-play-border: var(--lp-docs-line-strong);
+	--db-play-ink: var(--lp-docs-ink);
+	--db-play-copy: var(--lp-docs-copy);
+	--db-play-muted: var(--lp-docs-muted);
 	box-sizing: border-box;
 	width: 100%;
 	min-width: 0;
 	margin-block: clamp(1.5rem, 3vw, 2.25rem);
 	overflow: hidden;
 	border: 1px solid var(--db-play-border);
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-play-paper);
 	color: var(--db-play-copy);
 }
@@ -54,7 +54,7 @@
 .docspress-playground__identity strong {
 	overflow: hidden;
 	color: var(--db-play-ink);
-	font: 720 0.82rem/1.2 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 720 0.82rem/1.2 var(--lp-docs-font-ui);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
@@ -64,7 +64,7 @@
 .docspress-playground__console-label,
 .docspress-playground__editors label > span {
 	color: var(--db-play-muted);
-	font: 680 0.62rem/1.2 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 680 0.62rem/1.2 var(--lp-docs-font-ui);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 }
@@ -101,7 +101,7 @@
 
 .docspress-playground__policy {
 	color: var(--db-play-muted);
-	font: 590 0.64rem/1.2 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 590 0.64rem/1.2 var(--lp-docs-font-mono);
 }
 
 .docspress-playground__actions button,
@@ -110,12 +110,12 @@
 	margin: 0;
 	padding: 4px 9px;
 	border: 1px solid var(--db-play-border);
-	border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));
+	border-radius: var(--lp-docs-radius);
 	background: var(--db-play-paper);
 	box-shadow: none;
 	color: var(--db-play-ink);
 	cursor: pointer;
-	font: 660 0.68rem/1 var(--lp-docs-font-ui, var(--dp-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif));
+	font: 660 0.68rem/1 var(--lp-docs-font-ui);
 }
 
 .docspress-playground__actions button:hover,
@@ -172,7 +172,7 @@
 	background: transparent;
 	box-shadow: none;
 	color: var(--db-play-copy);
-	font: 500 0.72rem/1.5 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 500 0.72rem/1.5 var(--lp-docs-font-mono);
 	tab-size: 2;
 }
 
@@ -224,7 +224,7 @@
 	overflow: auto;
 	padding: 10px 12px 12px;
 	color: var(--db-play-copy);
-	font: 500 0.7rem/1.48 var(--lp-docs-font-mono, var(--dp-font-mono, "SFMono-Regular", Consolas, monospace));
+	font: 500 0.7rem/1.48 var(--lp-docs-font-mono);
 }
 
 .docspress-playground__console output > span::before {

@@ -373,28 +373,10 @@ describe("DocsPress block theme constraints", () => {
     const styles = (await Promise.all(stylePaths.map((file) => fs.readFile(file, "utf8")))).join("\n");
 
     expect(styles).not.toMatch(/border-radius:\s*(?:max\(|calc\(|999px)/);
-    expect(styles).toContain("border-radius: var(--lp-docs-radius, var(--dp-radius, 10px));");
+    expect(styles).toContain("border-radius: var(--lp-docs-radius);");
   });
 
-  it("reads each theme token through its Linchpin docs role first", async () => {
-    const roles = {
-      blue: "accent",
-      "blue-dark": "accent-strong",
-      "blue-soft": "accent-soft",
-      ink: "ink",
-      copy: "copy",
-      muted: "muted",
-      line: "line",
-      "line-strong": "line-strong",
-      paper: "surface",
-      canvas: "canvas",
-      radius: "radius",
-      "font-ui": "font-ui",
-      "font-copy": "font-copy",
-      "font-heading": "font-heading",
-      "font-mono": "font-mono",
-      "heading-weight": "heading-weight"
-    };
+  it("reads the docs tokens directly, with no fallback chain", async () => {
     const stylePaths = [
       ...["code.css", "code-editor.css", "shell-editor.css"].map((file) =>
         path.join(pluginRoot, "assets", file)
@@ -404,18 +386,14 @@ describe("DocsPress block theme constraints", () => {
         path.join(blocksRoot, name, "editor.css")
       ])
     ];
+    const instanceTokens = /^--lp-docs-(?:search-|component-width)/;
 
     for (const file of stylePaths) {
       const styles = await fs.readFile(file, "utf8").catch(() => "");
-      for (const match of styles.matchAll(/var\(--dp-([a-z-]+?)(?=[,)\s])/g)) {
-        const role = roles[match[1]];
-        if (!role) {
-          continue;
-        }
-        const before = styles.slice(Math.max(0, match.index - 40), match.index);
-        expect(before, `${path.relative(root, file)}: --dp-${match[1]}`).toMatch(
-          new RegExp(`var\\(--lp-docs-${role}, $`)
-        );
+      const label = path.relative(root, file);
+      expect(styles, label).not.toContain("--dp-");
+      for (const match of styles.matchAll(/var\((--lp-docs-[a-z0-9-]+),/g)) {
+        expect(match[1], label).toMatch(instanceTokens);
       }
     }
   });
@@ -845,7 +823,7 @@ describe("DocsPress block theme constraints", () => {
         kicker: {
           border: "0",
           markerWidth: "0",
-          shadow: "inset 0 -2px 0 var(--dp-blue)"
+          shadow: "inset 0 -2px 0 var(--lp-docs-accent)"
         },
         radius: "4px",
         ruleWidth: "48px",
@@ -990,23 +968,23 @@ describe("DocsPress block theme constraints", () => {
     expect(styles).toMatch(
       /\.brand-title\s*\{[^}]*font-weight:\s*var\(--wp--custom--heading-weight,\s*700\);[^}]*\}/s
     );
-    expect(styles).toContain("background: var(--dp-highlight);");
+    expect(styles).toContain("background: var(--lp-docs-highlight);");
     expect(theme.settings.custom.entryKickerRadius).toBe("999px");
     expect(theme.settings.custom.entryKickerShadow).toBe(
-      "3px 3px 0 var(--dp-highlight-strong)"
+      "3px 3px 0 var(--lp-docs-highlight-strong)"
     );
     expect(theme.settings.custom.entryKickerDarkBorder).toBe(
-      "2px solid color-mix(in srgb, var(--dp-highlight) 72%, var(--dp-line))"
+      "2px solid color-mix(in srgb, var(--lp-docs-highlight) 72%, var(--lp-docs-line))"
     );
     expect(theme.settings.custom.entryKickerDarkBackground).toBe(
-      "color-mix(in srgb, var(--dp-highlight) 12%, var(--dp-paper))"
+      "color-mix(in srgb, var(--lp-docs-highlight) 12%, var(--lp-docs-surface))"
     );
     expect(theme.settings.custom.entryKickerDarkShadow).toBe(
-      "3px 3px 0 color-mix(in srgb, var(--dp-highlight-strong) 48%, var(--dp-paper))"
+      "3px 3px 0 color-mix(in srgb, var(--lp-docs-highlight-strong) 48%, var(--lp-docs-surface))"
     );
-    expect(theme.settings.custom.entryKickerDarkColor).toBe("var(--dp-highlight)");
+    expect(theme.settings.custom.entryKickerDarkColor).toBe("var(--lp-docs-highlight)");
     expect(theme.settings.custom.entryKickerDarkMarkerBackground).toBe(
-      "var(--dp-highlight-strong)"
+      "var(--lp-docs-highlight-strong)"
     );
     expect(theme.settings.custom.entryTitleSize).toBe("clamp(42px, 5.6vw, 68px)");
     expect(theme.settings.custom.sidebarWidth).toBe("266px");
@@ -1044,28 +1022,28 @@ describe("DocsPress block theme constraints", () => {
     expect(theme.settings.color.palette).toContainEqual(
       expect.objectContaining({
         slug: "header-surface",
-        color: "color-mix(in srgb, var(--dp-paper) 92%, transparent)",
+        color: "color-mix(in srgb, var(--lp-docs-surface) 92%, transparent)",
       })
     );
     expect(styles).toContain(
-      "--dp-active-ink: var(--wp--preset--color--ink, #232323);"
+      "--lp-docs-active-ink: var(--wp--preset--color--ink, #232323);"
     );
-    expect(styles).toMatch(/\.brand\s*\{[^}]*color:\s*var\(--dp-ink\);/s);
+    expect(styles).toMatch(/\.brand\s*\{[^}]*color:\s*var\(--lp-docs-ink\);/s);
     expect(styles).toMatch(
-      /\.brand-wordpress\s*\{[^}]*color:\s*var\(--dp-blue-dark\);/s
+      /\.brand-wordpress\s*\{[^}]*color:\s*var\(--lp-docs-accent-strong\);/s
     );
     expect(styles).toMatch(
-      /\.primary-navigation\s*\{[^}]*color:\s*var\(--dp-copy\);/s
+      /\.primary-navigation\s*\{[^}]*color:\s*var\(--lp-docs-copy\);/s
     );
     expect(styles).toContain(".wp-site-blocks > header.wp-block-template-part {");
     expect(styles).toContain("margin: 0 0 0 auto;");
     expect(styles).toContain(".primary-navigation a.is-current-page");
     expect(styles).toMatch(
-      /\.primary-navigation a\.is-current-page,[\s\S]*?background:\s*var\(--dp-highlight\);[\s\S]*?color:\s*var\(--dp-active-ink\);/
+      /\.primary-navigation a\.is-current-page,[\s\S]*?background:\s*var\(--lp-docs-highlight\);[\s\S]*?color:\s*var\(--lp-docs-active-ink\);/
     );
     expect(styles).toMatch(/\.primary-navigation a\s*\{[^}]*line-height:\s*1\.65;/s);
     expect(styles).toMatch(
-      /\.search-shortcut kbd\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--dp-highlight\) 22%, var\(--dp-paper\)\);[^}]*color:\s*var\(--dp-ink\);/s
+      /\.search-shortcut kbd\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--lp-docs-highlight\) 22%, var\(--lp-docs-surface\)\);[^}]*color:\s*var\(--lp-docs-ink\);/s
     );
     expect(styles).toMatch(
       /\.primary-navigation \.wp-block-navigation__container\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*gap:\s*4px !important;/s
@@ -1195,13 +1173,13 @@ describe("DocsPress block theme constraints", () => {
       /\.home-download-card > \.home-download-card__features\s*\{[^}]*gap:\s*10px;[^}]*margin:\s*24px 0 0;[^}]*padding-inline-start:\s*0;/s
     );
     expect(styles).toMatch(
-      /\.home-download-card__features li\s*\{[^}]*border-radius:\s*999px;[^}]*font:\s*800 11px\/1\.2 var\(--dp-font-ui\);/s
+      /\.home-download-card__features li\s*\{[^}]*border-radius:\s*999px;[^}]*font:\s*800 11px\/1\.2 var\(--lp-docs-font-ui\);/s
     );
     expect(styles).not.toMatch(
       /\.home-download-card__features li:not\(:last-child\)::after\s*\{/
     );
     expect(styles).toContain(
-      "background: color-mix(in srgb, var(--dp-paper) 97%, var(--home-download-accent));"
+      "background: color-mix(in srgb, var(--lp-docs-surface) 97%, var(--home-download-accent));"
     );
     expect(styles).toMatch(
       /\.home-download-intro :where\(h2\)\s*\{[^}]*margin:\s*0;/s
@@ -1496,8 +1474,8 @@ describe("DocsPress block theme constraints", () => {
     expect(styles).not.toMatch(/^\.entry-content h[2-4][,{ ]/m);
     expect(styles).not.toMatch(/^\.entry-content \.wp-block-button__link\s*\{/m);
     expect(theme.styles.color).toEqual({
-      background: "var(--dp-paper)",
-      text: "var(--dp-copy)",
+      background: "var(--lp-docs-surface)",
+      text: "var(--lp-docs-copy)",
     });
     expect(theme.styles.typography).toMatchObject({
       fontFamily: "var:preset|font-family|ui",
@@ -1508,8 +1486,8 @@ describe("DocsPress block theme constraints", () => {
       "var(--wp--custom--heading-weight)"
     );
     expectCompleteThemePreset(theme);
-    expect(theme.styles.elements.heading.color.text).toBe("var(--dp-ink)");
-    expect(theme.styles.elements.link.color.text).toBe("var(--dp-blue-dark)");
+    expect(theme.styles.elements.heading.color.text).toBe("var(--lp-docs-ink)");
+    expect(theme.styles.elements.link.color.text).toBe("var(--lp-docs-accent-strong)");
 
     const bodyRule = styles.match(/\nbody\s*\{([^}]*)\}/)?.[1] ?? "";
     const linkRule = styles.match(/\na\s*\{([^}]*)\}/)?.[1] ?? "";
@@ -1750,8 +1728,8 @@ describe("DocsPress block theme constraints", () => {
       "https://automattic.com/?utm_medium=automattic_referred&amp;utm_source=docspress_footer"
     );
     expect(footer).toContain('"label":"Kitchen Sink"');
-    expect(cssRule(styles, ".site-footer")).toContain("background: var(--dp-canvas);");
-    expect(cssRule(styles, ".site-footer")).toContain("color: var(--dp-copy);");
+    expect(cssRule(styles, ".site-footer")).toContain("background: var(--lp-docs-canvas);");
+    expect(cssRule(styles, ".site-footer")).toContain("color: var(--lp-docs-copy);");
     expect(cssRule(styles, ".footer-inner")).toContain("max-width: none;");
     expect(cssRule(styles, ".footer-inner")).toContain("min-height: 62px;");
     expect(styles).toContain(".footer-automattic a:hover {");
