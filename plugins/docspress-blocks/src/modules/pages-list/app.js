@@ -2,11 +2,18 @@
  * Modern Pages list app shell.
  */
 
-import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from '@wordpress/element';
 import { Button, Notice, Spinner } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews';
+import { applyFilters } from '@wordpress/hooks';
 
 import { getActions, getFields } from './fields';
 import { toggleExpanded, visiblePages } from './hierarchy';
@@ -54,14 +61,36 @@ async function fetchPages() {
 /**
  * Root app.
  *
+ * Other plugins extend the list through three filters, each applied with the
+ * same `context`:
+ *
+ * - `docspress.pagesList.defaultView` — the view the screen opens with, once.
+ *   Add a column's field ID to `fields` to show it by default.
+ * - `docspress.pagesList.fields` — DataViews field definitions. Read the data
+ *   a field needs from keys added to each row by the PHP
+ *   `docspress_pages_list_row` filter.
+ * - `docspress.pagesList.actions` — DataViews row and bulk actions.
+ *
+ * `context` is `{ config, searching, reload, getPages }`. `reload()` refetches
+ * the rows without blanking the table, for an action that changed them;
+ * `getPages()` returns every row, not only the visible ones. Both are stable,
+ * so a field that holds them is not rebuilt, and its cells not remounted,
+ * every time the rows change.
+ *
  * @return {Element} App.
  */
 export function App() {
 	const [ pages, setPages ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
 	const [ error, setError ] = useState( null );
-	const [ view, setView ] = useState( DEFAULT_VIEW );
+	const [ view, setView ] = useState( () =>
+		applyFilters( 'docspress.pagesList.defaultView', DEFAULT_VIEW, {
+			config,
+		} )
+	);
 	const [ expanded, setExpanded ] = useState( () => new Set() );
+	const pagesRef = useRef( pages );
+	pagesRef.current = pages;
 
 	const load = useCallback( async () => {
 		setLoading( true );
@@ -78,6 +107,13 @@ export function App() {
 			setLoading( false );
 		}
 	}, [] );
+
+	// No spinner: it would unmount the table and lose the reader's place.
+	const reload = useCallback( async () => {
+		setPages( await fetchPages() );
+	}, [] );
+
+	const getPages = useCallback( () => pagesRef.current, [] );
 
 	useEffect( () => {
 		load();
@@ -117,11 +153,25 @@ export function App() {
 	);
 
 	const fields = useMemo(
-		() => getFields( { config, expanded, onToggle, searching } ),
-		[ expanded, onToggle, searching ]
+		() =>
+			applyFilters(
+				'docspress.pagesList.fields',
+				getFields( { config, expanded, onToggle, searching } ),
+				{ config, searching, reload, getPages }
+			),
+		[ expanded, onToggle, searching, reload, getPages ]
 	);
 
-	const actions = useMemo( () => getActions(), [] );
+	const actions = useMemo(
+		() =>
+			applyFilters( 'docspress.pagesList.actions', getActions(), {
+				config,
+				searching,
+				reload,
+				getPages,
+			} ),
+		[ searching, reload, getPages ]
+	);
 
 	const hierarchyVisible = useMemo(
 		() => visiblePages( pages, expanded ),
