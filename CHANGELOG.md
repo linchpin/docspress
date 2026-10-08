@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/linchpin/docspress/compare/v2.0.0...v2.1.0) (2026-10-08)
+
+
+### Features ✨
+
+* **LINCHPIN-5806:** Let other plugins add columns and actions to the Pages list ([ee2aa9d](https://github.com/linchpin/docspress/commit/ee2aa9dceb02ef204a85c8e02b335b34d53057c3))
+* **LINCHPIN-5806:** Let other plugins add columns and actions to the Pages list ([4ff5bbb](https://github.com/linchpin/docspress/commit/4ff5bbb7d012c3d2e73ddf8d07c05bf4a179981f))
+
 ## [2.0.0](https://github.com/linchpin/docspress/compare/v1.3.1...v2.0.0) (2026-09-29)
 
 
