@@ -90,6 +90,22 @@ The ten shell blocks the DocsPress theme's templates compose — Docs Navigation
 
 These functions keep the `docspress_` names they had in the theme, along with the `docspress_github_source`, `docspress_github_edit_url`, `docspress_markdown_source_path`, `docspress_search_index`, `docspress_llms_txt`, and `docspress_page_feedback_recorded` hooks. The plugin loads them on `after_setup_theme`, and skips them while a DocsPress theme released before the move is active, because that theme still declares the same functions.
 
+## Pages list
+
+The Pages List module (Settings → DocsPress) replaces **Pages → All Pages** with a DataViews list of the documentation tree, fed by `docspress/v1/admin/pages`. Another plugin can add columns and actions to it without changing DocsPress:
+
+- `docspress_pages_list_enqueue_scripts` (PHP action) fires on that screen only, after the app is enqueued. Enqueue your script there. The app mounts on DOM ready, so the script's filters are registered before the list renders.
+- `docspress_pages_list_row` (PHP filter) receives each row and its `WP_Post`. Add the keys your column reads. Every user who can edit Pages reads the route, so check capabilities before adding anything private.
+- `docspress.pagesList.fields` and `docspress.pagesList.actions` (JavaScript filters) receive DocsPress's DataViews fields and actions, plus a context of `{ config, searching, reload, getPages }`. `reload()` refetches the rows without blanking the table, for after an action changed them. `getPages()` returns every row, including collapsed ones.
+- `docspress.pagesList.defaultView` (JavaScript filter) receives the opening view once. Add your field's ID to `fields` to show it by default.
+
+```js
+wp.hooks.addFilter( 'docspress.pagesList.fields', 'my-plugin/owner', ( fields ) => [
+	...fields,
+	{ id: 'owner', label: 'Owner', getValue: ( { item } ) => item.owner },
+] );
+```
+
 ## Gutenberg serialization
 
 The blocks are dynamic. WordPress stores concise canonical block comments and the plugin renders accessible markup on the front end. A homepage hero can be serialized with every presentation choice kept in block attributes:

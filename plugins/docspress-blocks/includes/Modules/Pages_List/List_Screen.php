@@ -291,6 +291,20 @@ class List_Screen {
 			) . ';',
 			'before'
 		);
+
+		/**
+		 * Fires once the Pages list app is enqueued, on its screen only.
+		 *
+		 * Enqueue a script here that adds columns or actions through the
+		 * `docspress.pagesList.*` JavaScript filters. The app mounts on
+		 * DOM ready, so a script enqueued here registers its filters in time
+		 * whatever its position in the footer.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param string $handle The app's script handle.
+		 */
+		do_action( 'docspress_pages_list_enqueue_scripts', 'docspress-pages-list' );
 	}
 
 	/**

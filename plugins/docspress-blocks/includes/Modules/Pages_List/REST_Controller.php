@@ -141,9 +141,30 @@ class REST_Controller {
 				++$child_counts[ $parent_id ];
 			}
 		}
+		$posts_by_id = array();
+		foreach ( $posts as $post ) {
+			$posts_by_id[ (int) $post->ID ] = $post;
+		}
+
 		foreach ( $rows as &$row ) {
 			$row['hasChildren'] = ! empty( $child_counts[ (int) $row['id'] ] );
 			$row['childCount']  = isset( $child_counts[ (int) $row['id'] ] ) ? (int) $child_counts[ (int) $row['id'] ] : 0;
+
+			/**
+			 * Filters one row of the Pages list before it is sent.
+			 *
+			 * Pairs with the `docspress.pagesList.fields` JavaScript filter: add
+			 * the data a column needs here, read it back in that column's
+			 * `getValue`. Add keys rather than changing the ones DocsPress
+			 * sets, and check capabilities before adding anything private —
+			 * every user who can edit Pages reads this route.
+			 *
+			 * @since 2.1.0
+			 *
+			 * @param array<string,mixed> $row  Row.
+			 * @param WP_Post             $post Page.
+			 */
+			$row = (array) apply_filters( 'docspress_pages_list_row', $row, $posts_by_id[ (int) $row['id'] ] );
 		}
 		unset( $row );
 
