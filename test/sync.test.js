@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { hashPageState } from "../src/page-state.js";
 import { prependSentinel } from "../src/sentinel.js";
 import { syncPages } from "../src/sync.js";
 
@@ -545,5 +546,156 @@ describe("syncPages", () => {
     });
 
     expect(result.deleted).toBe(1);
+  });
+});
+
+describe("syncPages shared parent Pages", () => {
+  it("leaves a shared parent Page that already exists to WordPress", async () => {
+    const client = mockClient([
+      existingPage(1, "wordpress-plugins", {
+        hash: "edited-in-wordpress",
+        meta: { _docspress_github_repository: "linchpin/psst" }
+      }),
+      existingPage(2, "wordpress-plugins/mantle", { parent: 1 })
+    ]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      githubRepository: "linchpin/mantle",
+      logger: { info() {} }
+    });
+
+    expect(client.calls).toEqual([]);
+    expect(result.operations.find((op) => op.key === "wordpress-plugins"))
+      .toMatchObject({ action: "unchanged", id: 1, reason: expect.stringMatching(/owned by WordPress/) });
+  });
+
+  it("publishes below an unmanaged shared parent Page instead of reporting a conflict", async () => {
+    const client = mockClient([existingPage(1, "wordpress-plugins", { managed: false })]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      logger: { info() {} }
+    });
+
+    expect(result.conflicts).toBe(0);
+    expect(client.calls).toEqual([["create", expect.objectContaining({ slug: "mantle", parent: 1 })]]);
+  });
+
+  it("creates a shared parent Page that does not exist yet", async () => {
+    const client = mockClient([]);
+    await syncPages({
+      desiredPages: [desiredPage("wordpress-plugins"), desiredPage("wordpress-plugins/mantle")],
+      client,
+      rootSlug: "wordpress-plugins",
+      managedPath: "wordpress-plugins/mantle",
+      logger: { info() {} }
+    });
+
+    expect(client.calls.map(([action, payload]) => [action, payload.slug, payload.parent]))
+      .toEqual([["create", "wordpress-plugins", 0], ["create", "mantle", 101]]);
+  });
+
+  it("still updates the root Page when the repository owns the whole tree", async () => {
+    const client = mockClient([existingPage(1, "actions", { hash: "old" })]);
+    const result = await syncPages({
+      desiredPages: [desiredPage("actions")],
+      client,
+      rootSlug: "actions",
+      managedPath: "actions",
+      logger: { info() {} }
+    });
+
+    expect(result.updated).toBe(1);
+  });
+});
+
+describe("syncPages WordPress edits", () => {
+  const paragraph = (text) => `<!-- wp:paragraph -->\n<p>${text}</p>\n<!-- /wp:paragraph -->`;
+
+  function markdownPage(text) {
+    const page = {
+      key: "docs",
+      sourcePath: "docs/index.md",
+      title: "Docs",
+      slug: "docs",
+      parentKey: null,
+      status: "publish",
+      body: paragraph(text)
+    };
+    page.hash = hashPageState(page);
+    page.content = prependSentinel(page.body, { key: page.key, source: page.sourcePath, hash: page.hash });
+    return page;
+  }
+
+  // The live Page as WordPress holds it: the sentinel still records the last sync of `base`,
+  // while the body is whatever the editor saved.
+  function livePage(base, text) {
+    return {
+      id: 1,
+      slug: base.slug,
+      parent: 0,
+      title: base.title,
+      status: base.status,
+      content: prependSentinel(paragraph(text), { key: base.key, source: base.sourcePath, hash: base.hash }),
+      meta: {}
+    };
+  }
+
+  async function publish(live, desired, wordpressEdits) {
+    const client = mockClient([live]);
+    const result = await syncPages({
+      desiredPages: [desired],
+      client,
+      rootSlug: "docs",
+      wordpressEdits,
+      logger: { info() {} }
+    });
+    return { client, result };
+  }
+
+  it("overwrites a WordPress edit by default", async () => {
+    const base = markdownPage("Base");
+    const { client, result } = await publish(livePage(base, "Edited in WordPress"), markdownPage("Edited in GitHub"));
+
+    expect(result.updated).toBe(1);
+    expect(client.calls[0][0]).toBe("update");
+  });
+
+  it("reports a WordPress edit as a conflict instead of overwriting it", async () => {
+    const base = markdownPage("Base");
+    const { client, result } = await publish(
+      livePage(base, "Edited in WordPress"),
+      markdownPage("Edited in GitHub"),
+      "conflict"
+    );
+
+    expect(client.calls).toEqual([]);
+    expect(result.conflicts).toBe(1);
+    expect(result.conflictDetails[0]).toMatchObject({
+      key: "docs",
+      reason: expect.stringMatching(/edited in WordPress/),
+      sourcePath: "docs/index.md"
+    });
+  });
+
+  it("publishes over a Page nobody edited in WordPress", async () => {
+    const base = markdownPage("Base");
+    const { result } = await publish(livePage(base, "Base"), markdownPage("Edited in GitHub"), "conflict");
+
+    expect(result.conflicts).toBe(0);
+    expect(result.updated).toBe(1);
+  });
+
+  it("publishes when the WordPress edit already matches the new Markdown", async () => {
+    const base = markdownPage("Base");
+    const { result } = await publish(livePage(base, "Same on both sides"), markdownPage("Same on both sides"), "conflict");
+
+    expect(result.conflicts).toBe(0);
+    expect(result.updated).toBe(1);
   });
 });

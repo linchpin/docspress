@@ -24,7 +24,12 @@ export async function syncBidirectional(options) {
   const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = await client.listPages();
   const plan = planReconciliation({ desiredPages, existingPages, ownedPath });
-  const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
+  // Pages whose WordPress edit must survive this run's publish half, with the reason the
+  // summary gives for leaving each alone.
+  const skipUpdates = new Map([
+    ...plan.wordpressChanges.map(({ desired }) => [desired.key, "WordPress-only edit is awaiting its pull request."]),
+    ...plan.warnings.map(({ key }) => [key, "WordPress-only edit has no Markdown file to propose it to."])
+  ]);
   let publishPreview = emptyResult(true);
 
   if (mode === "reconcile") {
@@ -40,7 +45,7 @@ export async function syncBidirectional(options) {
       githubRepository,
       githubRef,
       githubServerUrl,
-      skipUpdateKeys: wordpressChangeKeys,
+      skipUpdates,
       logger: { info() {} }
     });
   }
@@ -54,6 +59,7 @@ export async function syncBidirectional(options) {
       conflictDetails: conflicts,
       operations: conflicts.map((conflict) => ({ action: "conflict", ...conflict })),
       classifications: plan.classifications,
+      warningDetails: plan.warnings,
       proposed: 0,
       proposedFiles: [],
       pullRequest: null
@@ -90,6 +96,7 @@ export async function syncBidirectional(options) {
       dryRun: true,
       mode,
       classifications: plan.classifications,
+      warningDetails: plan.warnings,
       proposed: changes.length,
       proposedFiles: changes.map((change) => change.path),
       proposedFileDetails: changes.map(proposedFileDetail),
@@ -113,7 +120,7 @@ export async function syncBidirectional(options) {
       githubRepository,
       githubRef,
       githubServerUrl,
-      skipUpdateKeys: wordpressChangeKeys,
+      skipUpdates,
       logger
     });
   } else if (plan.refreshPages.length > 0) {
@@ -140,6 +147,7 @@ export async function syncBidirectional(options) {
     ...wordpressResult,
     mode,
     classifications: plan.classifications,
+    warningDetails: plan.warnings,
     proposed: changes.length,
     proposedFiles: changes.map((change) => change.path),
     proposedFileDetails: changes.map(proposedFileDetail),
