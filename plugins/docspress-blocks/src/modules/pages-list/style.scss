@@ -118,3 +118,53 @@
 	border: 1px solid #c3c4c7;
 	border-radius: 2px;
 }
+
+/* The Order modal renders in a portal, outside .docspress-pages-list. */
+.docspress-pages-list__order {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+
+	p {
+		margin: 0;
+	}
+}
+
+.docspress-pages-list__order-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.docspress-pages-list__order .docspress-pages-list__order-heading {
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.docspress-pages-list__order-siblings {
+	list-style: none;
+	margin: 0;
+	max-height: 240px;
+	overflow-y: auto;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+
+	li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 6px 12px;
+	}
+
+	li + li {
+		border-top: 1px solid #f0f0f1;
+	}
+}
+
+.docspress-pages-list__order-value {
+	min-width: 2.5em;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+	color: #646970;
+}

@@ -2,9 +2,11 @@
  * DataViews field definitions for the Modern Pages list.
  */
 
-import { Button } from '@wordpress/components';
+import { Button, Notice, TextControl } from '@wordpress/components';
+import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { chevronDown, chevronRight, external } from '@wordpress/icons';
+import apiFetch from '@wordpress/api-fetch';
 
 /**
  * @typedef {Object} PagesListConfig
@@ -162,6 +164,13 @@ export function getFields( { config, expanded, onToggle, searching } ) {
 			getValue: ( { item } ) => item.date,
 			render: ( { item } ) => item.dateFormatted,
 		},
+		{
+			id: 'menuOrder',
+			label: __( 'Order', 'docspress-blocks' ),
+			type: 'integer',
+			enableSorting: searching,
+			getValue: ( { item } ) => item.menuOrder,
+		},
 	];
 
 	if ( config.hasGithubPaths ) {
@@ -216,11 +225,179 @@ export function getFields( { config, expanded, onToggle, searching } ) {
 }
 
 /**
+ * Order modal: sets one page's menu_order, which orders it among its siblings.
+ *
+ * When the page's Markdown sets sidebar_position, the sync owns menu_order and
+ * puts it back on every run, so the modal points at the source file instead of
+ * offering a value that would not last. Otherwise it lists the page's siblings
+ * with their numbers, which the table does not show by default, so a value can
+ * be chosen without opening each sibling in turn.
+ *
+ * @param {Object}              props
+ * @param {Object[]}            props.items      The page, as a one-item array.
+ * @param {() => void}          props.closeModal Closes the modal.
+ * @param {() => Promise<void>} props.reload     Refetches the rows.
+ * @param {() => Object[]}      props.getPages   Returns every row, in tree order.
+ * @return {Element} Modal body.
+ */
+function OrderModal( { items, closeModal, reload, getPages } ) {
+	const [ item ] = items;
+	const [ value, setValue ] = useState( String( item.menuOrder ?? 0 ) );
+	const [ isSaving, setIsSaving ] = useState( false );
+	const [ error, setError ] = useState( null );
+
+	if ( item.menuOrderManaged ) {
+		const path = item.githubPath || item.sourcePath;
+		return (
+			<div className="docspress-pages-list__order">
+				<p>
+					{ __(
+						'This page’s order comes from sidebar_position in its Markdown file. Change it there: the next sync resets any order set here.',
+						'docspress-blocks'
+					) }
+				</p>
+				{ path ? (
+					<p>
+						{ item.githubUrl ? (
+							<a
+								href={ item.githubUrl }
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<code>{ path }</code>
+								<span className="screen-reader-text">
+									{ __(
+										'(opens in a new tab)',
+										'docspress-blocks'
+									) }
+								</span>
+							</a>
+						) : (
+							<code>{ path }</code>
+						) }
+					</p>
+				) : null }
+				<div className="docspress-pages-list__order-buttons">
+					<Button variant="primary" onClick={ closeModal }>
+						{ __( 'Close', 'docspress-blocks' ) }
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	const order = Number( value );
+	const isValid = '' !== value.trim() && Number.isInteger( order );
+	const siblings = getPages().filter(
+		( page ) => page.parent === item.parent
+	);
+
+	const onSubmit = async ( event ) => {
+		event.preventDefault();
+		if ( ! isValid || isSaving ) {
+			return;
+		}
+		setIsSaving( true );
+		setError( null );
+		try {
+			await apiFetch( {
+				path: `/wp/v2/pages/${ item.id }`,
+				method: 'POST',
+				data: { menu_order: order },
+			} );
+			await reload();
+			closeModal();
+		} catch ( err ) {
+			setError(
+				err?.message ||
+					__( 'Could not save the order.', 'docspress-blocks' )
+			);
+			setIsSaving( false );
+		}
+	};
+
+	return (
+		<form className="docspress-pages-list__order" onSubmit={ onSubmit }>
+			{ error ? (
+				<Notice status="error" isDismissible={ false }>
+					{ error }
+				</Notice>
+			) : null }
+			<TextControl
+				type="number"
+				step={ 1 }
+				label={ __( 'Order', 'docspress-blocks' ) }
+				help={ __(
+					'Pages are ordered by this number among their siblings, lowest first. Pages with the same number are sorted by title. Negative numbers are allowed.',
+					'docspress-blocks'
+				) }
+				value={ value }
+				onChange={ setValue }
+			/>
+			{ siblings.length > 1 ? (
+				<div>
+					<p className="docspress-pages-list__order-heading">
+						{ __( 'Pages at this level', 'docspress-blocks' ) }
+					</p>
+					<ol className="docspress-pages-list__order-siblings">
+						{ siblings.map( ( page ) => (
+							<li key={ page.id }>
+								<span className="docspress-pages-list__order-value">
+									{ page.menuOrder }
+								</span>
+								<span>{ page.title }</span>
+								{ page.id === item.id ? (
+									<span className="docspress-pages-list__state">
+										{ __(
+											'This page',
+											'docspress-blocks'
+										) }
+									</span>
+								) : null }
+								{ page.menuOrderManaged ? (
+									<span className="docspress-pages-list__state">
+										{ __(
+											'Set in Markdown',
+											'docspress-blocks'
+										) }
+									</span>
+								) : null }
+							</li>
+						) ) }
+					</ol>
+				</div>
+			) : null }
+			<div className="docspress-pages-list__order-buttons">
+				<Button
+					variant="tertiary"
+					onClick={ closeModal }
+					disabled={ isSaving }
+				>
+					{ __( 'Cancel', 'docspress-blocks' ) }
+				</Button>
+				<Button
+					variant="primary"
+					type="submit"
+					isBusy={ isSaving }
+					disabled={ ! isValid || isSaving }
+					accessibleWhenDisabled
+				>
+					{ __( 'Save', 'docspress-blocks' ) }
+				</Button>
+			</div>
+		</form>
+	);
+}
+
+/**
  * Row actions.
  *
+ * @param {Object}              options
+ * @param {() => Promise<void>} options.reload   Refetches the rows after an action changed them.
+ * @param {() => Object[]}      options.getPages Returns every row, in tree order.
  * @return {Object[]} Actions.
  */
-export function getActions() {
+export function getActions( { reload, getPages } ) {
 	return [
 		{
 			id: 'edit',
@@ -241,6 +418,19 @@ export function getActions() {
 					window.open( items[ 0 ].viewUrl, '_blank', 'noopener' );
 				}
 			},
+		},
+		{
+			id: 'order',
+			label: __( 'Order', 'docspress-blocks' ),
+			modalHeader: __( 'Page order', 'docspress-blocks' ),
+			modalFocusOnMount: 'firstContentElement',
+			RenderModal: ( props ) => (
+				<OrderModal
+					{ ...props }
+					reload={ reload }
+					getPages={ getPages }
+				/>
+			),
 		},
 	];
 }

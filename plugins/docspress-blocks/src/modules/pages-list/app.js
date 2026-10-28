@@ -164,12 +164,16 @@ export function App() {
 
 	const actions = useMemo(
 		() =>
-			applyFilters( 'docspress.pagesList.actions', getActions(), {
-				config,
-				searching,
-				reload,
-				getPages,
-			} ),
+			applyFilters(
+				'docspress.pagesList.actions',
+				getActions( { reload, getPages } ),
+				{
+					config,
+					searching,
+					reload,
+					getPages,
+				}
+			),
 		[ searching, reload, getPages ]
 	);
 

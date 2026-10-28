@@ -77,6 +77,21 @@ describe("Pages List module", () => {
     expect(fields).not.toContain("enableSorting: true");
   });
 
+  it("sets page order from the list unless the Markdown owns it", () => {
+    const rest = read("includes/Modules/Pages_List/REST_Controller.php");
+    const fields = read("src/modules/pages-list/fields.js");
+    const app = read("src/modules/pages-list/app.js");
+
+    expect(rest).toContain("'menuOrderManaged' => $order_managed");
+    expect(rest).toContain("array_key_exists( 'sidebarPosition', $managed )");
+    expect(fields).toContain("id: 'menuOrder'");
+    expect(fields).toContain("id: 'order'");
+    expect(fields).toContain("data: { menu_order: order }");
+    // A value the next sync would reset is not offered.
+    expect(fields).toContain("if ( item.menuOrderManaged ) {");
+    expect(app).toContain("getActions( { reload, getPages } )");
+  });
+
   it("reads the management record in both sentinel formats", () => {
     const documentation = read("includes/documentation.php");
     const reader = documentation.slice(
