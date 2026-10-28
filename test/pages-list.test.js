@@ -77,6 +77,16 @@ describe("Pages List module", () => {
     expect(fields).not.toContain("enableSorting: true");
   });
 
+  it("reads the management record in both sentinel formats", () => {
+    const documentation = read("includes/documentation.php");
+    const reader = documentation.slice(
+      documentation.indexOf("function docspress_get_managed_metadata(")
+    );
+    expect(reader).toContain("wp:docspress/sentinel");
+    expect(reader).toContain("$attributes['sentinel']");
+    expect(reader).toContain("docspress:(.*?)");
+  });
+
   it("ships a built pages-list asset", () => {
     expect(fs.existsSync(path.join(blocks, "build/pages-list.asset.php"))).toBe(
       true
