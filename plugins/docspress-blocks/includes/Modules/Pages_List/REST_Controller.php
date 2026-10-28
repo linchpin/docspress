@@ -235,6 +235,13 @@ class REST_Controller {
 			$github_url  = $source['url'];
 		}
 
+		/*
+		 * A sidebar_position in the Page's Markdown owns menu_order: every sync
+		 * puts it back, so an order changed here would only last until then.
+		 */
+		$managed       = docspress_get_managed_metadata( $post->ID );
+		$order_managed = array_key_exists( 'sidebarPosition', $managed );
+
 		return array(
 			'id'               => (int) $post->ID,
 			'parent'           => (int) $post->post_parent,
@@ -256,6 +263,8 @@ class REST_Controller {
 			'githubPath'       => $github_path,
 			'githubUrl'        => $github_url,
 			'menuOrder'        => (int) $post->menu_order,
+			'menuOrderManaged' => $order_managed,
+			'sourcePath'       => $order_managed && isset( $managed['source'] ) ? (string) $managed['source'] : '',
 		);
 	}
 }

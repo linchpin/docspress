@@ -84,7 +84,7 @@ sidebar_collapsed: true
 - `sidebar_collapsed` must be `true` or `false`. It controls the initial state only when the Page has children in the rendered sidebar.
 - Without `sidebar_collapsed`, inactive branches start collapsed. The current Page and all its ancestors remain visible regardless of their configured default.
 
-A hand-built WordPress sidebar menu keeps its menu-item order, but Page-backed parent items still inherit `sidebar_collapsed`. Removing a previously synchronized `sidebar_position` resets that source-owned Page order to `0`; DocsPress leaves legacy manual Page order untouched when frontmatter never owned it. Invalid field values stop collection and identify the source file instead of publishing an ambiguous navigation state.
+A hand-built WordPress sidebar menu keeps its menu-item order, but Page-backed parent items still inherit `sidebar_collapsed`. Removing a previously synchronized `sidebar_position` resets that source-owned Page order to `0`; DocsPress leaves legacy manual Page order untouched when frontmatter never owned it. With DocsPress Blocks' Pages list enabled, set that manual order from a row's **Order** action. Invalid field values stop collection and identify the source file instead of publishing an ambiguous navigation state.
 
 ## Contextual sidebars
 

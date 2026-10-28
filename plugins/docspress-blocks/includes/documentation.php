@@ -168,6 +168,10 @@ function docspress_group_pages_by_parent( $pages ) {
 /**
  * Read DocsPress management metadata from a Page.
  *
+ * The Action writes the record as a docspress/sentinel block, or as the legacy
+ * bare comment when sentinel-format is comment. Both are read, block first,
+ * the same way readSentinel() in src/sentinel.js does.
+ *
  * @param int $post_id Page ID.
  * @return array<string,mixed>
  */
@@ -184,11 +188,19 @@ function docspress_get_managed_metadata( $post_id = 0 ) {
 
 	$content = (string) get_post_field( 'post_content', $post_id, 'raw' );
 	$cache[ $post_id ] = array();
-	if ( $content && preg_match( '/<!--\s*docspress:(.*?)\s*-->/s', $content, $matches ) ) {
+	if ( ! $content ) {
+		return $cache[ $post_id ];
+	}
+
+	$parsed = null;
+	if ( preg_match( '#<!--\s+wp:docspress/sentinel(?:\s+(\{[\s\S]*?\}))?\s+(?:/-->|-->[\s\S]*?<!--\s+/wp:docspress/sentinel\s+-->)#', $content, $matches ) && ! empty( $matches[1] ) ) {
+		$attributes = json_decode( $matches[1], true );
+		$parsed     = is_array( $attributes ) && isset( $attributes['sentinel'] ) ? $attributes['sentinel'] : null;
+	} elseif ( preg_match( '/<!--\s*docspress:(.*?)\s*-->/s', $content, $matches ) ) {
 		$parsed = json_decode( trim( $matches[1] ), true );
-		if ( is_array( $parsed ) && 1 === (int) ( isset( $parsed['version'] ) ? $parsed['version'] : 0 ) ) {
-			$cache[ $post_id ] = $parsed;
-		}
+	}
+	if ( is_array( $parsed ) && 1 === (int) ( isset( $parsed['version'] ) ? $parsed['version'] : 0 ) ) {
+		$cache[ $post_id ] = $parsed;
 	}
 	return $cache[ $post_id ];
 }

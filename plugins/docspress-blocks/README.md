@@ -92,7 +92,9 @@ These functions keep the `docspress_` names they had in the theme, along with th
 
 ## Pages list
 
-The Pages List module (Settings → DocsPress) replaces **Pages → All Pages** with a DataViews list of the documentation tree, fed by `docspress/v1/admin/pages`. Another plugin can add columns and actions to it without changing DocsPress:
+The Pages List module (Settings → DocsPress) replaces **Pages → All Pages** with a DataViews list of the documentation tree, fed by `docspress/v1/admin/pages`. Siblings appear in Page order (`menu_order`), then by title. A row's **Order** action sets that number and lists the page's siblings with theirs. When the page's Markdown sets `sidebar_position`, the sync owns the order, so the action names the source file instead. An **Order** column is available from the view options.
+
+Another plugin can add columns and actions to it without changing DocsPress:
 
 - `docspress_pages_list_enqueue_scripts` (PHP action) fires on that screen only, after the app is enqueued. Enqueue your script there. The app mounts on DOM ready, so the script's filters are registered before the list renders.
 - `docspress_pages_list_row` (PHP filter) receives each row and its `WP_Post`. Add the keys your column reads. Every user who can edit Pages reads the route, so check capabilities before adding anything private.
