@@ -52,6 +52,14 @@ inputs:
       shared parent page without removing each other's pages. Must be the root path or below it.
     required: false
     default: ""
+  wordpress-edits:
+    description: >-
+      What publish mode does with a managed Page that was edited in WordPress since its last
+      sync. overwrite replaces the edit with the Markdown, as publish always has. conflict
+      leaves the Page alone and reports a conflict, so the edit is never lost silently.
+      Reconcile mode already treats such a Page as a WordPress change and ignores this input.
+    required: false
+    default: overwrite
   sentinel-format:
     description: >-
       How the management sentinel is written into Page content. Use block for a locked

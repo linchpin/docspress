@@ -1,3 +1,4 @@
+import { hashPageState, livePageState } from "./page-state.js";
 import { readSentinel, sentinelFormat } from "./sentinel.js";
 import { slugify, slugifyPath } from "./utils.js";
 
@@ -16,7 +17,8 @@ export async function syncPages(options) {
     githubRef = "main",
     githubServerUrl = "https://github.com",
     allowDeletions = true,
-    skipUpdateKeys = new Set(),
+    skipUpdates = new Map(),
+    wordpressEdits = "overwrite",
     logger = console
   } = options;
 
@@ -58,6 +60,23 @@ export async function syncPages(options) {
       continue;
     }
 
+    // A parent shared with other repositories belongs to WordPress once it exists. Each
+    // repository would otherwise rewrite it with its own source metadata on every run, and
+    // overwrite whatever an editor wrote on it. It may be managed or not; either is a parent.
+    const sharedParent = isSharedAncestor(desired.key, ownedPath) ? managed || existingAtPath : null;
+    if (sharedParent) {
+      idByKey.set(desired.key, sharedParent.id);
+      result.unchanged += 1;
+      result.operations.push({
+        action: "unchanged",
+        key: desired.key,
+        id: sharedParent.id,
+        reason: "Shared parent Page is owned by WordPress.",
+        ...pageOperationContext(desired)
+      });
+      continue;
+    }
+
     if (existingAtPath && !managed) {
       addConflict(result, desired.key, "An unmanaged WordPress page already uses this path.", desired);
       continue;
@@ -76,13 +95,13 @@ export async function syncPages(options) {
 
     if (managed) {
       matchedExistingIds.add(managed.id);
-      if (skipUpdateKeys.has(desired.key)) {
+      if (skipUpdates.has(desired.key)) {
         result.unchanged += 1;
         result.operations.push({
           action: "unchanged",
           key: desired.key,
           id: managed.id,
-          reason: "WordPress-only edit is awaiting its pull request.",
+          reason: skipUpdates.get(desired.key),
           ...pageOperationContext(desired)
         });
         continue;
@@ -102,6 +121,16 @@ export async function syncPages(options) {
       ) {
         result.unchanged += 1;
         result.operations.push({ action: "unchanged", key: desired.key, id: managed.id, ...pageOperationContext(desired) });
+        continue;
+      }
+
+      if (wordpressEdits === "conflict" && wordpressEditWouldBeLost(desired, managed, indexed)) {
+        addConflict(
+          result,
+          desired.key,
+          "The Page was edited in WordPress since the last sync, and publishing would overwrite that edit. Bring the edit into the Markdown or revert it in WordPress, then run again.",
+          desired
+        );
         continue;
       }
 
@@ -153,6 +182,14 @@ export async function syncPages(options) {
   }
 
   return result;
+}
+
+// The sentinel records the Page as the last sync wrote it, so a live Page that no longer
+// hashes to it was changed in WordPress. Writing is still harmless when WordPress already
+// holds exactly what this run would write.
+function wordpressEditWouldBeLost(desired, managed, indexed) {
+  const liveHash = hashPageState(livePageState(managed, indexed));
+  return liveHash !== managed.sentinel?.hash && liveHash !== desired.hash;
 }
 
 function pagePayload(page, parentId, managed, options = {}) {
@@ -485,6 +522,15 @@ function normalizeBooleanMeta(value) {
 
 export function isUnderPath(key, path) {
   return key === path || Boolean(key?.startsWith(`${path}/`));
+}
+
+/**
+ * Whether a page sits above the subtree this repository owns, which only happens when
+ * managed-path narrows ownership below the root. Such a page is the shared parent every
+ * repository publishing into that root generates.
+ */
+export function isSharedAncestor(key, ownedPath) {
+  return Boolean(key) && Boolean(ownedPath?.startsWith(`${key}/`));
 }
 
 /**

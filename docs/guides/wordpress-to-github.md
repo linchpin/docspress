@@ -83,6 +83,8 @@ DocsPress compares Gutenberg blocks semantically and rewrites only matching Mark
 
 Reverse synchronization updates the title and content of an existing managed Page. WordPress-created or deleted Pages and editor changes to slug, parent, or publication status remain outside reverse-sync scope.
 
+Some managed Pages have no Markdown file behind them: placeholder Pages for directories without an `index.md`, manifest entries without a source, and redirect placeholders. An edit to one of those has nowhere to go, so the run leaves it in WordPress, reports it under **Left in WordPress** in the Actions summary, and still proposes every other edit. To keep such an edit in the repository, add the Markdown file the Page would be generated from. A shared parent Page that [several repositories publish below](multiple-repositories.md) is never proposed either; it belongs to WordPress.
+
 ## Combine both directions safely
 
 Use `mode: reconcile` when the same workflow also has a `push` trigger for [GitHub-to-WordPress](github-to-wordpress.md) publication. Add this condition to the sync job so merging the managed proposal does not publish the same change back to WordPress:

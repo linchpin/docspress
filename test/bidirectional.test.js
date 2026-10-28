@@ -186,4 +186,36 @@ describe("syncBidirectional", () => {
     expect(githubClient.syncChanges).not.toHaveBeenCalled();
     expect(client.updatePage).not.toHaveBeenCalled();
   });
+
+  it("proposes Markdown edits while leaving a generated Page edited in WordPress in place", async () => {
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "docspress-bidirectional-"));
+    await fs.mkdir(path.join(cwd, "docs"));
+    await fs.writeFile(path.join(cwd, "docs", "index.md"), "# Docs\n\nBase\n");
+    const desired = desiredPage();
+    const section = desiredPage("This section is generated.", {
+      key: "docs/guides",
+      slug: "guides",
+      parentKey: "docs",
+      sourcePath: "virtual:guides",
+      title: "Guides"
+    });
+    const client = mockClient([
+      existingPage(desired, "Edited in WordPress"),
+      existingPage(section, "Written by an editor", { id: 2, parent: 1 })
+    ]);
+    const githubClient = { syncChanges: vi.fn(async () => ({ number: 4, url: "https://github.com/o/r/pull/4", status: "created" })) };
+
+    const result = await syncBidirectional({
+      mode: "reconcile",
+      desiredPages: [desired, section],
+      client,
+      githubClient,
+      cwd,
+      logger: { info() {} }
+    });
+
+    expect(result.proposedFiles).toEqual(["docs/index.md"]);
+    expect(result.warningDetails).toEqual([expect.objectContaining({ key: "docs/guides" })]);
+    expect(client.updatePage).not.toHaveBeenCalled();
+  });
 });

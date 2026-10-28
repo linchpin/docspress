@@ -24,6 +24,7 @@ async function main() {
     rootSlug: core.getInput("root-slug") || "docs",
     rootTitle: core.getInput("root-title") || "Docs",
     managedPath: core.getInput("managed-path") || "",
+    wordpressEdits: normalizeWordPressEdits(core.getInput("wordpress-edits") || "overwrite"),
     createH1: normalizeBoolean(core.getInput("create-h1") || "false"),
     sentinelFormat: normalizeSentinelFormat(core.getInput("sentinel-format")),
     rewriteLinks: normalizeBoolean(core.getInput("rewrite-links") || "true"),
@@ -95,6 +96,7 @@ async function main() {
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
       managedPath: config.managedPath,
+      wordpressEdits: config.wordpressEdits,
       versionsRegistry,
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
@@ -128,6 +130,10 @@ async function main() {
 
   setOutputs(result);
   await writeSummary(result);
+
+  for (const warning of result.warningDetails || []) {
+    core.warning(`${warning.key}: ${warning.reason}`);
+  }
 
   if (result.conflicts > 0) {
     for (const conflict of result.conflictDetails) {
@@ -183,6 +189,14 @@ async function writeSummary(result) {
     }
   }
 
+  if (result.warningDetails?.length > 0) {
+    core.summary.addHeading("Left in WordPress", 2);
+    for (const warning of result.warningDetails) {
+      const source = warning.sourcePath ? ` (\`${warning.sourcePath}\`)` : "";
+      core.summary.addRaw(`- \`${warning.key}\`${source}: ${warning.reason}\n`);
+    }
+  }
+
   if (result.conflictDetails.length > 0) {
     core.summary.addHeading("Conflicts", 2);
     for (const conflict of result.conflictDetails) {
@@ -217,6 +231,14 @@ function normalizeMode(value) {
     throw new Error(`Invalid mode '${value}'. Use publish, propose, or reconcile.`);
   }
   return mode;
+}
+
+function normalizeWordPressEdits(value) {
+  const policy = String(value || "").trim().toLowerCase();
+  if (!["overwrite", "conflict"].includes(policy)) {
+    throw new Error(`Invalid wordpress-edits '${value}'. Use overwrite or conflict.`);
+  }
+  return policy;
 }
 
 main().catch((error) => {

@@ -63,9 +63,13 @@ The two workflows produce:
 
 Relative Markdown links resolve within each repository's own branch, so `[Home](../index.md)` in the Mantle tree becomes `/wordpress-plugins/mantle/`.
 
-## Keep the shared parent Page identical
+## The shared parent Page belongs to WordPress
 
-Every participating repository generates the same shared parent Page. Give each workflow the same `root-slug`, `root-title`, `status`, and `create-h1` so they produce identical content. Matching values make the Page report as unchanged after the first repository creates it. Differing values make each workflow rewrite the Page on every run.
+Every participating repository generates the shared parent Page, so no one repository can own it. The first workflow to run creates it; after that, every workflow leaves it alone and reports it as unchanged. Edit its title and content in WordPress, the same way as any other Page that no repository manages. An existing unmanaged Page at that path also works as the parent.
+
+Give each workflow the same `root-slug` and `root-title` anyway, so whichever one runs first creates the same Page. Changing `root-title` later does not retitle a parent that already exists.
+
+Reverse synchronization never proposes an edit to the shared parent, and never reports one as a conflict, because there is no single Markdown tree to write the edit to.
 
 ## Verify before publishing
 

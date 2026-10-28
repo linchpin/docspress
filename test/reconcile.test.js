@@ -135,4 +135,56 @@ describe("planReconciliation", () => {
     expect(unscoped.classifications.map((entry) => entry.key)).toContain("wordpress-plugins/linchpin-blocks");
     expect(unscoped.conflicts).not.toEqual([]);
   });
+
+  it("leaves a shared parent Page edited in WordPress to WordPress", () => {
+    const root = desiredPage({ key: "wordpress-plugins", slug: "wordpress-plugins", title: "WordPress Plugins" });
+    const mine = desiredPage({
+      key: "wordpress-plugins/mantle",
+      slug: "mantle",
+      parentKey: "wordpress-plugins",
+      sourcePath: "docs/mantle/index.md"
+    });
+    const retitled = desiredPage({ key: "wordpress-plugins", slug: "wordpress-plugins", title: "Plugins" });
+    const existing = [
+      { ...existingFrom(root, { body: paragraph("Written by an editor") }), id: 1, parent: 0 },
+      { ...existingFrom(mine), id: 2, parent: 1 }
+    ];
+
+    for (const desiredRoot of [root, retitled]) {
+      const plan = planReconciliation({
+        desiredPages: [desiredRoot, mine],
+        existingPages: existing,
+        ownedPath: "wordpress-plugins/mantle"
+      });
+
+      expect(plan.wordpressChanges).toEqual([]);
+      expect(plan.conflicts).toEqual([]);
+      expect(plan.classifications.find((entry) => entry.key === "wordpress-plugins").state).toBe("shared");
+    }
+  });
+
+  it("warns instead of proposing a WordPress edit to a Page with no Markdown source", () => {
+    const section = desiredPage({
+      key: "docs/guides",
+      slug: "guides",
+      parentKey: "docs",
+      sourcePath: "virtual:guides",
+      title: "Guides"
+    });
+    const root = desiredPage();
+    const plan = planReconciliation({
+      desiredPages: [root, section],
+      existingPages: [
+        { ...existingFrom(root), id: 1, parent: 0 },
+        { ...existingFrom(section, { body: paragraph("Written by an editor") }), id: 2, parent: 1 }
+      ]
+    });
+
+    expect(plan.wordpressChanges).toEqual([]);
+    expect(plan.conflicts).toEqual([]);
+    expect(plan.classifications.find((entry) => entry.key === "docs/guides").state).toBe("wordpress-only-unmapped");
+    expect(plan.warnings).toEqual([
+      expect.objectContaining({ key: "docs/guides", sourcePath: "virtual:guides", reason: expect.stringMatching(/no Markdown file/) })
+    ]);
+  });
 });

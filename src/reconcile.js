@@ -1,6 +1,5 @@
-import { hashPageState } from "./page-state.js";
-import { stripSentinel } from "./sentinel.js";
-import { indexExistingPages, isUnderPath } from "./sync.js";
+import { hashPageState, livePageState } from "./page-state.js";
+import { indexExistingPages, isSharedAncestor, isUnderPath } from "./sync.js";
 
 export function planReconciliation(options) {
   const { desiredPages, existingPages, ownedPath = "" } = options;
@@ -9,9 +8,17 @@ export function planReconciliation(options) {
   const wordpressChanges = [];
   const refreshPages = [];
   const conflicts = [];
+  const warnings = [];
   const classifications = [];
 
   for (const desired of desiredPages) {
+    // Every repository below a shared parent generates that parent, so no single Markdown
+    // tree can take an edit to it. WordPress owns it; see the matching rule in syncPages.
+    if (isSharedAncestor(desired.key, ownedPath)) {
+      classifications.push({ key: desired.key, state: "shared", desired });
+      continue;
+    }
+
     const managed = indexed.managedByKey.get(desired.key);
     if (!managed) {
       classifications.push({ key: desired.key, state: "github-only", desired });
@@ -39,6 +46,18 @@ export function planReconciliation(options) {
           reason: `WordPress changed unsupported field(s): ${structuralChanges.join(", ")}.`
         });
         classifications.push({ key: desired.key, state: "conflict", desired, page: managed });
+        continue;
+      }
+      // A generated Page (a section placeholder, a manifest entry without a source, a
+      // redirect) has no file to write the edit into. Failing here would stop every other
+      // Page's proposal with it, so leave the edit in WordPress and say so.
+      if (!desired.sourcePath || desired.sourcePath.includes(":")) {
+        warnings.push({
+          key: desired.key,
+          sourcePath: desired.sourcePath || "",
+          reason: "Edited in WordPress, but this Page is generated and has no Markdown file to write the edit to. Add one to keep the edit in the repository; until then it stays in WordPress only."
+        });
+        classifications.push({ key: desired.key, state: "wordpress-only-unmapped", desired, page: managed });
         continue;
       }
       wordpressChanges.push({ desired, page: managed });
@@ -84,20 +103,8 @@ export function planReconciliation(options) {
     wordpressChanges,
     refreshPages,
     conflicts,
+    warnings,
     classifications
-  };
-}
-
-export function livePageState(page, indexed) {
-  const parent = page.parent ? indexed.byId.get(page.parent) : null;
-  return {
-    key: page.sentinel?.key || page.path,
-    sourcePath: page.sentinel?.source || "",
-    title: page.title,
-    slug: page.slug,
-    parentKey: parent?.sentinel?.key || (page.path.includes("/") ? page.path.split("/").slice(0, -1).join("/") : null),
-    status: page.status,
-    body: stripSentinel(page.content)
   };
 }
 

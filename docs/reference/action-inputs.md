@@ -29,7 +29,7 @@ DocsPress is a Node 20 GitHub Action configured entirely through `with` inputs.
 | `versions-file` | empty | Optional ordered API-version registry. Enables root, directory, suffix, and per-version manifest sources through DocsPress Blocks. |
 | `root-slug` | `docs` | Slug of the managed root Page. |
 | `root-title` | `Docs` | Fallback root title when no root document supplies one. |
-| `managed-path` | `root-slug` | Page path this repository owns, for example `docs/my-plugin`. Limits deletions and reconciliation to that subtree so several repositories can publish below one shared parent Page. Must be the root path or a path below it. |
+| `managed-path` | `root-slug` | Page path this repository owns, for example `docs/my-plugin`. Limits deletions and reconciliation to that subtree so several repositories can publish below one shared parent Page. Pages above it are created when missing and otherwise left to WordPress. Must be the root path or a path below it. |
 | `sentinel-format` | `block` | How the [management sentinel](sync-and-rest-api.md#management-sentinel) is written into Page content. `block` writes a locked `docspress/sentinel` block that DocsPress Blocks renders as a small placeholder. `comment` writes the legacy bare HTML comment, which the block editor shows as a Classic block containing the raw record. Use `comment` only where the plugin is not installed. |
 
 ## Content conversion and source links
@@ -63,6 +63,7 @@ Reverse sync requires `contents: write` and `pull-requests: write`. The reposito
 | --- | --- | --- |
 | `status` | `publish` | WordPress status for created or updated Pages. Start with `draft`. |
 | `delete-mode` | `trash` | `trash` moves removed managed Pages to Trash; `force` permanently deletes them. |
+| `wordpress-edits` | `overwrite` | What `publish` does with a managed Page edited in WordPress since its last sync. `overwrite` replaces the edit with the Markdown. `conflict` leaves the Page alone and reports a conflict, so the edit is never lost silently. `reconcile` ignores this input because it already treats such a Page as a WordPress change. |
 | `dry-run` | `false` | Plans operations without WordPress or GitHub writes. Start with `true`. |
 
 <!-- docspress:block
