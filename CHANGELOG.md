@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.2.0](https://github.com/linchpin/docspress/compare/v2.1.0...v2.2.0) (2026-10-28)
+
+
+### Features ✨
+
+* **LINCHPIN-5966:** Keep WordPress edits safe when several repositories share a site ([a145e87](https://github.com/linchpin/docspress/commit/a145e8763e362206cb73b4f9af27e50330cc8ccd))
+* **LINCHPIN-5966:** Keep WordPress edits safe when several repositories share a site ([f46230a](https://github.com/linchpin/docspress/commit/f46230aaa0f5aa2edabd0d97da28e365037cfa90))
+
+
+### Miscellaneous Chores 🧹
+
+* **deps-dev:** bump brace-expansion from 1.1.16 to 1.1.21 ([a9d4154](https://github.com/linchpin/docspress/commit/a9d4154ed7258c6a549146c25081daa81155e1c7))
+* **deps-dev:** bump shell-quote from 1.10.0 to 1.12.0 in /plugins/docspress-blocks ([4b1921f](https://github.com/linchpin/docspress/commit/4b1921f29cf55abae6ccd5e6a897127b157a0a63))
+* **deps-dev:** bump vite from 8.3.0 to 8.3.4 ([90f2bea](https://github.com/linchpin/docspress/commit/90f2beaa14f3c58fa28850c0ec2db842223d82f7))
+* **deps:** bump markdown-it and @wordpress/scripts ([f7dfa7b](https://github.com/linchpin/docspress/commit/f7dfa7bd473ddaee79164dbfbdc6641802943f62))
+* **deps:** bump markdown-it and @wordpress/scripts in /plugins/docspress-blocks ([2c32b0b](https://github.com/linchpin/docspress/commit/2c32b0b321f7fe02375dfb0723f47f561da62aa3))
+* **deps:** bump source-map-js from 1.2.1 to 1.2.2 in /plugins/docspress-blocks ([f8f96e8](https://github.com/linchpin/docspress/commit/f8f96e8b2eda710a62a18e021aa019fc33be8f53))
+* **deps:** bump undici from 6.28.0 to 6.29.0 ([f023260](https://github.com/linchpin/docspress/commit/f023260bdc36657d9acebec347aef59f7d99ba1c))
+* **NO-TASK:** Rebuild dist for a145e87 [skip ci] ([8f0799c](https://github.com/linchpin/docspress/commit/8f0799c1f339df16fd9c752a1fb6293eb2ee10c8))
+
 ## [2.1.0](https://github.com/linchpin/docspress/compare/v2.0.0...v2.1.0) (2026-10-08)
 
 
