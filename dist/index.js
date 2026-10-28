@@ -65061,7 +65061,7 @@ __nccwpck_require__.d(core_namespaceObject, {
   toPlatformPath: () => (toPlatformPath),
   toPosixPath: () => (toPosixPath),
   toWin32Path: () => (toWin32Path),
-  warning: () => (warning)
+  warning: () => (core_warning)
 });
 
 // NAMESPACE OBJECT: ./node_modules/micromark/lib/constructs.js
@@ -67923,7 +67923,7 @@ function error(message, properties = {}) {
  * @param message warning issue message. Errors will be converted to string via toString()
  * @param properties optional properties to add to the annotation.
  */
-function warning(message, properties = {}) {
+function core_warning(message, properties = {}) {
     issueCommand('warning', toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 /**
@@ -93503,6 +93503,7 @@ function normalizeText(value) {
 ;// CONCATENATED MODULE: ./src/page-state.js
 
 
+
 const BLOCK_DELIMITER_PATTERN = /<!--\s+(\/)?wp:([a-z][a-z0-9_-]*\/)?([a-z][a-z0-9_-]*)\s+({(?:(?=([^}]+|}+(?=})|(?!}\s+\/?-->)[^])*)\5|[^]*?)}\s+)?(\/)?-->/g;
 
 function pageState(page) {
@@ -93519,6 +93520,19 @@ function pageState(page) {
 
 function hashPageState(page) {
   return sha256(stableJson(pageState(page)));
+}
+
+function livePageState(page, indexed) {
+  const parent = page.parent ? indexed.byId.get(page.parent) : null;
+  return {
+    key: page.sentinel?.key || page.path,
+    sourcePath: page.sentinel?.source || "",
+    title: page.title,
+    slug: page.slug,
+    parentKey: parent?.sentinel?.key || (page.path.includes("/") ? page.path.split("/").slice(0, -1).join("/") : null),
+    status: page.status,
+    body: stripSentinel(page.content)
+  };
 }
 
 function normalizeGutenbergSerialization(value) {
@@ -93542,6 +93556,7 @@ function normalizeGutenbergSerialization(value) {
 
 
 
+
 async function syncPages(options) {
   const {
     desiredPages,
@@ -93557,7 +93572,8 @@ async function syncPages(options) {
     githubRef = "main",
     githubServerUrl = "https://github.com",
     allowDeletions = true,
-    skipUpdateKeys = new Set(),
+    skipUpdates = new Map(),
+    wordpressEdits = "overwrite",
     logger = console
   } = options;
 
@@ -93599,6 +93615,23 @@ async function syncPages(options) {
       continue;
     }
 
+    // A parent shared with other repositories belongs to WordPress once it exists. Each
+    // repository would otherwise rewrite it with its own source metadata on every run, and
+    // overwrite whatever an editor wrote on it. It may be managed or not; either is a parent.
+    const sharedParent = isSharedAncestor(desired.key, ownedPath) ? managed || existingAtPath : null;
+    if (sharedParent) {
+      idByKey.set(desired.key, sharedParent.id);
+      result.unchanged += 1;
+      result.operations.push({
+        action: "unchanged",
+        key: desired.key,
+        id: sharedParent.id,
+        reason: "Shared parent Page is owned by WordPress.",
+        ...pageOperationContext(desired)
+      });
+      continue;
+    }
+
     if (existingAtPath && !managed) {
       addConflict(result, desired.key, "An unmanaged WordPress page already uses this path.", desired);
       continue;
@@ -93617,13 +93650,13 @@ async function syncPages(options) {
 
     if (managed) {
       matchedExistingIds.add(managed.id);
-      if (skipUpdateKeys.has(desired.key)) {
+      if (skipUpdates.has(desired.key)) {
         result.unchanged += 1;
         result.operations.push({
           action: "unchanged",
           key: desired.key,
           id: managed.id,
-          reason: "WordPress-only edit is awaiting its pull request.",
+          reason: skipUpdates.get(desired.key),
           ...pageOperationContext(desired)
         });
         continue;
@@ -93643,6 +93676,16 @@ async function syncPages(options) {
       ) {
         result.unchanged += 1;
         result.operations.push({ action: "unchanged", key: desired.key, id: managed.id, ...pageOperationContext(desired) });
+        continue;
+      }
+
+      if (wordpressEdits === "conflict" && wordpressEditWouldBeLost(desired, managed, indexed)) {
+        addConflict(
+          result,
+          desired.key,
+          "The Page was edited in WordPress since the last sync, and publishing would overwrite that edit. Bring the edit into the Markdown or revert it in WordPress, then run again.",
+          desired
+        );
         continue;
       }
 
@@ -93694,6 +93737,14 @@ async function syncPages(options) {
   }
 
   return result;
+}
+
+// The sentinel records the Page as the last sync wrote it, so a live Page that no longer
+// hashes to it was changed in WordPress. Writing is still harmless when WordPress already
+// holds exactly what this run would write.
+function wordpressEditWouldBeLost(desired, managed, indexed) {
+  const liveHash = hashPageState(livePageState(managed, indexed));
+  return liveHash !== managed.sentinel?.hash && liveHash !== desired.hash;
 }
 
 function pagePayload(page, parentId, managed, options = {}) {
@@ -94029,6 +94080,15 @@ function isUnderPath(key, path) {
 }
 
 /**
+ * Whether a page sits above the subtree this repository owns, which only happens when
+ * managed-path narrows ownership below the root. Such a page is the shared parent every
+ * repository publishing into that root generates.
+ */
+function isSharedAncestor(key, ownedPath) {
+  return Boolean(key) && Boolean(ownedPath?.startsWith(`${key}/`));
+}
+
+/**
  * Resolve the subtree this repository owns.
  *
  * The root defaults to the managed root page and is normalized exactly the way
@@ -94093,7 +94153,6 @@ function pathForPage(page, byId, seen = new Set()) {
 
 
 
-
 function planReconciliation(options) {
   const { desiredPages, existingPages, ownedPath = "" } = options;
   const indexed = indexExistingPages(existingPages);
@@ -94101,9 +94160,17 @@ function planReconciliation(options) {
   const wordpressChanges = [];
   const refreshPages = [];
   const conflicts = [];
+  const warnings = [];
   const classifications = [];
 
   for (const desired of desiredPages) {
+    // Every repository below a shared parent generates that parent, so no single Markdown
+    // tree can take an edit to it. WordPress owns it; see the matching rule in syncPages.
+    if (isSharedAncestor(desired.key, ownedPath)) {
+      classifications.push({ key: desired.key, state: "shared", desired });
+      continue;
+    }
+
     const managed = indexed.managedByKey.get(desired.key);
     if (!managed) {
       classifications.push({ key: desired.key, state: "github-only", desired });
@@ -94131,6 +94198,18 @@ function planReconciliation(options) {
           reason: `WordPress changed unsupported field(s): ${structuralChanges.join(", ")}.`
         });
         classifications.push({ key: desired.key, state: "conflict", desired, page: managed });
+        continue;
+      }
+      // A generated Page (a section placeholder, a manifest entry without a source, a
+      // redirect) has no file to write the edit into. Failing here would stop every other
+      // Page's proposal with it, so leave the edit in WordPress and say so.
+      if (!desired.sourcePath || desired.sourcePath.includes(":")) {
+        warnings.push({
+          key: desired.key,
+          sourcePath: desired.sourcePath || "",
+          reason: "Edited in WordPress, but this Page is generated and has no Markdown file to write the edit to. Add one to keep the edit in the repository; until then it stays in WordPress only."
+        });
+        classifications.push({ key: desired.key, state: "wordpress-only-unmapped", desired, page: managed });
         continue;
       }
       wordpressChanges.push({ desired, page: managed });
@@ -94176,20 +94255,8 @@ function planReconciliation(options) {
     wordpressChanges,
     refreshPages,
     conflicts,
+    warnings,
     classifications
-  };
-}
-
-function livePageState(page, indexed) {
-  const parent = page.parent ? indexed.byId.get(page.parent) : null;
-  return {
-    key: page.sentinel?.key || page.path,
-    sourcePath: page.sentinel?.source || "",
-    title: page.title,
-    slug: page.slug,
-    parentKey: parent?.sentinel?.key || (page.path.includes("/") ? page.path.split("/").slice(0, -1).join("/") : null),
-    status: page.status,
-    body: stripSentinel(page.content)
   };
 }
 
@@ -94225,7 +94292,12 @@ async function syncBidirectional(options) {
   const ownedPath = resolveManagedPath(rootSlug, managedPath);
   const existingPages = await client.listPages();
   const plan = planReconciliation({ desiredPages, existingPages, ownedPath });
-  const wordpressChangeKeys = new Set(plan.wordpressChanges.map(({ desired }) => desired.key));
+  // Pages whose WordPress edit must survive this run's publish half, with the reason the
+  // summary gives for leaving each alone.
+  const skipUpdates = new Map([
+    ...plan.wordpressChanges.map(({ desired }) => [desired.key, "WordPress-only edit is awaiting its pull request."]),
+    ...plan.warnings.map(({ key }) => [key, "WordPress-only edit has no Markdown file to propose it to."])
+  ]);
   let publishPreview = emptyResult(true);
 
   if (mode === "reconcile") {
@@ -94241,7 +94313,7 @@ async function syncBidirectional(options) {
       githubRepository,
       githubRef,
       githubServerUrl,
-      skipUpdateKeys: wordpressChangeKeys,
+      skipUpdates,
       logger: { info() {} }
     });
   }
@@ -94255,6 +94327,7 @@ async function syncBidirectional(options) {
       conflictDetails: conflicts,
       operations: conflicts.map((conflict) => ({ action: "conflict", ...conflict })),
       classifications: plan.classifications,
+      warningDetails: plan.warnings,
       proposed: 0,
       proposedFiles: [],
       pullRequest: null
@@ -94291,6 +94364,7 @@ async function syncBidirectional(options) {
       dryRun: true,
       mode,
       classifications: plan.classifications,
+      warningDetails: plan.warnings,
       proposed: changes.length,
       proposedFiles: changes.map((change) => change.path),
       proposedFileDetails: changes.map(proposedFileDetail),
@@ -94314,7 +94388,7 @@ async function syncBidirectional(options) {
       githubRepository,
       githubRef,
       githubServerUrl,
-      skipUpdateKeys: wordpressChangeKeys,
+      skipUpdates,
       logger
     });
   } else if (plan.refreshPages.length > 0) {
@@ -94341,6 +94415,7 @@ async function syncBidirectional(options) {
     ...wordpressResult,
     mode,
     classifications: plan.classifications,
+    warningDetails: plan.warnings,
     proposed: changes.length,
     proposedFiles: changes.map((change) => change.path),
     proposedFileDetails: changes.map(proposedFileDetail),
@@ -96017,6 +96092,7 @@ async function main() {
     rootSlug: getInput("root-slug") || "docs",
     rootTitle: getInput("root-title") || "Docs",
     managedPath: getInput("managed-path") || "",
+    wordpressEdits: normalizeWordPressEdits(getInput("wordpress-edits") || "overwrite"),
     createH1: normalizeBoolean(getInput("create-h1") || "false"),
     sentinelFormat: normalizeSentinelFormat(getInput("sentinel-format")),
     rewriteLinks: normalizeBoolean(getInput("rewrite-links") || "true"),
@@ -96088,6 +96164,7 @@ async function main() {
       deleteMode: config.deleteMode,
       rootSlug: config.rootSlug,
       managedPath: config.managedPath,
+      wordpressEdits: config.wordpressEdits,
       versionsRegistry,
       githubRepository: config.githubRepository,
       githubRef: config.githubRef,
@@ -96121,6 +96198,10 @@ async function main() {
 
   setOutputs(result);
   await writeSummary(result);
+
+  for (const warning of result.warningDetails || []) {
+    core_warning(`${warning.key}: ${warning.reason}`);
+  }
 
   if (result.conflicts > 0) {
     for (const conflict of result.conflictDetails) {
@@ -96176,6 +96257,14 @@ async function writeSummary(result) {
     }
   }
 
+  if (result.warningDetails?.length > 0) {
+    summary.addHeading("Left in WordPress", 2);
+    for (const warning of result.warningDetails) {
+      const source = warning.sourcePath ? ` (\`${warning.sourcePath}\`)` : "";
+      summary.addRaw(`- \`${warning.key}\`${source}: ${warning.reason}\n`);
+    }
+  }
+
   if (result.conflictDetails.length > 0) {
     summary.addHeading("Conflicts", 2);
     for (const conflict of result.conflictDetails) {
@@ -96210,6 +96299,14 @@ function normalizeMode(value) {
     throw new Error(`Invalid mode '${value}'. Use publish, propose, or reconcile.`);
   }
   return mode;
+}
+
+function normalizeWordPressEdits(value) {
+  const policy = String(value || "").trim().toLowerCase();
+  if (!["overwrite", "conflict"].includes(policy)) {
+    throw new Error(`Invalid wordpress-edits '${value}'. Use overwrite or conflict.`);
+  }
+  return policy;
 }
 
 main().catch((error) => {
