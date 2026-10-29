@@ -311,7 +311,9 @@ The Linchpin skills library vendors `generate-docs-from-source` from here, along
 
 The Playground blueprints in `theme/` still clone `Automattic/docspress`, so these previews run **upstream's** theme and plugin. They show the shared foundation accurately. Fork-only blocks such as Symbol, Sentinel, and Page Details do not appear in them.
 
-Preview a local `docs/` directory, from the repository that contains it:
+### Preview local docs from the CLI
+
+Run this from the repository that contains your `docs/` directory:
 
 ```bash
 npx @wp-playground/cli@3.1.46 start \
@@ -322,6 +324,8 @@ npx @wp-playground/cli@3.1.46 start \
 ```
 
 WordPress Playground imports the Markdown as editable Pages and opens `/docs/`.
+
+### Playground demos
 
 - [Default documentation site](https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2FAutomattic%2Fdocspress%2Fmain%2Ftheme%2Fblueprint-docs.json&page-title=DocsPress%20Documentation)
 - [Contextual sidebars](https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2FAutomattic%2Fdocspress%2Fmain%2Ftheme%2Fblueprint-sidebars.json&page-title=DocsPress%20Contextual%20Sidebars)
