@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.2.1](https://github.com/linchpin/docspress/compare/v2.2.0...v2.2.1) (2026-10-29)
+
+
+### Documentation 📚
+
+* **LINCHPIN-5970:** Keep the CLI preview heading the Playground test checks for ([eceea86](https://github.com/linchpin/docspress/commit/eceea860d3ed0319a0089fa49865fbdf67c2ea85))
+* **LINCHPIN-5970:** Rewrite the README around what the fork adds to upstream ([d76d6e1](https://github.com/linchpin/docspress/commit/d76d6e189b07d185e5bbb1d437b29b4822ce0c09))
+* **LINCHPIN-5970:** Rewrite the README around what the fork adds to upstream ([9db7374](https://github.com/linchpin/docspress/commit/9db73741a5f170aa06af69cabc7b4b2bb405c5c1))
+* **LINCHPIN-5981:** Accept WP_ACCESS_TOKEN as a repository or organisation secret ([b32c899](https://github.com/linchpin/docspress/commit/b32c8992e5b25850d993d16817a6060f9575aa71))
+* **LINCHPIN-5981:** Accept WP_ACCESS_TOKEN as a repository or organisation secret ([8dee5ba](https://github.com/linchpin/docspress/commit/8dee5bae68bdf307e18aa6e9bfafd05ab8454ae6))
+
+
+### Miscellaneous Chores 🧹
+
+* **deps-dev:** bump launch-editor from 2.14.1 to 2.14.2 in /plugins/docspress-blocks ([fe42172](https://github.com/linchpin/docspress/commit/fe42172ffa3e0c884e62002ced2f79c4bb02fd59))
+* **deps:** bump @vitest/mocker and vitest ([c97ee4a](https://github.com/linchpin/docspress/commit/c97ee4a8567c5d9b9ff3a6ed008215a2a24f9f4f))
+* **deps:** bump fast-uri from 3.1.7 to 3.1.9 ([1ae4a57](https://github.com/linchpin/docspress/commit/1ae4a574111f955c5f52bf215482eb6bbe39771c))
+* **deps:** bump fast-uri from 3.1.7 to 3.1.9 ([4da4bb4](https://github.com/linchpin/docspress/commit/4da4bb4bb5e013ba2c383f3a2347d2c882cc8f93))
+* **NO-TASK:** Rebuild dist for c97ee4a [skip ci] ([6239d76](https://github.com/linchpin/docspress/commit/6239d7611d270b673e7fa849fdfef8f90f6613f3))
+
 ## [2.2.0](https://github.com/linchpin/docspress/compare/v2.1.0...v2.2.0) (2026-10-28)
 
 

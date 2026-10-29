@@ -335,7 +335,7 @@ WordPress Playground imports the Markdown as editable Pages and opens `/docs/`.
 ## Releases and versioning
 
 <!-- x-release-please-start-version -->
-Current release: `2.2.0`
+Current release: `2.2.1`
 <!-- x-release-please-end -->
 
 This fork is its own product line. Upstream versions the theme and plugin in a `0.x` series. Ours starts at `1.0.0`, so an upstream release can never sort above what we publish. Before that break, both claimed `0.10.7`, and nothing (not Composer, not the WordPress admin, not SatisPress) could tell them apart.
