@@ -9,12 +9,13 @@ Start with the GitHub Actions summary, then match the symptom to the narrowest s
 
 | Symptom | Check |
 | --- | --- |
-| `401` or “Invalid token” | Confirm `WP_ACCESS_TOKEN` exists in the correct repository and was not revoked. |
+| `Input required and not supplied: wordpress-access-token` | No secret named `WP_ACCESS_TOKEN` reaches the workflow. Set it on the repository or its organisation; an organisation secret must also grant this repository access. |
+| `401` or “Invalid token” | Confirm `WP_ACCESS_TOKEN` on the repository or its organisation holds the current token and was not revoked. A repository secret takes precedence over an organisation secret with the same name. |
 | WordPress.com reports required `global` scope | Regenerate the token with the DocsPress helper, whose default scope is `global`. |
 | Self-hosted endpoint rejects Bearer authentication | Confirm the site has a trusted Bearer-token mechanism; DocsPress does not provision one. |
 | WordPress.com endpoint is missing the site | Set `wordpress-site` to the site domain or ID. |
 
-Do not print the token while debugging. Verify only the secret name with `gh secret list`.
+Do not print the token while debugging. Verify only the secret name: `gh secret list --repo OWNER/REPO` shows a repository secret, and `gh secret list --org ORG` an organisation secret, which needs the `admin:org` scope.
 
 ## A Page opens with a Classic block full of JSON
 

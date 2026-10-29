@@ -6,7 +6,7 @@ Follow these steps once to connect an existing Markdown tree to WordPress safely
 
 ## 1. Add the WordPress secret
 
-Create a repository secret named `WP_ACCESS_TOKEN`. The [authentication guide](./authentication.md) explains how to generate the token without exposing it. The same token reads editor content for WordPress-to-GitHub proposals and writes Pages for GitHub-to-WordPress publication.
+Create a secret named `WP_ACCESS_TOKEN` on the repository, or on its organisation when several repositories publish to the same site. The [authentication guide](./authentication.md) explains how to generate the token without exposing it. The same token reads editor content for WordPress-to-GitHub proposals and writes Pages for GitHub-to-WordPress publication.
 
 <!-- docspress:block
 {
