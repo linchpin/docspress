@@ -2,7 +2,7 @@
 title: Authenticate WordPress
 ---
 
-Before publishing existing docs, configure the Bearer token DocsPress sends to the WordPress Pages REST endpoint. Store it as the GitHub Actions secret `WP_ACCESS_TOKEN`.
+Before publishing existing docs, configure the Bearer token DocsPress sends to the WordPress Pages REST endpoint. Store it as the GitHub Actions secret `WP_ACCESS_TOKEN`, on the repository or on its organisation. A repository secret takes precedence over an organisation secret with the same name.
 
 ## WordPress.com
 

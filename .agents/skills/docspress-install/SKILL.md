@@ -157,13 +157,15 @@ The helper requests the broad `global` scope and, with `--set-secret`, stores `W
 
 ### Self-hosted WordPress
 
-DocsPress sends `Authorization: Bearer …`. Core WordPress does not provision that token through this project. Confirm the site already has a bearer-token authentication mechanism and that the token can list, create, update, and trash Pages. Store it as `WP_ACCESS_TOKEN`; never commit it.
+DocsPress sends `Authorization: Bearer …`. Core WordPress does not provision that token through this project. Confirm the site already has a bearer-token authentication mechanism and that the token can list, create, update, and trash Pages. Store it as `WP_ACCESS_TOKEN`, a repository or organisation secret; never commit it.
 
 Verify only the secret name:
 
 ```bash
 gh secret list --repo OWNER/REPO
 ```
+
+That command lists repository secrets only. A token set on the organisation does not appear in it, and listing organisation secrets needs the `admin:org` scope, so a token missing from this list is not a blocker.
 
 ## 5. Prepare the WordPress presentation layer
 
@@ -199,7 +201,7 @@ Keep these as Site Editor blocks and template parts so the active style family a
 1. Confirm every workflow path and optional manifest, redirect, and version-registry file exists.
 2. Validate YAML with an available YAML parser or `actionlint` when installed.
 3. Run repository tests, lint, build, and `git diff --check` when those commands exist.
-4. Confirm `WP_ACCESS_TOKEN` appears in `gh secret list` without reading its value.
+4. Confirm `WP_ACCESS_TOKEN` exists without reading its value. `gh secret list --repo` shows a repository secret but never an organisation secret, so when it is not listed, let the dry run decide: a missing secret fails with `Input required and not supplied: wordpress-access-token`, and a token WordPress rejects fails with a 401 or 403.
 5. Commit and push only when the user asked for repository publication.
 6. Dispatch the manual workflow only after approval with `dry-run: true`; inspect the Actions summary and `summary-json`.
 7. Stop on unmanaged conflicts, authentication errors, unexpected deletes, or an incorrect page tree.
